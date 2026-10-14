@@ -95,36 +95,32 @@ email: "vous@exemple.com",   // votre e-mail (cible des dépôts)
 
 ---
 
-## 🤝 Collaboration avec l'espace « Vie scolaire »
+## 📅 Calendrier officiel tunisien (propre au site)
 
-Le site est **synchronisé avec l'espace enseignant**
-[aymenessouyah.github.io/viescolaire](https://aymenessouyah.github.io/viescolaire/) :
+Le site est **autonome** : son calendrier officiel (vacances, jours
+fériés, semaines bloquées, jours de cours, fenêtres des devoirs de
+synthèse) vit dans `data/calendrier.js`, sans aucune synchronisation
+externe.
 
-- **Page Calendrier** : les vacances, jours fériés, semaines bloquées et épreuves
-  officielles (DC1 à DC6, DS1) s'affichent automatiquement dans la grille mensuelle,
-  avec la liste des prochains jalons officiels.
-- **Accueil** : le prochain jalon officiel est affiché sous la prochaine échéance.
-- **Espace enseignant** : contrôle automatique des dates — une alerte signale toute
-  échéance qui tombe pendant les vacances, un jour férié, une semaine bloquée ou le
-  jour d'une épreuve officielle, avec suggestion du prochain jour de cours.
-
-⚡ En ligne, les données sont chargées en direct depuis `viescolaire/data/` —
-toute modification du planning là-bas se répercute ici sans rien toucher.
-📁 Hors-ligne, la copie locale `data/calendrier.js` prend le relais
-(régénérable depuis les fichiers de viescolaire).
-- **Épreuves officielles** : les **2 devoirs de contrôle + 1 devoir de synthèse de chaque
-  trimestre** (dates tirées de la répartition de viescolaire) sont publiés dans
-  `data/devoirs.js` avec le champ `examen: true` : visibles par les élèves dans la liste
-  des devoirs et le calendrier, **sans bouton de dépôt**, et les notes se saisissent
-  comme pour les autres devoirs (espace enseignant). Pour les DS2/DS3, le jour exact
-  est fixé par l'établissement — la date affichée est le début de la semaine bloquée.
+- **Page Calendrier** : les vacances, jours fériés, semaines bloquées
+  et épreuves officielles s'affichent dans la grille mensuelle, avec
+  les prochains jalons officiels.
+- **Choix des dates** : un devoir de contrôle ne peut tomber qu'un
+  jour de cours de la classe (hors vacances, jours fériés et semaines
+  bloquées) ; un devoir de synthèse uniquement pendant une semaine
+  bloquée. Pour une classe créée par l'admin et absente du calendrier
+  officiel, des règles assouplies s'appliquent (lundi→samedi hors
+  vacances/fériés/bloquées ; synthèse en semaines bloquées).
+- **Épreuves officielles** : les **2 devoirs de contrôle + 1 devoir de
+  synthèse de chaque trimestre** sont publiés dans `data/devoirs.js`
+  avec le champ `examen: true`.
 
 ---
 
 ## 🔐 Phase 3 — Comptes enseignant & élèves (Supabase)
 
 Le site dispose désormais de **vrais comptes**, branchés sur le même projet
-Supabase que l'espace Vie scolaire :
+Supabase du site :
 
 - **Connexion** (`connexion.html`) : les élèves s'inscrivent avec leur **code
   élève** + un mot de passe ; l'enseignant avec son e-mail.
@@ -201,7 +197,7 @@ est réservé aux comptes **validés par l'administrateur du site**
   la table `classes` de la base (pré-remplie avec 3ème SI 1 et
   4ème SI 2) et se gère depuis l'interface d'administration
   (ajouter / renommer / supprimer) ; `data/config.js` ne sert plus que
-  de repli. Pour une classe inconnue de Vie scolaire, le calendrier de
+  de repli. Pour une classe inconnue du calendrier officiel, le calendrier de
   choix de date applique des règles assouplies (lundi→samedi hors
   vacances/fériés/bloquées ; synthèse en semaines bloquées officielles).
 - **L'admin a deux interfaces** : son **espace enseignant**, identique
@@ -211,3 +207,24 @@ est réservé aux comptes **validés par l'administrateur du site**
   comptes, rôles/classes/matières des comptes, et gestion des classes.
 - Mise en place : (ré)exécuter `supabase/schema.sql` (v4.1, idempotent)
   puis suivre [`GUIDE-COMPTES.md`](GUIDE-COMPTES.md).
+
+
+## 🧑‍🏫 v4.2 — Site autonome, jetons de classes, 2 matières, quota par trimestre
+
+- **Aucune relation avec viescolaire** : plus de synchronisation ni de
+  lien externe ; le calendrier officiel tunisien est intégré au site
+  (`data/calendrier.js`).
+- **L'enseignant choisit ses classes et ses matières dans son espace**
+  (carte « 🎓 Mes classes et mes matières ») : ses classes deviennent
+  des **jetons colorés** qu'il **glisse dans le calendrier** (ou clique
+  le jeton puis le jour), puis il écrit le **titre** du devoir. Il peut
+  enseigner **2 matières en même temps** (chaque devoir porte sa
+  matière).
+- **Quota appliqué à la pose comme à l'enregistrement** : maximum
+  **2 devoirs de contrôle + 1 devoir de synthèse par trimestre**, par
+  classe et par matière (compteurs affichés au-dessus du calendrier ;
+  les épreuves déjà présentes dans `data/devoirs.js` comptent, hors
+  doublons importés).
+- Mise en place : (ré)exécuter `supabase/schema.sql` (v4.2, idempotent,
+  ajoute `matiere_2` et `classes` aux profils) puis suivre
+  [`GUIDE-COMPTES.md`](GUIDE-COMPTES.md).

@@ -5,7 +5,7 @@
    SYNTHÈSE sont acceptés (épreuves officielles en classe).
    Chaque trimestre : 2 devoirs de contrôle + 1 devoir de
    synthèse par classe, aux dates de la répartition de
-   l'espace Vie scolaire.
+   le calendrier officiel du site.
 
    POUR AJOUTER UNE ÉPREUVE :
    1. Cliquez sur le crayon ✏️ (Edit) de ce fichier sur GitHub

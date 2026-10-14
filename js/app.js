@@ -71,131 +71,20 @@ const EMPLOI = window.EMPLOI || {};
 const RESSOURCES = window.RESSOURCES || [];
 const REGLES = window.REGLES || [];
 
-/* ---------- Calendrier officiel (collaboration avec l'espace Vie scolaire) ---------- */
-/* En ligne : chargement dynamique depuis aymenessouyah.github.io/viescolaire
-   (data/reference.js + data/repartition.js). Hors-ligne : copie locale
-   data/calendrier.js (window.CAL_OFFICIEL). */
-const VIESCOLAIRE_DATA = "https://aymenessouyah.github.io/viescolaire/data/";
-let OFFICIEL = window.CAL_OFFICIEL || null;
-let officielEnLigne = false;
-const _officielCallbacks = [];
-
-function stripHTML(s) {
-  return String(s || "").replace(/<[^>]*>/g, "").trim();
-}
+/* ---------- Calendrier officiel tunisien (propre au site) ---------- */
+/* Les données officielles de l'année (vacances, jours fériés, semaines
+   bloquées, jours de cours, fenêtres des devoirs de synthèse) vivent
+   dans le fichier du site data/calendrier.js : le site est autonome,
+   sans aucune synchronisation externe. */
+const OFFICIEL = window.CAL_OFFICIEL || null;
 
 function dansPlage(isoDate, from, to) {
   return isoDate >= from && isoDate <= to;
 }
 
-function normaliserOfficiel(ref, plan) {
-  const cours = {};
-  Object.entries(ref.CLASSES || {}).forEach(([k, v]) => { cours[k.toLowerCase()] = v.days; });
-  const epreuves = plan ? simulerEpreuves(ref, plan) : {};
-  const ds1 = {};
-  Object.entries(ref.DS1 || {}).forEach(([k, v]) => { ds1[k.toLowerCase()] = { dates: v.dates, main: v.main }; });
-  ajouterDS(ref, epreuves);
-  return {
-    source: "viescolaire",
-    cours,
-    vacances: (ref.VACANCES || []).map((v) => ({ label: stripHTML(v.label), from: v.from, to: v.to })),
-    feries: (ref.FERIES || []).map((f) => ({ date: f.date, label: stripHTML(f.label) })),
-    suspensions: (ref.SUSPENSIONS || []).map((s) => ({
-      label: stripHTML(s.label), from: s.from, to: s.to,
-      classes: (s.classes || []).map((c) => String(c).toLowerCase())
-    })),
-    jalons: (ref.JALONS || []).map((j) => ({
-      ...(j.date ? { date: j.date } : { from: j.from, to: j.to }),
-      type: j.type, label: stripHTML(j.label), s: stripHTML(j.s)
-    })),
-    ds1,
-    epreuves
-  };
-}
-
-function simulerEpreuves(ref, plan) {
-  /* Rejoue le planning : jours de cours − vacances − fériés − suspensions */
-  const resultat = {};
-  const rentree = (ref.SCHOOL || {}).rentreeEleves || "2026-09-15";
-  Object.entries(plan || {}).forEach(([classe, blocs]) => {
-    const cfg = (ref.CLASSES || {})[classe];
-    if (!cfg || !Array.isArray(blocs)) return;
-    const cle = classe.toLowerCase();
-    const liste = [];
-    let bi = 0;
-    let reste = blocs.length ? blocs[0].n : 0;
-    const d = parseDate(rentree);
-    const fin = parseDate(cfg.fin || "2027-06-30");
-    while (d <= fin && bi < blocs.length) {
-      const dateIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const repos =
-        (ref.VACANCES || []).some((v) => dansPlage(dateIso, v.from, v.to)) ||
-        (ref.FERIES || []).some((f) => f.date === dateIso) ||
-        (ref.SUSPENSIONS || []).some((s) => (!s.classes || s.classes.includes(classe)) && dansPlage(dateIso, s.from, s.to));
-      if ((cfg.days || []).includes(d.getDay()) && !repos) {
-        const bloc = blocs[bi];
-        if (bloc.k === "dc") liste.push({ nom: stripHTML(bloc.t), date: dateIso });
-        reste--;
-        if (reste <= 0) { bi++; if (bi < blocs.length) reste = blocs[bi].n; }
-      }
-      d.setDate(d.getDate() + 1);
-    }
-    resultat[cle] = liste;
-  });
-  return resultat;
-}
-
-function ajouterDS(ref, epreuves) {
-  /* Devoirs de synthèse : un par semaine bloquée (jalons « bloc » de viescolaire).
-     DS1 : jour exact déjà fixé (constante DS1) ; DS suivants : début de la semaine bloquée
-     (le jour exact est arrêté par l'établissement). */
-  const compteurs = {};
-  (ref.JALONS || [])
-    .filter((j) => j.type === "bloc" && j.from)
-    .sort((a, b) => a.from.localeCompare(b.from))
-    .forEach((j) => {
-      const label = stripHTML(j.label);
-      const classes = label.startsWith("3SI1") ? ["3si1"] : label.startsWith("4SI2") ? ["4si2"] : ["3si1", "4si2"];
-      classes.forEach((cle) => {
-        compteurs[cle] = (compteurs[cle] || 0) + 1;
-        const n = compteurs[cle];
-        const exact = n === 1 && ref.DS1 ? (ref.DS1[cle.toUpperCase()] || {}).main : null;
-        epreuves[cle] = epreuves[cle] || [];
-        epreuves[cle].push({ nom: `Devoir de synthèse n°${n}`, date: exact || j.from, debut: j.from, fin: j.to });
-      });
-    });
-  Object.values(epreuves).forEach((l) => l.sort((a, b) => a.date.localeCompare(b.date)));
-}
-
-function chargerScriptDistant(url, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    const minuteur = setTimeout(() => { s.remove(); reject(new Error("délai dépassé")); }, timeoutMs || 6000);
-    s.onload = () => { clearTimeout(minuteur); resolve(); };
-    s.onerror = () => { clearTimeout(minuteur); reject(new Error("chargement impossible")); };
-    s.src = url;
-    document.head.appendChild(s);
-  });
-}
-
-function chargerOfficiel() {
-  chargerScriptDistant(VIESCOLAIRE_DATA + "reference.js")
-    .then(() => chargerScriptDistant(VIESCOLAIRE_DATA + "repartition.js"))
-    .then(() => {
-      const data = window.STI_DATA || {};
-      if (data.reference) {
-        OFFICIEL = normaliserOfficiel(data.reference, data.repartition);
-        officielEnLigne = true;
-      }
-    })
-    .catch(() => { /* copie locale conservée */ })
-    .finally(() => {
-      _officielCallbacks.splice(0).forEach((fn) => { try { fn(); } catch (e) { /* ignoré */ } });
-    });
-}
-
 function quandOfficielPret(fn) {
-  _officielCallbacks.push(fn);
+  /* Les données sont locales : elles sont déjà disponibles. */
+  try { fn(); } catch (e) { /* ignoré */ }
 }
 
 /* Événements officiels d'une date : [{type, label}] */
@@ -499,9 +388,7 @@ function creerCalendrierChoix(conteneur) {
 }
 
 function sourceOfficielHTML() {
-  return officielEnLigne
-    ? `🔄 Synchronisé en direct avec <a href="https://aymenessouyah.github.io/viescolaire/" target="_blank" rel="noopener">l'espace Vie scolaire</a>`
-    : `📁 Copie locale du calendrier officiel (connexion à Vie scolaire impossible)`;
+  return `📅 Calendrier officiel tunisien ${CFG.annee || "2026-2027"} — données propres au site`;
 }
 
 function nomClasse(cle) {
@@ -850,7 +737,7 @@ function renderAccueil() {
           <div>
             <strong>Prochain jalon officiel : ${esc(j.label)}</strong><br/>
             ${esc(quand)} · <a href="calendrier.html"><strong>Calendrier officiel →</strong></a>
-            <span class="text-muted" style="font-size:.82rem">(${officielEnLigne ? "synchronisé avec Vie scolaire" : "copie locale"})</span>
+            <span class="text-muted" style="font-size:.82rem">(calendrier officiel du site)</span>
           </div>
         </div>`;
     };
@@ -1747,9 +1634,6 @@ document.addEventListener("DOMContentLoaded", () => {
     case "suivi": renderSuivi(); break;
     case "admin": renderAdmin(); break;
   }
-
-  /* Collaboration Vie scolaire : calendrier officiel synchronisé en direct */
-  if (["accueil", "calendrier", "admin", "espace-enseignant"].includes(page)) chargerOfficiel();
 
   initReveal();
 

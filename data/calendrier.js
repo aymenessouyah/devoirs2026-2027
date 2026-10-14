@@ -1,15 +1,17 @@
 /* ============================================================
-   CALENDRIER OFFICIEL TUNISIEN 2026-2027 — COPIE LOCALE
+   CALENDRIER OFFICIEL TUNISIEN 2026-2027 — DONNÉES DU SITE
    ------------------------------------------------------------
-   Copie de secours générée le 14/10/2026 à partir des données
-   de l'espace Vie scolaire (aymenessouyah.github.io/viescolaire).
+   Vacances, jours fériés, suspensions (semaines bloquées),
+   jours de cours par classe et fenêtres des devoirs de
+   synthèse pour l'année scolaire 2026-2027.
 
-   ⚡ En ligne, le site charge automatiquement la version à jour
-   depuis viescolaire (data/reference.js + data/repartition.js).
-   Ce fichier ne sert que hors-ligne ou en cas d'échec du chargement.
+   Ce fichier appartient au site : aucune synchronisation
+   externe. Pour corriger une date officielle, modifiez les
+   données ci-dessous (structure : cours, vacances, feries,
+   suspensions, jalons, epreuves).
    ============================================================ */
 window.CAL_OFFICIEL = {
-  "source": "viescolaire",
+  "source": "site",
   "copieLocale": "2026-10-14",
   "cours": {
     "3si1": [

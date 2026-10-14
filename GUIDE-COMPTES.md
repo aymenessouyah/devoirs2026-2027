@@ -18,9 +18,11 @@ puis chacun accède à son espace :
   (page séparée) pour valider les comptes, corriger les rôles et
   **déterminer les classes** du site.
 
-La base est le **même projet Supabase** que l'espace Vie scolaire ; la
-table `espace_pedagogique` n'est pas touchée. Les anciens fichiers
-`data/devoirs.js` etc. restent comme **repli** et source d'import.
+La base Supabase du site stocke comptes, classes, devoirs et notes ;
+le calendrier officiel tunisien est **intégré au site**
+(`data/calendrier.js`, aucune synchronisation externe). Les anciens
+fichiers `data/devoirs.js` etc. restent comme **repli** et source
+d'import.
 
 ---
 
@@ -88,8 +90,18 @@ Tant qu'un compte n'est pas accepté, la personne voit seulement
 
 1. **Créer un compte** (type Enseignant + sa matière) → l'admin
    l'accepte.
-2. **📝 Mes devoirs** : choisissez la **classe** →
-   **➕ Nouveau devoir** (ou **✏️ Modifier**) :
+2. **🎓 Mes classes et mes matières** (dans son espace) : l'enseignant
+   choisit **les classes qu'il enseigne** et sa matière — ou ses
+   **2 matières** s'il en enseigne deux. Ses classes deviennent des
+   **jetons colorés**.
+3. **🗓️ Mon calendrier — placer mes devoirs** : il **glisse le jeton
+   d'une classe** dans une case du calendrier (ou clique le jeton puis
+   le jour), choisit DC ou DS (et la matière s'il en a deux), puis
+   écrit le **titre** du devoir. Limite appliquée automatiquement :
+   **2 devoirs de contrôle + 1 devoir de synthèse par trimestre**, par
+   classe et par matière (compteurs affichés au-dessus du calendrier).
+   Il peut aussi créer/modifier un devoir par la liste
+   (**➕ Nouveau devoir** / **✏️ Modifier**) :
    - le type (**devoir de contrôle** / **devoir de synthèse**) ;
    - la **date**, cliquée dans le calendrier : seuls les jours
      compatibles avec le **calendrier scolaire officiel tunisien** sont
@@ -103,7 +115,7 @@ Tant qu'un compte n'est pas accepté, la personne voit seulement
    Bouton **⬇ Importer les épreuves du fichier** : récupère en un clic
    les 18 épreuves de `data/devoirs.js` de la classe pour les gérer
    ensuite en ligne (sans doublons).
-3. **👨‍🎓 Mes élèves — notes et observations** : choisissez la classe
+4. **👨‍🎓 Mes élèves — notes et observations** : choisissez la classe
    et le devoir → saisissez la **note** et la **remarque** de chaque
    élève validé (**Enregistrer** ligne par ligne ; vider la note puis
    Enregistrer l'efface). Plus bas, la liste des élèves de la classe

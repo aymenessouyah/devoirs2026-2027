@@ -1332,3 +1332,36 @@ tbody tr:hover { background: var(--surface-2); }
 }
 .table .input-note { min-width: 70px; }
 .btn-bascule { margin-left: .4rem; }
+
+/* ---------- v4.2 : calendrier à jetons de l'enseignant ---------- */
+.jetons-bar { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.55rem 0; }
+.jeton-classe {
+  display:inline-flex; align-items:center; gap:.45rem;
+  padding:.45rem .85rem; border-radius:999px;
+  border:2px solid var(--jc, #888); background:var(--card-bg, #fff); color:inherit;
+  font:inherit; font-weight:700; font-size:.9rem; cursor:grab;
+}
+.jeton-classe .point { width:.7rem; height:.7rem; border-radius:50%; background:var(--jc, #888); flex:none; }
+.jeton-classe.sel { background:var(--jc, #888); color:#fff; }
+.jeton-classe.sel .point { background:#fff; }
+.jeton-classe:active { cursor:grabbing; }
+.cal-token {
+  display:block; width:100%; margin-top:.2rem; padding:.12rem .35rem;
+  border:none; border-left:4px solid var(--jc, #888); border-radius:.35rem;
+  background:rgba(127,127,160,.14); color:inherit;
+  font:inherit; font-size:.7rem; font-weight:700; text-align:left;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;
+}
+.cal-case.deposable { cursor:pointer; }
+.cal-case.survol { outline:3px dashed var(--green); outline-offset:-3px; }
+.mm-classes { display:flex; gap:.5rem; flex-wrap:wrap; }
+.mm-classe {
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.45rem .8rem; border:1.5px solid var(--border, rgba(120,110,160,.3));
+  border-radius:999px; cursor:pointer; font-weight:600;
+}
+#cj-matiere {
+  padding:.45rem .6rem; border-radius:.55rem;
+  border:1.5px solid var(--border, rgba(120,110,160,.3));
+  background:var(--card-bg, #fff); color:inherit; font:inherit;
+}

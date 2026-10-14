@@ -34,6 +34,15 @@ window.CONFIG = {
   /* Année scolaire */
   annee: "2026-2027",
 
+  /* Trimestres scolaires — règle du site : par trimestre, par classe et
+     par matière, un enseignant peut placer au maximum 2 devoirs de
+     contrôle et 1 devoir de synthèse. */
+  trimestres: [
+    { id: "T1", label: "1er trimestre", debut: "2026-09-01", fin: "2026-12-31" },
+    { id: "T2", label: "2e trimestre", debut: "2027-01-01", fin: "2027-03-31" },
+    { id: "T3", label: "3e trimestre", debut: "2027-04-01", fin: "2027-06-30" }
+  ],
+
   /* Nom de l'enseignant (affiché dans le pied de page) */
   prof: "Mr Aymen Essouyah" /* ← remplacez par votre nom */,
 

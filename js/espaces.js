@@ -133,6 +133,41 @@ function normaliserDevoirFichier(d) {
   };
 }
 
+/* Les matières d'un enseignant : 1 ou 2, choisies dans son espace */
+function sesMatieres(profil) {
+  return [profil && profil.matiere, profil && profil.matiere_2]
+    .filter((m) => m && String(m).trim())
+    .filter((m, i, arr) => arr.indexOf(m) === i);
+}
+
+/* Trimestre scolaire d'une date (bornes dans data/config.js) */
+function trimestreDe(dateISO) {
+  return ((CFG && CFG.trimestres) || []).find((t) => dateISO >= t.debut && dateISO <= t.fin) || null;
+}
+
+/* Règle du site : 2 devoirs de contrôle + 1 devoir de synthèse par
+   trimestre, par classe et par matière. Compte les devoirs en base de
+   l'enseignant + les épreuves du fichier (hors doublons déjà importés). */
+function etatQuota(mesDevoirsDB, classe, matiere, type, dateISO, ignoreId) {
+  const max = type === "DS" ? 1 : 2;
+  const tr = trimestreDe(dateISO);
+  if (!tr) return { trimestre: null, nb: 0, max, ok: true };
+  const memeTrimestre = (d) => {
+    const t = trimestreDe(d.date);
+    return t && t.id === tr.id;
+  };
+  const clesDB = new Set(mesDevoirsDB.map((d) => `${d.titre}|${d.date}`));
+  let nb = mesDevoirsDB.filter((d) =>
+    d.id !== ignoreId && d.classe === classe && d.type === type &&
+    (!matiere || !d.matiere || d.matiere === matiere) && memeTrimestre(d)).length;
+  nb += DEVOIRS.filter((d) => d.examen && d.classe === classe)
+    .map(normaliserDevoirFichier)
+    .filter((d) =>
+      !clesDB.has(`${d.titre}|${d.date}`) && d.type === type &&
+      (!matiere || d.matiere === matiere) && memeTrimestre(d)).length;
+  return { trimestre: tr, nb, max, ok: nb < max };
+}
+
 function optionsClassesHTML(selection) {
   return listeClasses().map((c) => `<option value="${esc(c.cle)}" ${c.cle === selection ? "selected" : ""}>${esc(c.nom)}</option>`).join("");
 }
@@ -165,7 +200,7 @@ async function accesEspace(roleAttendu) {
     return null;
   }
   if (!profil) {
-    /* Compte de connexion existant (ex. créé sur Vie scolaire) sans profil ici */
+    /* Compte de connexion existant, mais pas encore de profil sur ce site */
     if (contenu) {
       contenu.innerHTML = `
         <div class="card">
@@ -626,6 +661,13 @@ async function renderEspaceEleve() {
    ESPACE ENSEIGNANT (+ tableau de bord admin)
    ============================================================ */
 const ENS_ETAT = { classeDevoirs: null, classeEleves: null, devoirNotes: "" };
+const CALJ = { classe: null, type: "DC", matiere: "", a: null, m: null };
+const COULEURS_CLASSES = ["var(--rose)", "var(--cyan)", "var(--violet)", "var(--green)", "var(--orange)", "var(--amber)"];
+
+function couleurClasse(cle) {
+  const i = listeClasses().findIndex((c) => c.cle === cle);
+  return COULEURS_CLASSES[(i < 0 ? 0 : i) % COULEURS_CLASSES.length];
+}
 
 /* Petit calendrier mensuel pour choisir la date d'un devoir :
    seules les dates compatibles avec le calendrier scolaire officiel
@@ -747,8 +789,41 @@ async function renderEspaceEnseignant() {
     </div></div>` : ""}
 
     <div class="card mb-3">
-      <h2 class="card-title">📝 Mes devoirs — dates, sujets et corrections</h2>
-      <p class="text-muted">Choisissez la classe, puis créez ou modifiez un devoir : la <strong>date se choisit au calendrier</strong> (calendrier scolaire officiel tunisien), vous écrivez le <strong>sujet</strong> et la <strong>correction</strong> — les élèves voient les dates tout de suite, mais le sujet et la correction seulement à partir du <strong>lendemain</strong> de l'épreuve.</p>
+      <h2 class="card-title">🎓 Mes classes et mes matières</h2>
+      <p class="text-muted">Choisissez les classes que vous enseignez et votre matière — ou vos <strong>2 matières</strong> si vous en enseignez deux en même temps. Vos classes deviennent les <strong>jetons</strong> à placer dans le calendrier ci-dessous.</p>
+      <div class="form-grid mt-2">
+        <div class="field">
+          <label for="mm-mat1">Ma matière</label>
+          <select id="mm-mat1">${optionsMatieresHTML(profil.matiere || MATIERES[0])}</select>
+        </div>
+        <div class="field">
+          <label for="mm-mat2">Ma 2e matière (si j'en enseigne deux)</label>
+          <select id="mm-mat2">
+            <option value="" ${!profil.matiere_2 ? "selected" : ""}>— Aucune —</option>
+            ${optionsMatieresHTML(profil.matiere_2 || "")}
+          </select>
+        </div>
+        <div class="field full">
+          <label>Mes classes (déterminées par l'admin du site)</label>
+          <div class="mm-classes">
+            ${listeClasses().map((c) => `
+              <label class="mm-classe"><input type="checkbox" class="mm-classe-cb" value="${esc(c.cle)}" ${(profil.classes || []).includes(c.cle) ? "checked" : ""} /> ${esc(c.nom)}</label>`).join("") || `<span class="text-muted">Aucune classe définie pour le moment.</span>`}
+          </div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="mm-enregistrer">💾 Enregistrer mes classes et matières</button>
+        <span class="text-muted" id="mm-msg"></span>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <h2 class="card-title">🗓️ Mon calendrier — placer mes devoirs</h2>
+      <p class="text-muted"><strong>Glissez le jeton d'une classe</strong> dans une case du calendrier (ou cliquez le jeton, puis le jour), puis écrivez le <strong>titre</strong> du devoir. La date respecte le calendrier officiel tunisien du site ; limite : <strong>2 devoirs de contrôle + 1 devoir de synthèse par trimestre</strong>, par classe et par matière. Les élèves voient les dates tout de suite, le sujet et la correction à partir du <strong>lendemain</strong> de l'épreuve.</p>
+      <div id="cal-jetons" class="mt-2"></div>
+      <div id="dv-msg" class="mt-1"></div>
+      <div id="dv-form-zone" class="mt-2"></div>
+      <h3 class="mt-3">📋 Mes devoirs en liste (modifier sujets et corrections)</h3>
       <div class="form-grid mt-2">
         <div class="field">
           <label for="dv-classe">Classe</label>
@@ -762,8 +837,6 @@ async function renderEspaceEnseignant() {
           </div>
         </div>
       </div>
-      <div id="dv-msg" class="mt-1"></div>
-      <div id="dv-form-zone" class="mt-2"></div>
       <div id="dv-liste" class="mt-2"></div>
     </div>
 
@@ -794,9 +867,152 @@ async function renderEspaceEnseignant() {
     </div>`;
 
   brancherDeconnexion();
+  brancherChoixEnseignant();
+  afficherCalendrierJetons();
   rendreDevoirs();
   rendreEleves();
   brancherEleves();
+
+  /* ---------------- 🎓 Mes classes et mes matières ---------------- */
+  function brancherChoixEnseignant() {
+    $("#mm-enregistrer")?.addEventListener("click", async () => {
+      const mat1 = $("#mm-mat1").value;
+      const mat2 = $("#mm-mat2").value;
+      const msg = $("#mm-msg");
+      if (mat2 && mat2 === mat1) { if (msg) msg.textContent = "Les deux matières doivent être différentes."; return; }
+      const classes = $$(".mm-classe-cb").filter((cb) => cb.checked).map((cb) => cb.value);
+      try {
+        await sbPatch("profils", `id=eq.${uid}`, { matiere: mat1 || null, matiere_2: mat2 || null, classes });
+        CALJ.classe = null;
+        CALJ.matiere = "";
+        renderEspaceEnseignant();
+      } catch (e) { if (msg) msg.textContent = e.message; }
+    });
+  }
+
+  /* ---------------- 🗓️ Calendrier à jetons ---------------- */
+  /* L'enseignant voit SES classes comme des jetons colorés : il glisse
+     un jeton dans une case du calendrier (ou clique le jeton puis le
+     jour), puis écrit le titre du devoir. Quota : 2 DC + 1 DS par
+     trimestre, par classe et par matière. */
+  function afficherCalendrierJetons() {
+    const zone = $("#cal-jetons");
+    if (!zone) return;
+    const mesClasses = (profil.classes || []).filter((cle) => listeClasses().some((c) => c.cle === cle));
+    if (!mesClasses.length) {
+      zone.innerHTML = `<div class="callout callout-info">${ICONS.info}<div><strong>Choisissez d'abord vos classes</strong> dans la carte « 🎓 Mes classes et mes matières » ci-dessus : elles apparaîtront ici comme jetons à placer dans le calendrier.</div></div>`;
+      return;
+    }
+    if (!mesClasses.includes(CALJ.classe)) CALJ.classe = mesClasses[0];
+    const mats = sesMatieres(profil);
+    if (!mats.includes(CALJ.matiere)) CALJ.matiere = mats[0] || "";
+    const auj = new Date();
+    if (CALJ.a === null) { CALJ.a = auj.getFullYear(); CALJ.m = auj.getMonth(); }
+
+    function placer(iso, classe) {
+      const typeSql = CALJ.type === "DS" ? "synthese" : "controle";
+      const ev = evaluerDateChoix(classe, iso, typeSql, "", {
+        occupees: devoirsTous.filter((d) => d.classe === classe).map((d) => d.date)
+      });
+      if (!ev.ok) { espaceMessage("#dv-msg", "erreur", `Date impossible : ${esc(ev.raison)}`); return; }
+      const q = etatQuota(mesDevoirs, classe, CALJ.matiere, CALJ.type, iso, null);
+      if (!q.ok) {
+        espaceMessage("#dv-msg", "erreur", `Limite atteinte pour le ${q.trimestre.label} : maximum ${q.max} ${CALJ.type === "DS" ? "devoir de synthèse" : "devoirs de contrôle"} par trimestre (${esc(nomClasseDyn(classe))} · ${esc(CALJ.matiere || "")}).`);
+        return;
+      }
+      ouvrirFormulaire(null, { classe, type: CALJ.type, date: iso, matiere: CALJ.matiere });
+    }
+
+    function quotaHTML() {
+      return (CFG.trimestres || []).map((t) => {
+        const qDC = etatQuota(mesDevoirs, CALJ.classe, CALJ.matiere, "DC", t.debut, null);
+        const qDS = etatQuota(mesDevoirs, CALJ.classe, CALJ.matiere, "DS", t.debut, null);
+        return `<span class="pill" title="${esc(t.label)} — ${esc(nomClasseDyn(CALJ.classe))}">${esc(t.label)} · DC ${qDC.nb}/${qDC.max} · DS ${qDS.nb}/${qDS.max}</span>`;
+      }).join(" ");
+    }
+
+    function dessiner() {
+      const typeSql = CALJ.type === "DS" ? "synthese" : "controle";
+      const premier = new Date(CALJ.a, CALJ.m, 1);
+      const debut = (premier.getDay() + 6) % 7;
+      const nbJours = new Date(CALJ.a, CALJ.m + 1, 0).getDate();
+      const occupees = devoirsTous.filter((d) => d.classe === CALJ.classe).map((d) => d.date);
+      let cases = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"].map((j) => `<div class="cal-jour-nom">${j}</div>`).join("");
+      for (let i = 0; i < debut; i++) cases += `<div class="cal-case vide"></div>`;
+      for (let jour = 1; jour <= nbJours; jour++) {
+        const iso = `${CALJ.a}-${String(CALJ.m + 1).padStart(2, "0")}-${String(jour).padStart(2, "0")}`;
+        const ev = evaluerDateChoix(CALJ.classe, iso, typeSql, "", { occupees });
+        const evts = evenementsOfficiels(iso);
+        const icone = evts.some((e) => e.type === "vacances") ? "🏖️"
+          : evts.some((e) => e.type === "ferie") ? "🚩"
+          : evts.some((e) => e.type === "suspension") ? "🔒" : "";
+        const tokens = mesDevoirs.filter((d) => d.date === iso)
+          .map((d) => `<button type="button" class="cal-token" style="--jc:${couleurClasse(d.classe)}" data-id="${esc(d.id)}" title="${esc(d.titre)} — ${esc(nomClasseDyn(d.classe))} · ${esc(d.matiere || "")}">${d.type} · ${esc(d.titre)}</button>`).join("");
+        const classesCls = ["cal-case", ev.ok ? "valide deposable" : "invalide"];
+        if (iso === todayISO()) classesCls.push("aujourdhui");
+        cases += `<div class="${classesCls.join(" ")}" data-iso="${iso}" title="${esc(ev.raison)}">
+          <div class="cal-num">${jour}</div>
+          ${icone ? `<div class="cal-off">${icone}</div>` : ""}
+          ${tokens}
+        </div>`;
+      }
+      const reste = (7 - ((debut + nbJours) % 7)) % 7;
+      for (let i = 0; i < reste; i++) cases += `<div class="cal-case vide"></div>`;
+
+      zone.innerHTML = `
+        <div class="jetons-bar">
+          <strong>Mes jetons :</strong>
+          ${mesClasses.map((cle) => `<button type="button" class="jeton-classe ${CALJ.classe === cle ? "sel" : ""}" draggable="true" data-cle="${esc(cle)}" style="--jc:${couleurClasse(cle)}" title="Glissez-moi dans le calendrier, ou cliquez puis cliquez un jour"><span class="point"></span>${esc(nomClasseDyn(cle))}</button>`).join("")}
+          <span style="margin-left:.4rem">
+            <button type="button" class="btn ${CALJ.type === "DC" ? "btn-secondary" : "btn-ghost"} btn-sm cj-type" data-type="DC">DC · Contrôle</button>
+            <button type="button" class="btn ${CALJ.type === "DS" ? "btn-secondary" : "btn-ghost"} btn-sm cj-type" data-type="DS">DS · Synthèse</button>
+          </span>
+          ${mats.length > 1
+            ? `<select id="cj-matiere" title="Matière du devoir">${mats.map((m) => `<option ${m === CALJ.matiere ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>`
+            : `<span class="pill">📚 ${esc(CALJ.matiere || "")}</span>`}
+        </div>
+        <p class="text-muted" style="font-size:.88rem">Glissez un jeton dans une case <strong style="color:var(--green)">verte</strong>, ou cliquez le jeton puis le jour. Cliquez un devoir déjà placé pour le modifier (date, sujet, correction).</p>
+        <div class="jetons-bar">${quotaHTML()}</div>
+        <div class="cal-nav mb-2">
+          <button type="button" class="btn btn-outline btn-sm cj-prev">← Précédent</button>
+          <h3>${MOIS_LONG[CALJ.m]} ${CALJ.a}</h3>
+          <button type="button" class="btn btn-outline btn-sm cj-next">Suivant →</button>
+          <span class="text-muted" style="margin-left:auto;font-size:.82rem">${sourceOfficielHTML()}</span>
+        </div>
+        <div class="cal-grid">${cases}</div>`;
+
+      $$(".jeton-classe", zone).forEach((chip) => {
+        chip.addEventListener("click", () => { CALJ.classe = chip.dataset.cle; dessiner(); });
+        chip.addEventListener("dragstart", (e) => {
+          CALJ.classe = chip.dataset.cle;
+          try { e.dataTransfer.setData("text/plain", chip.dataset.cle); e.dataTransfer.effectAllowed = "copy"; } catch (err) { /* ignoré */ }
+        });
+      });
+      $$(".cj-type", zone).forEach((b) => b.addEventListener("click", () => { CALJ.type = b.dataset.type; dessiner(); }));
+      $("#cj-matiere", zone)?.addEventListener("change", (e) => { CALJ.matiere = e.target.value; dessiner(); });
+      $(".cj-prev", zone)?.addEventListener("click", () => { CALJ.m--; if (CALJ.m < 0) { CALJ.m = 11; CALJ.a--; } dessiner(); });
+      $(".cj-next", zone)?.addEventListener("click", () => { CALJ.m++; if (CALJ.m > 11) { CALJ.m = 0; CALJ.a++; } dessiner(); });
+      $$(".cal-token", zone).forEach((t) => t.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const d = mesDevoirs.find((x) => x.id === t.dataset.id);
+        if (d) ouvrirFormulaire(d);
+      }));
+      $$(".cal-case.deposable", zone).forEach((cell) => {
+        cell.addEventListener("click", () => placer(cell.dataset.iso, CALJ.classe));
+        cell.addEventListener("dragover", (e) => { e.preventDefault(); cell.classList.add("survol"); });
+        cell.addEventListener("dragleave", () => cell.classList.remove("survol"));
+        cell.addEventListener("drop", (e) => {
+          e.preventDefault();
+          cell.classList.remove("survol");
+          let cle = CALJ.classe;
+          try { cle = e.dataTransfer.getData("text/plain") || cle; } catch (err) { /* ignoré */ }
+          if (mesClasses.includes(cle)) placer(cell.dataset.iso, cle);
+        });
+      });
+    }
+
+    dessiner();
+  }
 
   /* ---------------- 📝 Mes devoirs ---------------- */
   let formEtat = null; // { id|null, date }
@@ -834,19 +1050,20 @@ async function renderEspaceEnseignant() {
     }));
   }
 
-  function ouvrirFormulaire(devoir) {
+  function ouvrirFormulaire(devoir, preset) {
     const zone = $("#dv-form-zone");
     if (!zone) return;
-    const classe = ENS_ETAT.classeDevoirs;
+    const classe = devoir ? devoir.classe : (preset && preset.classe) || ENS_ETAT.classeDevoirs;
     const estNouveau = !devoir;
     formEtat = {
       id: devoir ? devoir.id : null,
-      date: devoir ? devoir.date : null,
+      date: devoir ? devoir.date : (preset && preset.date) || null,
       classe
     };
-    const typeInit = devoir ? devoir.type : "DC";
+    const typeInit = devoir ? devoir.type : (preset && preset.type) || "DC";
     /* Numéro suggéré pour le titre automatique */
-    const nbMemeType = devoirsDeLaClasse(classe).filter((d) => d.type === typeInit).length
+    const proprietaireInit = devoir ? (devoir.enseignant_id || uid) : uid;
+    const nbMemeType = devoirsTous.filter((d) => d.enseignant_id === proprietaireInit && d.classe === classe && d.type === typeInit).length
       + DEVOIRS.filter((d) => d.examen && d.classe === classe && typeDepuisTitre(d.titre) === typeInit).length;
     const titreSuggere = `${typeLibelle(typeInit)} n°${nbMemeType + 1}`;
 
@@ -867,7 +1084,7 @@ async function renderEspaceEnseignant() {
           </div>
           <div class="field">
             <label for="dvf-matiere">Matière</label>
-            <select id="dvf-matiere">${optionsMatieresHTML(devoir ? devoir.matiere : (profil.matiere || MATIERES[0]))}</select>
+            <select id="dvf-matiere">${(sesMatieres(profil).length ? sesMatieres(profil) : MATIERES).map((m) => `<option value="${esc(m)}" ${m === (devoir ? devoir.matiere : (preset && preset.matiere) || sesMatieres(profil)[0] || "") ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>
           </div>
           <div class="field">
             <label for="dvf-bareme">Barème (note sur…)</label>
@@ -899,7 +1116,7 @@ async function renderEspaceEnseignant() {
       afficherCalendrierChoixDate($("#dvf-cal"), {
         classe,
         type: type === "DS" ? "synthese" : "controle",
-        dateActuelle: devoir ? devoir.date : null,
+        dateActuelle: formEtat.date,
         occupees: () => devoirsTous
           .filter((x) => x.classe === classe && x.id !== formEtat.id)
           .map((x) => x.date),
@@ -928,8 +1145,14 @@ async function renderEspaceEnseignant() {
         ignorees: devoir && formEtat.date === devoir.date ? [devoir.date] : []
       });
       if (!ev.ok) { espaceMessage("#dvf-msg", "erreur", `Date refusée : ${esc(ev.raison)}`); return; }
+      const proprietaire = devoir ? (devoir.enseignant_id || uid) : uid;
+      const q = etatQuota(devoirsTous.filter((d) => d.enseignant_id === proprietaire), classe, matiere, type, formEtat.date, formEtat.id);
+      if (!q.ok) {
+        espaceMessage("#dvf-msg", "erreur", `Limite atteinte pour le ${q.trimestre.label} : maximum ${q.max} ${type === "DS" ? "devoir de synthèse" : "devoirs de contrôle"} par trimestre, par classe et par matière. Choisissez une date d'un autre trimestre.`);
+        return;
+      }
       const ligne = {
-        enseignant_id: devoir ? (devoir.enseignant_id || uid) : uid,
+        enseignant_id: proprietaire,
         enseignant_nom: devoir ? (devoir.enseignant_nom || profil.nom) : profil.nom,
         classe, matiere, type, titre, date: formEtat.date, sujet, correction, bareme
       };

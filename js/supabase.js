@@ -1,7 +1,7 @@
 /* ============================================================
    Mini-client Supabase (REST + Auth) — aucune dépendance.
-   Projet partagé avec l'espace Vie scolaire (même compte
-   enseignant, même base). La clé ci-dessous est la clé PUBLIQUE
+   Base Supabase du site (comptes, classes, devoirs, notes).
+   La clé ci-dessous est la clé PUBLIQUE
    (« anon ») : la sécurité est assurée par les règles RLS
    (voir supabase/schema.sql).
    ============================================================ */

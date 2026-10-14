@@ -1,10 +1,14 @@
 -- =========================================================================
 --  Site « 3SI1 & 4SI2 — Devoirs » — Schéma de la base (Supabase)
---  Base partagée avec l'espace Vie scolaire (même projet).
+--  Base Supabase du site : comptes, classes, devoirs et notes.
 --
 --  À exécuter dans : Supabase → SQL Editor → New query → coller → Run.
 --  Le script est SANS DANGER si vous le relancez (mises à jour incluses).
 --
+--  v4.2 — Site autonome (calendrier officiel propre au site, sans
+--  synchronisation externe) ; un enseignant choisit ses classes et
+--  ses matières (1 ou 2) dans son espace ; quota de devoirs par
+--  trimestre appliqué par le site (2 DC + 1 DS par classe/matière).
 --  v4.1 — Matières ordonnées (STI, Algo, Informatique…), classes
 --  déterminées par l'admin (table « classes ») et admin à deux
 --  interfaces (enseignant + ⭐ Administration séparée).
@@ -23,7 +27,8 @@
 --  accepte ou refuse les autres comptes (enseignants et élèves), depuis
 --  son espace enseignant sur le site.
 --
---  La table espace_pedagogique de viescolaire n'est pas touchée.
+--  Seules les tables du site (profils, classes, devoirs, notes,
+--  rendus, eleves) sont créées ou mises à jour.
 -- =========================================================================
 
 -- 1) Tables -----------------------------------------------------------------
@@ -43,6 +48,8 @@ create table if not exists public.profils (
 
 -- (installations v3 : ajout des colonnes manquantes)
 alter table public.profils add column if not exists statut      text not null default 'en_attente';
+alter table public.profils add column if not exists matiere_2   text;  -- 2e matière (un enseignant peut en enseigner 2)
+alter table public.profils add column if not exists classes     text[] not null default '{}'; -- classes enseignées (enseignant)
 alter table public.profils add column if not exists matiere     text;
 alter table public.profils add column if not exists email       text;
 alter table public.profils add column if not exists observation text not null default '';
