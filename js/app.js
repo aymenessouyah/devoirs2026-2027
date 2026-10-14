@@ -560,13 +560,30 @@ function injectLayout() {
     })
     .join("");
 
+  /* Mode « application » (barre latérale façon modèle) quand on est connecté */
+  if (connecte) document.body.classList.add("mode-app");
+  const initiales = cacheP && cacheP.nom
+    ? cacheP.nom.trim().split(/\s+/).slice(0, 2).map((m) => m[0] || "").join("").toUpperCase()
+    : "👤";
+  const detailUser = cacheP
+    ? [cacheP.role === "enseignant" ? "Enseignant" : "Élève",
+       cacheP.role === "enseignant" ? (cacheP.matiere || "") : (cacheP.classe ? nomClasse(cacheP.classe) : "")]
+        .filter(Boolean).join(" · ")
+    : "";
+  const carteUser = connecte && cacheP ? `
+        <div class="side-user">
+          <span class="side-avatar">${esc(initiales)}</span>
+          <span class="side-user-txt"><strong>${esc(cacheP.nom || "")}</strong><small>${esc(detailUser)}</small></span>
+          <span class="side-dot" title="Connecté"></span>
+        </div>` : "";
+
   const header = `
     <header class="site-header">
       <div class="container header-inner">
         <a class="brand" href="index.html">
           <span class="brand-logo">${ICONS.book}</span>
           <span>${esc(titre)}<small>${esc(sous)}</small></span>
-        </a>
+        </a>${carteUser}
         <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">${ICONS.menu}</button>
         <nav class="main-nav" id="main-nav">${nav}</nav>
         <button class="theme-toggle" id="theme-toggle" aria-label="Changer de thème">${themeIcon()}</button>
@@ -585,7 +602,7 @@ function injectLayout() {
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
-        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.11</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.12</div>
       </div>
     </footer>`;
 
@@ -1657,7 +1674,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* Filet de sécurité : si le serveur propose une version plus récente que
    ce code-ci, on nettoie caches et Service Worker puis on recharge. */
-window.__VERSION_ATTENDUE = 23; /* numéro du cache de sw.js correspondant */
+window.__VERSION_ATTENDUE = 24; /* numéro du cache de sw.js correspondant */
 setTimeout(async () => {
   try {
     if (sessionStorage.getItem("maj-verifiee")) return;
