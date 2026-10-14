@@ -141,7 +141,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.2.0</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.3.0</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -208,7 +208,8 @@ const ETAT = {
   cal: { a: null, m: null, classe: null, type: "DC", matiere: "" },
   calOff: { a: null, m: null },
   form: null, classeEleves: "", devoirNotes: "", selNotes: { classe: "", devoirId: null },
-  repartition: [], sourceRep: "manuel", lienRep: ""
+  repartition: [], sourceRep: "manuel", lienRep: "",
+  photoEmploi: null, photoEmploiMode: null, photoNouvelle: null, photoSupprimee: false
 };
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -307,9 +308,21 @@ function evaluerDateChoix(classe, iso, type, extra) {
 }
 const JOURS_SEANCE = [[1, "lundi"], [2, "Mardi"], [3, "mercredi"], [4, "jeudi"], [5, "vendredi"], [6, "samedi"]];
 const JOURS_COURTS = { 1: "lundi", 2: "mardi", 3: "mer", 4: "jeu", 5: "ven", 6: "sam" };
+function normaliserEmploi(emp) {
+  if (!emp || typeof emp !== "object") return { jours: {}, seances: [], photo: null };
+  if (emp.jours || emp.seances || "photo" in emp) {
+    return { jours: emp.jours || {}, seances: Array.isArray(emp.seances) ? emp.seances : [], photo: emp.photo || null };
+  }
+  return { jours: emp, seances: [], photo: null }; /* ancien format {classe:[jours]} */
+}
 function joursSeance(classe) {
-  const emp = ETAT.profil && ETAT.profil.role === "enseignant" ? (ETAT.profil.emploi || {})[classe] : null;
-  if (Array.isArray(emp) && emp.length) return emp.map(Number);
+  if (ETAT.profil && ETAT.profil.role === "enseignant") {
+    const n = normaliserEmploi(ETAT.profil.emploi);
+    const desSeances = [...new Set(n.seances.filter(x => x.classe === classe).map(x => Number(x.jour)))].filter(j => j >= 1 && j <= 6).sort((a, b) => a - b);
+    if (desSeances.length) return desSeances;
+    const j = n.jours[classe];
+    if (Array.isArray(j) && j.length) return j.map(Number);
+  }
   const off = (OFFICIEL.cours || {})[classe];
   return off && off.length ? off : [1, 2, 3, 4, 5, 6];
 }
@@ -512,6 +525,7 @@ async function entrerApp() {
   $("#appView").classList.remove("hidden");
   majBarreLaterale();
   await chargerDonnees();
+  chargerPhotoDistante();
   afficherRemplissageSupabase();
   construireNav();
   showSection("dashboard");
@@ -641,6 +655,23 @@ function rendreClasses() {
         </div>
       </div>`; }).join("") || `<div class="card p-5 text-slate-400 text-sm md:col-span-3">Aucune classe sur le site pour le moment${estAdmin() ? " : créez-en dans ⭐ Administration." : " : l'administrateur doit d'abord les créer."}</div>`}
     </div>
+    <div class="card p-5 mt-5">
+      <div class="flex flex-wrap justify-between gap-2 items-center"><h3 class="font-extrabold text-[16px]">🗓️ Mon emploi du temps</h3><span class="text-[11px] text-slate-400">Photo bienvenue — le site l'affiche dans le tableau (Vie de classe)</span></div>
+      <p class="text-[13px] text-slate-500 mt-1">Chargez la <b>photo de votre emploi du temps</b> et/ou saisissez vos séances hebdomadaires : le site les affiche en tableau et s'en sert pour proposer vos devoirs les jours de séance.</p>
+      <div class="grid md:grid-cols-[220px_1fr] gap-4 mt-4">
+        <div>
+          <div class="rounded-2xl border-2 border-dashed border-violet-300 bg-violet-50 overflow-hidden flex items-center justify-center min-h-[140px]" id="emploiPhotoApercu">${photoEmploiHTML()}</div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <label class="pill cursor-pointer !text-xs">📷 Charger une photo<input type="file" accept="image/*" class="hidden" onchange="chargerPhotoEmploi(this)"></label>
+            ${ETAT.photoEmploi || ETAT.photoNouvelle ? `<button type="button" onclick="supprimerPhotoEmploi()" class="pill !text-xs !text-red-500">🗑️ Retirer</button>` : ""}
+          </div>
+        </div>
+        <div>
+          <div id="seancesZone" class="grid gap-2">${seancesTriees().map((x, i) => seanceRowHTML(x)).join("") || `<p class="text-sm text-slate-400" id="seancesVide">Aucune séance saisie pour le moment — ajoutez vos créneaux (ils définissent aussi vos jours de séance).</p>`}</div>
+          <button type="button" onclick="ajouterSeanceDOM()" class="pill mt-3 !text-xs">＋ Ajouter une séance</button>
+        </div>
+      </div>
+    </div>
     <div id="barreClasses" class="card p-4 mt-5 flex flex-wrap gap-3 items-center hidden" style="border:2px solid #F59E0B">
       <p class="text-sm font-bold flex-1">⚠️ Vous avez modifié vos classes/matières — ce n'est pas encore enregistré.</p>
       <button onclick="annulerModifsClasses()" class="pill">↩️ Annuler</button>
@@ -658,8 +689,115 @@ function rendreClasses() {
 }
 function basculerJourSeance(btn) { btn.classList.toggle("active"); majBarreClasses(); }
 let classesDirty = false;
+/* ---------- Emploi du temps : séances, photo, tableau ---------- */
+function seancesTriees() {
+  return normaliserEmploi(ETAT.profil && ETAT.profil.emploi).seances.slice().sort((a, b) => (Number(a.jour) || 1) - (Number(b.jour) || 1) || String(a.debut || "").localeCompare(String(b.debut || "")));
+}
+function seanceRowHTML(x) {
+  x = x || {};
+  return `<div class="seance-row flex flex-wrap gap-2 items-center bg-slate-50 border rounded-2xl p-2.5">
+    <select class="input !w-auto !py-2 se-jour">${JOURS_SEANCE.map(([j, nom]) => `<option value="${j}" ${Number(x.jour) === j ? "selected" : ""}>${nom}</option>`).join("")}</select>
+    <input type="time" class="input !w-auto !py-2 se-debut" value="${esc(x.debut || "08:00")}">
+    <span class="text-slate-400 font-bold">→</span>
+    <input type="time" class="input !w-auto !py-2 se-fin" value="${esc(x.fin || "10:00")}">
+    <select class="input !w-auto !py-2 se-classe">${optionsClasses(x.classe || (ETAT.classes[0] && ETAT.classes[0].cle))}</select>
+    <select class="input !w-auto !py-2 se-matiere">${optionsMatieres(x.matiere || "")}</select>
+    <input class="input !w-auto !py-2 flex-1 min-w-[90px] se-salle" placeholder="Salle" value="${esc(x.salle || "")}">
+    <button type="button" onclick="supprimerSeanceDOM(this)" class="text-red-500 font-black px-2" title="Retirer cette séance">✕</button>
+  </div>`;
+}
+function ajouterSeanceDOM() {
+  const zone = $("#seancesZone"); if (!zone) return;
+  const vide = $("#seancesVide"); if (vide) vide.remove();
+  zone.insertAdjacentHTML("beforeend", seanceRowHTML({ jour: 1, debut: "08:00", fin: "10:00", classe: ETAT.classes[0] && ETAT.classes[0].cle, matiere: (ETAT.profil && toutesSesMatieres(ETAT.profil)[0]) || "" }));
+  zone.querySelectorAll("select, input").forEach(el => el.addEventListener("change", majBarreClasses));
+  majBarreClasses();
+}
+function supprimerSeanceDOM(btn) { const r = btn.closest(".seance-row"); if (r) r.remove(); majBarreClasses(); }
+function lireSeancesDOM() {
+  return $$(".seance-row").map(row => ({
+    jour: Number(row.querySelector(".se-jour") ? row.querySelector(".se-jour").value : 1) || 1,
+    debut: row.querySelector(".se-debut") ? row.querySelector(".se-debut").value : "",
+    fin: row.querySelector(".se-fin") ? row.querySelector(".se-fin").value : "",
+    classe: row.querySelector(".se-classe") ? row.querySelector(".se-classe").value : "",
+    matiere: row.querySelector(".se-matiere") ? row.querySelector(".se-matiere").value : "",
+    salle: row.querySelector(".se-salle") ? row.querySelector(".se-salle").value.trim() : ""
+  }));
+}
+function photoEmploiHTML() {
+  const src = ETAT.photoNouvelle || ETAT.photoEmploi;
+  if (src) return `<img src="${esc(src)}" alt="Emploi du temps" class="emploi-photo-img w-full h-full object-contain max-h-[220px] cursor-zoom-in" onclick="window.open(this.src,'_blank')">`;
+  return `<div class="text-center text-slate-400 p-4"><div class="text-3xl">🗓️</div><p class="text-[11px] font-bold mt-1">Aucune photo<br>pour le moment</p></div>`;
+}
+function cheminPhotoEmploi() { return `${ETAT.session.user.id}/emploi/emploi-du-temps.jpg`; }
+async function compresserImage(fichier) {
+  const url = URL.createObjectURL(fichier);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const MAX = 1280, ratio = Math.min(1, MAX / Math.max(img.width, img.height));
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(img.width * ratio); cv.height = Math.round(img.height * ratio);
+    cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+    return cv.toDataURL("image/jpeg", 0.82);
+  } finally { URL.revokeObjectURL(url); }
+}
+async function chargerPhotoEmploi(input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  try {
+    ETAT.photoNouvelle = await compresserImage(f);
+    ETAT.photoSupprimee = false;
+    const z = $("#emploiPhotoApercu"); if (z) z.innerHTML = photoEmploiHTML();
+    majBarreClasses();
+    toast("📷 Photo prête — cliquez « Confirmer l'enregistrement » pour l'enregistrer.", "info");
+  } catch (e) { toast("Photo illisible : " + e.message, "erreur"); }
+}
+function supprimerPhotoEmploi() {
+  ETAT.photoNouvelle = null; ETAT.photoEmploi = null; ETAT.photoSupprimee = true;
+  const z = $("#emploiPhotoApercu"); if (z) z.innerHTML = photoEmploiHTML();
+  majBarreClasses();
+}
+/* Enregistre la photo en attente : stockage du site si possible, sinon ce navigateur. */
+async function preparerPhotoEmploi() {
+  if (ETAT.photoSupprimee) { ETAT.photoEmploiMode = null; return; }
+  if (!ETAT.photoNouvelle) return;
+  const dataUrl = ETAT.photoNouvelle;
+  try {
+    const blob = await (await fetch(dataUrl)).blob();
+    await sbEnvoyerFichier(cheminPhotoEmploi(), blob);
+    ETAT.photoEmploiMode = "storage";
+    ETAT.photoEmploi = await sbLienSigne(cheminPhotoEmploi(), 3600).catch(() => dataUrl);
+  } catch (e) {
+    ETAT.photoEmploiMode = "local";
+    ETAT.photoEmploi = dataUrl;
+    try { localStorage.setItem("dl-emploi-photo-" + ETAT.session.user.id, dataUrl); } catch (e2) { }
+  }
+  ETAT.photoNouvelle = null;
+}
+async function chargerPhotoDistante() {
+  if (!ETAT.profil || ETAT.profil.role !== "enseignant" || !ETAT.session) return;
+  const mode = normaliserEmploi(ETAT.profil.emploi).photo;
+  ETAT.photoEmploiMode = mode || null;
+  if (mode === "local") { try { ETAT.photoEmploi = localStorage.getItem("dl-emploi-photo-" + ETAT.session.user.id); } catch (e) { } }
+  else if (mode === "storage") { ETAT.photoEmploi = await sbLienSigne(cheminPhotoEmploi(), 3600).catch(() => null); }
+  if (ETAT.photoEmploi && (ETAT.section === "classes" || ETAT.section === "vie")) {
+    if (ETAT.section === "classes" && !classesDirty) rendreClasses();
+    if (ETAT.section === "vie") rendreVie();
+  }
+}
+/* Tableau hebdomadaire affiché (Vie de classe) */
+function tableauEmploiHTML() {
+  const n = normaliserEmploi(ETAT.profil && ETAT.profil.emploi);
+  const photo = ETAT.photoNouvelle || ETAT.photoEmploi;
+  if (!n.seances.length && !photo) return "";
+  return `<div class="card p-5 mt-5">
+    <h3 class="font-extrabold text-[16px]">🗓️ Mon emploi du temps</h3>
+    ${photo ? `<img src="${esc(photo)}" alt="Photo de l'emploi du temps" class="emploi-photo-img w-full rounded-2xl border mt-3 cursor-zoom-in" style="max-height:340px;object-fit:contain;background:#0B1322" onclick="window.open(this.src,'_blank')">` : ""}
+    ${n.seances.length ? `<div class="grid gap-1.5 mt-4">${JOURS_SEANCE.map(([j, nom]) => { const ss = n.seances.filter(x => Number(x.jour) === j); return `<div class="mm-row ${ss.length ? "" : "opacity-40"}"><span class="capitalize font-bold text-[13px] w-24">${nom}</span><span class="flex-1 text-[13px]">${ss.length ? ss.map(x => `<b>${esc(x.debut || "")}–${esc(x.fin || "")}</b> · ${esc(x.classe ? nomClasse(x.classe) : "")}${x.matiere ? " · " + esc(x.matiere) : ""}${x.salle ? ` <span class="text-slate-400">(${esc(x.salle)})</span>` : ""}`).join("<br>") : "—"}</span></div>`; }).join("")}</div>` : ""}
+  </div>`;
+}
 function lireChoixClasses() {
-  const classes = [], carte = {}, emploi = {};
+  const classes = [], carte = {}, emploiJours = {};
+  const emploi = { jours: {}, seances: [], photo: null };
   let erreur = "";
   $$(".mm-row").forEach(row => {
     const cb = row.querySelector(".mm-cb");
@@ -670,23 +808,34 @@ function lireChoixClasses() {
     classes.push(cb.value);
     carte[cb.value] = [m1, m2].filter(Boolean);
     const jours = Array.from(row.querySelectorAll(".mm-jour.active")).map(b => Number(b.dataset.jour)).filter(j => j >= 1 && j <= 6).sort((a, b) => a - b);
-    emploi[cb.value] = jours;
+    emploiJours[cb.value] = jours;
   });
+  emploi.jours = emploiJours;
+  emploi.seances = lireSeancesDOM();
+  emploi.photo = ETAT.photoSupprimee ? null : (ETAT.photoEmploiMode || normaliserEmploi(ETAT.profil && ETAT.profil.emploi).photo || null);
   return { classes, carte, erreur, emploi };
 }
 function signatureChoix(classes, carte, emploi) {
   const c = {};
   Object.keys(carte || {}).sort().forEach(k => { c[k] = (carte[k] || []).slice().sort(); });
+  const n = normaliserEmploi(emploi);
   const e = {};
-  (classes || []).slice().sort().forEach(k => { e[k] = ((emploi || {})[k] || []).map(Number).slice().sort((a, b) => a - b); });
-  return JSON.stringify({ classes: (classes || []).slice().sort(), carte: c, emploi: e });
+  (classes || []).slice().sort().forEach(k => { e[k] = ((n.jours || {})[k] || []).map(Number).slice().sort((a, b) => a - b); });
+  const seances = (n.seances || []).map(x => [Number(x.jour) || 1, x.debut || "", x.fin || "", x.classe || "", x.matiere || "", x.salle || ""].join("|")).sort();
+  return JSON.stringify({ classes: (classes || []).slice().sort(), carte: c, emploi: e, seances, photo: n.photo || null });
 }
 function emploiEnregistre(p, classes) {
-  const e = {};
+  const n = normaliserEmploi(p && p.emploi);
+  const jours = {};
   (classes || []).forEach(k => {
-    e[k] = (p && p.emploi && Array.isArray(p.emploi[k]) && p.emploi[k].length) ? p.emploi[k].map(Number) : (((OFFICIEL.cours || {})[k]) || []).slice();
+    const desSeances = [...new Set(n.seances.filter(x => x.classe === k).map(x => Number(x.jour)))].filter(j => j >= 1 && j <= 6).sort((a, b) => a - b);
+    if (desSeances.length) jours[k] = desSeances;
+    else if (Array.isArray(n.jours[k]) && n.jours[k].length) jours[k] = n.jours[k].map(Number);
+    else jours[k] = (((OFFICIEL.cours || {})[k]) || []).slice();
   });
-  return e;
+  const seances = n.seances.map(x => ({ jour: Number(x.jour) || 1, debut: x.debut || "", fin: x.fin || "", classe: x.classe || "", matiere: x.matiere || "", salle: x.salle || "" }))
+    .sort((a, b) => a.jour - b.jour || String(a.debut).localeCompare(String(b.debut)));
+  return { jours, seances, photo: n.photo || null };
 }
 function etatClassesModifie() {
   const p = ETAT.profil; if (!p) return false;
@@ -695,7 +844,7 @@ function etatClassesModifie() {
   return signatureChoix(actuel.classes, actuel.carte, actuel.emploi) !== signatureChoix(cls, p.matieres_par_classe || {}, emploiEnregistre(p, cls));
 }
 function majBarreClasses() {
-  classesDirty = etatClassesModifie();
+  classesDirty = etatClassesModifie() || !!ETAT.photoNouvelle || ETAT.photoSupprimee;
   const bar = $("#barreClasses");
   if (bar) bar.classList.toggle("hidden", !classesDirty);
 }
@@ -716,7 +865,9 @@ function conflitMatiereUnique(carte, monId, profils) {
 async function enregistrerMesClasses() {
   const choix = lireChoixClasses();
   if (choix.erreur) return toast(choix.erreur, "erreur");
-  const { classes, carte, emploi } = choix;
+  const { classes, carte } = choix;
+  await preparerPhotoEmploi();
+  const emploi = Object.assign({}, choix.emploi, { photo: ETAT.photoEmploiMode || null });
   try { const frais = await sbSelect("profils", "select=*"); if (Array.isArray(frais) && frais.length) ETAT.profils = frais; } catch (e) { }
   const conflit = conflitMatiereUnique(carte, ETAT.session.user.id, ETAT.profils);
   if (conflit) return toast(`⛔ La matière « ${conflit.matiere} » est déjà enseignée en ${nomClasse(conflit.classe)} par ${conflit.nom}. Une classe ne peut avoir qu'un seul enseignant par matière.`, "erreur");
@@ -1331,6 +1482,7 @@ function rendreVie() {
   zone.innerHTML = `
     <h2 class="text-2xl font-black">Vie de classe</h2>
     <p class="text-sm text-slate-500">Annonces du cours, emploi du temps, ressources et règles.</p>
+    ${ETAT.profil.role === "enseignant" ? tableauEmploiHTML() : ""}
     ${carteRepartitionHTML()}
     <div class="grid lg:grid-cols-2 gap-5 mt-5">
       <div class="card p-5">
