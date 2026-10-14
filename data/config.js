@@ -15,14 +15,14 @@ window.CONFIG = {
   annee: "2026-2027",
 
   /* Nom de l'enseignant (affiché dans le pied de page) */
-  prof: "M. l'Enseignant", /* ← remplacez par votre nom */
+  prof: "Mr Aymen Essouyah" /* ← remplacez par votre nom */,
 
   /* E-mail de l'enseignant (utilisé par le bouton « Envoyer » du dépôt) */
-  email: "prof@exemple.tn", /* ← remplacez par votre e-mail */
+  email: "aymenessouyah@gmail.com" /* ← remplacez par votre e-mail */,
 
   /* Classes gérées par le site : clé technique -> nom affiché */
   classes: {
     "3si1": "3ème SI 1",
-    "4si2": "4ème SI 2"
-  }
+    "4si2": "4ème SI 2",
+  },
 };
