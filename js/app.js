@@ -413,7 +413,10 @@ function injectLayout() {
     { key: "vie", href: "vie-de-classe.html", label: "Vie de classe" },
     { key: "depot", href: "depot.html", label: "Déposer" },
     { key: "suivi", href: "suivi.html", label: "Mon suivi" },
-    { key: "admin", href: "admin.html", label: "Admin" }
+    { key: "admin", href: "admin.html", label: "Admin" },
+    (typeof sbConnecte === "function" && sbConnecte())
+      ? { key: "espace-eleve", href: "espace-eleve.html", label: "👤 Mon espace" }
+      : { key: "connexion", href: "connexion.html", label: "Connexion" }
   ];
 
   const nav = liens

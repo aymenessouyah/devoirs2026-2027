@@ -118,3 +118,24 @@ toute modification du planning là-bas se répercute ici sans rien toucher.
   des devoirs et le calendrier, **sans bouton de dépôt**, et les notes se saisissent
   comme pour les autres devoirs (espace enseignant). Pour les DS2/DS3, le jour exact
   est fixé par l'établissement — la date affichée est le début de la semaine bloquée.
+
+---
+
+## 🔐 Phase 3 — Comptes enseignant & élèves (Supabase)
+
+Le site dispose désormais de **vrais comptes**, branchés sur le même projet
+Supabase que l'espace Vie scolaire :
+
+- **Connexion** (`connexion.html`) : les élèves s'inscrivent avec leur **code
+  élève** + un mot de passe ; l'enseignant avec son e-mail.
+- **Espace élève** (`espace-eleve.html`) : mes devoirs, **dépôt de fichiers
+  direct** (ou lien Drive), mes notes en ligne, mes prochaines épreuves.
+- **Espace enseignant** (`espace-enseignant.html`) : dépôts reçus par devoir,
+  **saisie des notes en ligne** (visibles aussitôt par les élèves), élèves inscrits.
+
+👉 **Mise en place (10 min, une seule fois) : suivez le
+[GUIDE-COMPTES.md](GUIDE-COMPTES.md)** — exécuter `supabase/schema.sql`,
+deux réglages d'authentification, créer puis promouvoir le compte enseignant.
+
+Les anciens fonctionnements restent disponibles en parallèle : « Mon suivi »
+par code, générateurs de l'espace admin et édition des fichiers `data/`.

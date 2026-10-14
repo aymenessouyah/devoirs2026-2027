@@ -2,7 +2,7 @@
    Service Worker — mise en cache pour usage hors-ligne (PWA)
    ⚠️ Lors d'une mise à jour du site, changez la VERSION ci-dessous.
    ============================================================ */
-const VERSION = "devoirs-v4";
+const VERSION = "devoirs-v5";
 const FICHIERS = [
   "./",
   "./index.html",
@@ -14,8 +14,13 @@ const FICHIERS = [
   "./depot.html",
   "./suivi.html",
   "./admin.html",
+  "./connexion.html",
+  "./espace-eleve.html",
+  "./espace-enseignant.html",
   "./css/style.css",
   "./js/app.js",
+  "./js/supabase.js",
+  "./js/espaces.js",
   "./data/config.js",
   "./data/devoirs.js",
   "./data/eleves.js",
@@ -45,6 +50,8 @@ self.addEventListener("activate", (ev) => {
 
 self.addEventListener("fetch", (ev) => {
   if (ev.request.method !== "GET") return;
+  /* Appels externes (Supabase : comptes, notes, fichiers) : réseau direct, aucun cache */
+  if (new URL(ev.request.url).origin !== self.location.origin) return;
   ev.respondWith(
     caches.match(ev.request).then((cached) => {
       const reseau = fetch(ev.request)
