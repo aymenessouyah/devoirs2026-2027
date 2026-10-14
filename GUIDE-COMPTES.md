@@ -70,7 +70,9 @@ votre espace enseignant). Votre espace enseignant, lui, reste identique
   demandés sont affichés).
 - **👥 Tous les comptes** : corriger le **rôle** (élève ↔ enseignant),
   la **classe** et la **matière** de chacun, ré-accepter un compte
-  refusé, refuser ou **supprimer** un profil.
+  refusé, refuser ou **supprimer** un profil. La colonne **Détails**
+  affiche pour chaque enseignant **ses classes enseignées avec la
+  matière de chacune** (ex. « 3ème SI 1 · STI », « 4ème SI 2 · Algo »).
 - **🏫 Les classes du site** : c'est vous qui déterminez les classes
   (ajouter, renommer, supprimer). Elles sont aussitôt proposées à
   l'inscription et dans les espaces. La **clé technique** (ex. `3si1`)
@@ -86,14 +88,26 @@ Tant qu'un compte n'est pas accepté, la personne voit seulement
 > jours fériés et semaines bloquées ; devoir de synthèse uniquement
 > pendant les semaines bloquées officielles.
 
+### 🧹 Tout recommencer (remise à zéro)
+
+Pour repartir de zéro (nouvelle année, par exemple) : (ré)exécutez
+d'abord `supabase/schema.sql`, puis exécutez **une seule fois**
+`supabase/REINITIALISER.sql` dans Supabase → SQL Editor. Tout est
+supprimé — comptes enseignants et élèves, devoirs, notes, rendus,
+annuaire et liste des classes — **sauf le compte admin**. Le
+calendrier officiel (vacances, fériés, semaines bloquées) est
+conservé. Recréez ensuite vos classes dans ⭐ Administration, et
+laissez chacun se réinscrire.
+
 ### Côté enseignant
 
 1. **Créer un compte** (type Enseignant + sa matière) → l'admin
    l'accepte.
 2. **🎓 Mes classes et mes matières** (dans son espace) : l'enseignant
-   choisit **les classes qu'il enseigne** et sa matière — ou ses
-   **2 matières** s'il en enseigne deux. Ses classes deviennent des
-   **jetons colorés**.
+   coche **les classes qu'il enseigne** et choisit **la matière
+   enseignée dans chacune** (jusqu'à 2 matières par classe) — par
+   exemple **STI en 3ème SI** et **Algo en 4ème SI**. Ses classes
+   deviennent des **jetons colorés**.
 3. **🗓️ Mon calendrier — placer mes devoirs** : il **glisse le jeton
    d'une classe** dans une case du calendrier (ou clique le jeton puis
    le jour), choisit DC ou DS (et la matière s'il en a deux), puis

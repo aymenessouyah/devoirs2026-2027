@@ -50,6 +50,7 @@ create table if not exists public.profils (
 alter table public.profils add column if not exists statut      text not null default 'en_attente';
 alter table public.profils add column if not exists matiere_2   text;  -- 2e matière (un enseignant peut en enseigner 2)
 alter table public.profils add column if not exists classes     text[] not null default '{}'; -- classes enseignées (enseignant)
+alter table public.profils add column if not exists matieres_par_classe jsonb not null default '{}'::jsonb; -- matière(s) par classe, ex. {"3si1":["STI"],"4si2":["Algo"]}
 alter table public.profils add column if not exists matiere     text;
 alter table public.profils add column if not exists email       text;
 alter table public.profils add column if not exists observation text not null default '';
@@ -373,6 +374,9 @@ begin
   if auth.uid() is distinct from old.id then
     new.classe := old.classe;
     new.matiere := old.matiere;
+    new.matiere_2 := old.matiere_2;
+    new.classes := old.classes;
+    new.matieres_par_classe := old.matieres_par_classe;
     new.code := old.code;
     new.email := old.email;
   end if;

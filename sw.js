@@ -2,7 +2,7 @@
    Service Worker — mise en cache pour usage hors-ligne (PWA)
    ⚠️ Lors d'une mise à jour du site, changez la VERSION ci-dessous.
    ============================================================ */
-const VERSION = "devoirs-v20";
+const VERSION = "devoirs-v21";
 const FICHIERS = [
   "./",
   "./index.html",
@@ -18,18 +18,18 @@ const FICHIERS = [
   "./espace-eleve.html",
   "./espace-enseignant.html",
   "./espace-admin.html",
-  "./reparer.html?v=428",
-  "./css/style.css?v=428",
-  "./js/app.js?v=428",
-  "./js/supabase.js?v=428",
-  "./js/espaces.js?v=428",
-  "./data/config.js?v=428",
-  "./data/devoirs.js?v=428",
-  "./data/eleves.js?v=428",
-  "./data/notes.js?v=428",
-  "./data/annonces.js?v=428",
-  "./data/vie.js?v=428",
-  "./data/calendrier.js?v=428",
+  "./reparer.html?v=429",
+  "./css/style.css?v=429",
+  "./js/app.js?v=429",
+  "./js/supabase.js?v=429",
+  "./js/espaces.js?v=429",
+  "./data/config.js?v=429",
+  "./data/devoirs.js?v=429",
+  "./data/eleves.js?v=429",
+  "./data/notes.js?v=429",
+  "./data/annonces.js?v=429",
+  "./data/vie.js?v=429",
+  "./data/calendrier.js?v=429",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",

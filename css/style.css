@@ -1362,6 +1362,13 @@ tbody tr:hover { background: var(--surface-2); }
   padding:.45rem .8rem; border:1.5px solid var(--border, rgba(120,110,160,.3));
   border-radius:999px; cursor:pointer; font-weight:600;
 }
+.mm-lignes { display: grid; gap: 0.6rem; }
+.mm-ligne { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+.mm-ligne select {
+  padding: 0.5rem 0.6rem; border-radius: 0.55rem;
+  border: 1.5px solid var(--border, rgba(120,110,160,.3));
+  background: var(--card-bg, #fff); color: inherit; font: inherit;
+}
 #cj-matiere {
   padding:.45rem .6rem; border-radius:.55rem;
   border:1.5px solid var(--border, rgba(120,110,160,.3));

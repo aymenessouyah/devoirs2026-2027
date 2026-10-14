@@ -209,6 +209,19 @@ est réservé aux comptes **validés par l'administrateur du site**
   puis suivre [`GUIDE-COMPTES.md`](GUIDE-COMPTES.md).
 
 
+## 🔁 v4.3 — Matière par classe et remise à zéro
+
+- **Matière par classe** : un enseignant choisit, pour **chaque
+  classe** qu'il enseigne, la matière qu'il y enseigne (jusqu'à 2 par
+  classe) — ex. STI en 3ème SI et Algo en 4ème SI
+  (colonne `matieres_par_classe` ; pensez à (ré)exécuter
+  `supabase/schema.sql`).
+- **Remise à zéro** : `supabase/REINITIALISER.sql` (à exécuter une
+  seule fois, après le schéma) supprime comptes, devoirs, notes,
+  rendus, annuaire et classes — sauf le compte admin. Les dates
+  préchargées du fichier (`data/devoirs.js`) ont été supprimées :
+  tous les devoirs naissent désormais dans l'espace enseignant.
+
 ## 🧑‍🏫 v4.2 — Site autonome, jetons de classes, 2 matières, quota par trimestre
 
 - **Aucune relation avec viescolaire** : plus de synchronisation ni de

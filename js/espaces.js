@@ -140,6 +140,28 @@ function sesMatieres(profil) {
     .filter((m, i, arr) => arr.indexOf(m) === i);
 }
 
+/* Matières enseignées par un enseignant DANS une classe donnée
+   (jusqu'à 2 par classe, ex. STI en 3ème SI et Algo en 4ème SI).
+   Stockées dans profils.matieres_par_classe : {"3si1":["STI"],"4si2":["Algo"]}.
+   Anciens profils (avant cette nouveauté) : repli sur les matières globales. */
+function matieresDeClasse(profil, classe) {
+  const carte = (profil && profil.matieres_par_classe) || {};
+  const liste = Array.isArray(carte[classe]) ? carte[classe].filter((m) => m && String(m).trim()) : [];
+  const propres = [...new Set(liste)];
+  if (propres.length) return propres;
+  if (Object.keys(carte).length) return [];
+  return sesMatieres(profil);
+}
+
+/* Toutes les matières d'un enseignant, toutes classes confondues */
+function toutesSesMatieres(profil) {
+  const toutes = [];
+  ((profil && profil.classes) || []).forEach((cle) => {
+    matieresDeClasse(profil, cle).forEach((m) => { if (!toutes.includes(m)) toutes.push(m); });
+  });
+  return toutes.length ? toutes : sesMatieres(profil);
+}
+
 /* Trimestre scolaire d'une date (bornes dans data/config.js) */
 function trimestreDe(dateISO) {
   return ((CFG && CFG.trimestres) || []).find((t) => dateISO >= t.debut && dateISO <= t.fin) || null;
@@ -795,25 +817,21 @@ async function renderEspaceEnseignant() {
 
     <div class="card mb-3">
       <h2 class="card-title">🎓 Mes classes et mes matières</h2>
-      <p class="text-muted">Choisissez les classes que vous enseignez et votre matière — ou vos <strong>2 matières</strong> si vous en enseignez deux en même temps. Vos classes deviennent les <strong>jetons</strong> à placer dans le calendrier ci-dessous.</p>
+      <p class="text-muted">Cochez les classes que vous enseignez, puis choisissez <strong>la matière enseignée dans chacune</strong> (jusqu'à 2 matières par classe) : par exemple <strong>STI en 3ème SI</strong> et <strong>Algo en 4ème SI</strong>. Vos classes deviennent les <strong>jetons</strong> à placer dans le calendrier ci-dessous.</p>
       <div class="form-grid mt-2">
-        <div class="field">
-          <label for="mm-mat1">Ma matière</label>
-          <select id="mm-mat1">${optionsMatieresHTML(profil.matiere || MATIERES[0])}</select>
-        </div>
-        <div class="field">
-          <label for="mm-mat2">Ma 2e matière (si j'en enseigne deux)</label>
-          <select id="mm-mat2">
-            <option value="" ${!profil.matiere_2 ? "selected" : ""}>— Aucune —</option>
-            ${optionsMatieresHTML(profil.matiere_2 || "")}
-          </select>
-        </div>
         <div class="field full">
-          <label>Mes classes (déterminées par l'admin du site)</label>
-          <div class="mm-classes">
-            ${listeClasses().map((c) => `
-              <label class="mm-classe"><input type="checkbox" class="mm-classe-cb" value="${esc(c.cle)}" ${(profil.classes || []).includes(c.cle) ? "checked" : ""} /> ${esc(c.nom)}</label>`).join("") || `<span class="text-muted">Aucune classe définie pour le moment.</span>`}
+          <label>Mes classes et la matière enseignée dans chacune</label>
+          <div class="mm-lignes">
+            ${listeClasses().map((c) => {
+              const matsC = matieresDeClasse(profil, c.cle);
+              return `<div class="mm-ligne">
+                <label class="mm-classe"><input type="checkbox" class="mm-classe-cb" value="${esc(c.cle)}" ${(profil.classes || []).includes(c.cle) ? "checked" : ""} /> ${esc(c.nom)}</label>
+                <select class="mm-mat1" title="Matière enseignée en ${esc(c.nom)}">${optionsMatieresHTML(matsC[0] || sesMatieres(profil)[0] || MATIERES[0])}</select>
+                <select class="mm-mat2" title="2e matière en ${esc(c.nom)} (optionnel)"><option value="" ${!matsC[1] ? "selected" : ""}>— 2e matière (optionnel) —</option>${optionsMatieresHTML(matsC[1] || "")}</select>
+              </div>`;
+            }).join("") || `<span class="text-muted">Aucune classe définie pour le moment : l'admin les crée dans ⭐ Administration.</span>`}
           </div>
+          <p class="hint">Exemple : STI en 3ème SI 1 et Algo en 4ème SI 2. Cochez la classe, choisissez sa matière, puis enregistrez.</p>
         </div>
       </div>
       <div class="form-actions">
@@ -881,13 +899,22 @@ async function renderEspaceEnseignant() {
   /* ---------------- 🎓 Mes classes et mes matières ---------------- */
   function brancherChoixEnseignant() {
     $("#mm-enregistrer")?.addEventListener("click", async () => {
-      const mat1 = $("#mm-mat1").value;
-      const mat2 = $("#mm-mat2").value;
       const msg = $("#mm-msg");
-      if (mat2 && mat2 === mat1) { if (msg) msg.textContent = "Les deux matières doivent être différentes."; return; }
-      const classes = $$(".mm-classe-cb").filter((cb) => cb.checked).map((cb) => cb.value);
+      const classes = [];
+      const carte = {};
+      let erreur = "";
+      $$(".mm-classe-cb").filter((cb) => cb.checked).forEach((cb) => {
+        const ligne = cb.closest(".mm-ligne");
+        const m1 = ligne ? ligne.querySelector(".mm-mat1").value : "";
+        const m2 = ligne ? ligne.querySelector(".mm-mat2").value : "";
+        if (m2 && m2 === m1) erreur = "Dans une même classe, les deux matières doivent être différentes.";
+        classes.push(cb.value);
+        carte[cb.value] = [m1, m2].filter(Boolean);
+      });
+      if (erreur) { if (msg) msg.textContent = erreur; return; }
+      const toutes = [...new Set(Object.values(carte).flat())];
       try {
-        await sbPatch("profils", `id=eq.${uid}`, { matiere: mat1 || null, matiere_2: mat2 || null, classes });
+        await sbPatch("profils", `id=eq.${uid}`, { classes, matieres_par_classe: carte, matiere: toutes[0] || null, matiere_2: toutes[1] || null });
         CALJ.classe = null;
         CALJ.matiere = "";
         renderEspaceEnseignant();
@@ -909,8 +936,6 @@ async function renderEspaceEnseignant() {
       return;
     }
     if (!mesClasses.includes(CALJ.classe)) CALJ.classe = mesClasses[0];
-    const mats = sesMatieres(profil);
-    if (!mats.includes(CALJ.matiere)) CALJ.matiere = mats[0] || "";
     const auj = new Date();
     if (CALJ.a === null) { CALJ.a = auj.getFullYear(); CALJ.m = auj.getMonth(); }
 
@@ -920,12 +945,14 @@ async function renderEspaceEnseignant() {
         occupees: devoirsTous.filter((d) => d.classe === classe).map((d) => d.date)
       });
       if (!ev.ok) { espaceMessage("#dv-msg", "erreur", `Date impossible : ${esc(ev.raison)}`); return; }
-      const q = etatQuota(mesDevoirs, classe, CALJ.matiere, CALJ.type, iso, null);
+      const matsC = matieresDeClasse(profil, classe);
+      const matiereChoisie = (classe === CALJ.classe && matsC.includes(CALJ.matiere)) ? CALJ.matiere : (matsC[0] || "");
+      const q = etatQuota(mesDevoirs, classe, matiereChoisie, CALJ.type, iso, null);
       if (!q.ok) {
-        espaceMessage("#dv-msg", "erreur", `Limite atteinte pour le ${q.trimestre.label} : maximum ${q.max} ${CALJ.type === "DS" ? "devoir de synthèse" : "devoirs de contrôle"} par trimestre (${esc(nomClasseDyn(classe))} · ${esc(CALJ.matiere || "")}).`);
+        espaceMessage("#dv-msg", "erreur", `Limite atteinte pour le ${q.trimestre.label} : maximum ${q.max} ${CALJ.type === "DS" ? "devoir de synthèse" : "devoirs de contrôle"} par trimestre (${esc(nomClasseDyn(classe))} · ${esc(matiereChoisie)}).`);
         return;
       }
-      ouvrirFormulaire(null, { classe, type: CALJ.type, date: iso, matiere: CALJ.matiere });
+      ouvrirFormulaire(null, { classe, type: CALJ.type, date: iso, matiere: matiereChoisie });
     }
 
     function quotaHTML() {
@@ -937,6 +964,8 @@ async function renderEspaceEnseignant() {
     }
 
     function dessiner() {
+      const mats = matieresDeClasse(profil, CALJ.classe);
+      if (!mats.includes(CALJ.matiere)) CALJ.matiere = mats[0] || "";
       const typeSql = CALJ.type === "DS" ? "synthese" : "controle";
       const premier = new Date(CALJ.a, CALJ.m, 1);
       const debut = (premier.getDay() + 6) % 7;
@@ -1071,6 +1100,9 @@ async function renderEspaceEnseignant() {
     const nbMemeType = devoirsTous.filter((d) => d.enseignant_id === proprietaireInit && d.classe === classe && d.type === typeInit).length
       + DEVOIRS.filter((d) => d.examen && d.classe === classe && typeDepuisTitre(d.titre) === typeInit).length;
     const titreSuggere = `${typeLibelle(typeInit)} n°${nbMemeType + 1}`;
+    const matsClasse = matieresDeClasse(profil, classe);
+    const matiereInit = devoir ? devoir.matiere : (preset && preset.matiere) || matsClasse[0] || sesMatieres(profil)[0] || "";
+    const matsForm = [...new Set([...(matsClasse.length ? matsClasse : MATIERES), matiereInit].filter(Boolean))];
 
     zone.innerHTML = `
       <div class="card" style="border:2px dashed var(--violet)">
@@ -1089,7 +1121,7 @@ async function renderEspaceEnseignant() {
           </div>
           <div class="field">
             <label for="dvf-matiere">Matière</label>
-            <select id="dvf-matiere">${(sesMatieres(profil).length ? sesMatieres(profil) : MATIERES).map((m) => `<option value="${esc(m)}" ${m === (devoir ? devoir.matiere : (preset && preset.matiere) || sesMatieres(profil)[0] || "") ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>
+            <select id="dvf-matiere">${matsForm.map((m) => `<option value="${esc(m)}" ${m === matiereInit ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>
           </div>
           <div class="field">
             <label for="dvf-bareme">Barème (note sur…)</label>
@@ -1197,7 +1229,7 @@ async function renderEspaceEnseignant() {
         };
       });
     if (!aInserer.length) {
-      espaceMessage("#dv-msg", "info", "Toutes les épreuves du fichier sont déjà en ligne pour cette classe.");
+      espaceMessage("#dv-msg", "info", statiques.length ? "Toutes les épreuves du fichier sont déjà en ligne pour cette classe." : "Aucune épreuve préchargée : créez vos devoirs avec le calendrier à jetons ci-dessus.");
       return;
     }
     try {
@@ -1458,14 +1490,14 @@ async function renderEspaceAdmin() {
       : `<span class="badge badge-afaire">⏳ En attente</span>`;
   };
   const erreurAdmin = (e) => espaceMessage("#admin-msg", "erreur", esc(e.message));
-  const chipsClasses = (cles) => (Array.isArray(cles) && cles.length)
-    ? cles.map((c) => `<span class="badge badge-attente">${esc(nomClasseDyn(c))}</span>`).join(" ")
+  const chipsClasses = (x) => (Array.isArray(x.classes) && x.classes.length)
+    ? x.classes.map((c) => `<span class="badge badge-attente">${esc(nomClasseDyn(c))} · ${esc(matieresDeClasse(x, c).join(" + ") || "matière à choisir")}</span>`).join(" ")
     : `<span class="text-muted">Aucune classe choisie</span>`;
   const detailsCompte = (x) => {
     if (x.role === "enseignant") {
-      const mats = sesMatieres(x);
+      const mats = toutesSesMatieres(x);
       return `<div class="details-compte">
-        <div>🏫 <strong>Classes enseignées :</strong> ${chipsClasses(x.classes)}</div>
+        <div>🏫 <strong>Classes enseignées :</strong> ${chipsClasses(x)}</div>
         <div>📚 <strong>Matière(s) :</strong> ${mats.length ? mats.map((m) => esc(m)).join(" + ") : "—"}</div>
         <div class="text-muted">Compte créé le ${dateHeureFr(x.created_at)}</div>
       </div>`;
