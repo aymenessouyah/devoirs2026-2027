@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.3</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.4</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.3</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.4</p>
 </main>
 </div>
 </div>
@@ -1779,11 +1779,12 @@ function rendreEleves() { if (ETAT.profil.role === "enseignant") rendreElevesEns
 
 function rendreElevesEns() {
   const zone = $("#section-eleves");
-  if (!mesClasses().length) {
+  const classesDispo = mesClasses().length ? mesClasses() : (estAdmin() ? ETAT.classes.map(c => c.cle) : []);
+  if (!classesDispo.length) {
     zone.innerHTML = `<div class="card p-6 text-center"><div class="text-4xl">🎓</div><h2 class="font-black text-xl mt-3">Aucune classe choisie</h2><p class="text-sm text-slate-500 mt-1">Choisissez vos classes dans « Mes Classes » pour saisir les notes.</p><button onclick="showSection('classes')" class="mt-4 ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold">Choisir mes classes →</button></div>`;
     return;
   }
-  if (!mesClasses().includes(ETAT.selNotes.classe)) ETAT.selNotes.classe = mesClasses()[0];
+  if (!classesDispo.includes(ETAT.selNotes.classe)) ETAT.selNotes.classe = classesDispo[0];
   const devoirsClasse = ETAT.devoirs.filter(d => d.classe === ETAT.selNotes.classe && d.enseignant_id === ETAT.session.user.id).slice().sort((a,b) => a.date.localeCompare(b.date));
   if (!devoirsClasse.some(d => d.id === ETAT.selNotes.devoirId)) ETAT.selNotes.devoirId = devoirsClasse.length ? devoirsClasse[devoirsClasse.length - 1].id : null;
   const devoir = devoirsClasse.find(d => d.id === ETAT.selNotes.devoirId) || null;
@@ -1795,32 +1796,32 @@ function rendreElevesEns() {
     <p class="text-sm text-slate-500">Choisissez la classe, puis le devoir : saisissez les notes et les remarques (vues par l'élève), ainsi qu'une observation générale par élève.</p>
     <div class="card p-4 md:p-5 mt-5">
       <div class="flex flex-wrap gap-3 items-end">
-        <label class="text-xs font-extrabold">CLASSE<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.classe=this.value;ETAT.selNotes.devoirId=null;rendreEleves()">${mesClasses().map(c => `<option value="${esc(c)}" ${c === ETAT.selNotes.classe ? "selected" : ""}>${esc(nomClasse(c))}</option>`).join("")}</select></label>
+        <label class="text-xs font-extrabold">CLASSE<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.classe=this.value;ETAT.selNotes.devoirId=null;rendreEleves()">${classesDispo.map(c => `<option value="${esc(c)}" ${c === ETAT.selNotes.classe ? "selected" : ""}>${esc(nomClasse(c))}</option>`).join("")}</select></label>
         <label class="text-xs font-extrabold">DEVOIR<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.devoirId=this.value;rendreEleves()">${devoirsClasse.map(d => `<option value="${d.id}" ${devoir && d.id === devoir.id ? "selected" : ""}>${esc(d.type)} · ${esc(fmtDateCourte(d.date))} · ${esc(d.matiere||"")} · ${esc(d.titre)}</option>`).join("") || `<option value="">Aucun devoir dans cette classe</option>`}</select></label>
         <span class="badge bg-violet-100 text-violet-700">${eleves.length} élève(s)</span>
         ${devoir ? `<span class="badge !text-[12px] !py-1.5 !px-3" style="background:#6D28D9;color:#fff">📚 Matière : ${esc(devoir.matiere || "—")}</span><span class="badge bg-slate-100 text-slate-600">${esc(devoir.type === "DS" ? "Devoir de synthèse" : "Devoir de contrôle")} · ${fmtDate(devoir.date)}</span>` : ""}
         ${moy !== null ? `<span class="badge bg-emerald-100 text-emerald-700">Moyenne de la classe : ${moy.toFixed(2)}/20</span>` : ""}
       </div>
-      ${devoir ? `
       <div class="overflow-auto mt-4">
       <table class="w-full text-sm min-w-[760px]">
-        <thead><tr class="text-left text-[11px] text-slate-400 uppercase tracking-wider"><th class="py-2">Élève</th><th class="w-[160px]">Note / ${esc(String(devoir.bareme || 20))}</th><th>💬 Remarque (vue par l'élève)</th><th>📌 Observation générale</th></tr></thead>
+        <thead><tr class="text-left text-[11px] text-slate-400 uppercase tracking-wider"><th class="py-2">Élève</th><th class="w-[160px]">Note${devoir ? " / " + esc(String(devoir.bareme || 20)) : ""}</th><th>💬 Remarque (vue par l'élève)</th><th>📌 Observation générale</th></tr></thead>
         <tbody>
-        ${eleves.map(e => { const n = ETAT.notes.find(x => x.devoir_id === devoir.id && x.eleve_id === e.id); return `
+        ${eleves.map(e => { const n = devoir ? ETAT.notes.find(x => x.devoir_id === devoir.id && x.eleve_id === e.id) : null; return `
           <tr class="border-t" data-eleve="${e.id}">
-            <td class="py-2 pr-3"><p class="font-bold">${esc(e.nom || "")}</p><p class="text-[11px] text-slate-400">${esc(e.email || e.code || "")}</p></td>
-            <td class="pr-3"><input id="nt-${e.id}" inputmode="decimal" class="input !py-2" value="${n ? esc(String(n.note)) : ""}" placeholder="—"></td>
+            <td class="py-2 pr-3"><p class="font-bold">${esc(e.nom || "")}</p><p class="text-[11px] text-slate-400">${esc(e.email || e.code || "")}${e.code ? ` • code : <b>${esc(e.code)}</b>` : ""}</p></td>
+            ${devoir ? `<td class="pr-3"><input id="nt-${e.id}" inputmode="decimal" class="input !py-2" value="${n ? esc(String(n.note)) : ""}" placeholder="—"></td>
             <td class="pr-3"><input id="ap-${e.id}" class="input !py-2" value="${n ? esc(n.appreciation || "") : ""}" placeholder="Ex. : Bon travail"></td>
-            <td><input id="ob-${e.id}" class="input !py-2" value="${esc(e.observation || "")}" placeholder="Visible par l'élève"></td>
-          </tr>`; }).join("") || `<tr><td colspan="4" class="py-4 text-slate-400">Aucun élève actif dans cette classe. Les élèves apparaissent ici après validation de leur compte par l'administrateur.</td></tr>`}
+            <td><input id="ob-${e.id}" class="input !py-2" value="${esc(e.observation || "")}" placeholder="Visible par l'élève"></td>`
+            : `<td class="pr-3 text-slate-300">—</td><td class="pr-3 text-slate-300">—</td><td class="text-slate-400">${esc(e.observation || "—")}</td>`}
+          </tr>`; }).join("") || `<tr><td colspan="4" class="py-4 text-slate-400">Aucun élève actif dans cette classe pour le moment. Pour apparaître ici, un élève doit avoir un compte <b>accepté</b> et être inscrit dans <b>cette classe</b>.${estAdmin() ? `<br><button onclick="showSection('admin')" class="pill mt-2 !text-xs">➕ Ajouter des élèves (⭐ Administration)</button>` : `<br>Vérifiez dans « Mes Classes » que cette classe est bien cochée.`}</td></tr>`}
         </tbody>
       </table>
       </div>
-      <div class="flex flex-wrap gap-2 mt-4 items-center">
+      ${devoir ? `<div class="flex flex-wrap gap-2 mt-4 items-center">
         <button onclick="enregistrerNotes()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">💾 Enregistrer les notes</button>
         <span class="text-[12px] text-slate-400">Laissez une note vide pour l'effacer. Les élèves voient leurs notes et remarques immédiatement.</span>
       </div>
-      ${correctionIAHTML(devoir, eleves)}` : `<p class="text-slate-400 text-sm mt-4">Créez d'abord un devoir pour cette classe (section « Devoirs »).</p>`}
+      ${correctionIAHTML(devoir, eleves)}` : `<p class="text-slate-400 text-sm mt-4">📝 La liste des élèves de la classe est ci-dessus. Créez d'abord un devoir pour cette classe (section « Devoirs ») pour pouvoir saisir les notes et utiliser la correction IA.</p>`}
     </div>`;
 }
 /* ================= CORRECTION IA DES SOLUTIONS =================
