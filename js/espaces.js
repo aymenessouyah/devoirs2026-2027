@@ -1451,6 +1451,14 @@ async function renderEspaceAdmin() {
       </p>
     </div>`;
 
+  const badgeStatut = (x) => {
+    const st = statutProfil(x);
+    return st === "accepte" ? `<span class="badge badge-note">✓ Accepté</span>`
+      : st === "refuse" ? `<span class="badge badge-retard">Refusé</span>`
+      : `<span class="badge badge-afaire">⏳ En attente</span>`;
+  };
+  const erreurAdmin = (e) => espaceMessage("#admin-msg", "erreur", esc(e.message));
+
   brancherDeconnexion();
   rendreAttente();
   rendreComptes();
@@ -1466,14 +1474,6 @@ async function renderEspaceAdmin() {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 80);
   }
-
-  const badgeStatut = (x) => {
-    const st = statutProfil(x);
-    return st === "accepte" ? `<span class="badge badge-note">✓ Accepté</span>`
-      : st === "refuse" ? `<span class="badge badge-retard">Refusé</span>`
-      : `<span class="badge badge-afaire">⏳ En attente</span>`;
-  };
-  const erreurAdmin = (e) => espaceMessage("#admin-msg", "erreur", esc(e.message));
 
   /* ----- Demandes en attente ----- */
   function rendreAttente() {

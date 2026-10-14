@@ -585,7 +585,7 @@ function injectLayout() {
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
-        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.6</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.7</div>
       </div>
     </footer>`;
 
@@ -1657,7 +1657,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* Filet de sécurité : si le serveur propose une version plus récente que
    ce code-ci, on nettoie caches et Service Worker puis on recharge. */
-window.__VERSION_ATTENDUE = 18; /* numéro du cache de sw.js correspondant */
+window.__VERSION_ATTENDUE = 19; /* numéro du cache de sw.js correspondant */
 setTimeout(async () => {
   try {
     if (sessionStorage.getItem("maj-verifiee")) return;
