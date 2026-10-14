@@ -142,7 +142,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.4.1</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.4.2</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -178,7 +178,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.4.1</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.4.2</p>
 </main>
 </div>
 </div>
@@ -210,7 +210,8 @@ const ETAT = {
   calOff: { a: null, m: null },
   form: null, classeEleves: "", devoirNotes: "", selNotes: { classe: "", devoirId: null },
   repartition: [], sourceRep: "manuel", lienRep: "",
-  photoEmploi: null, photoEmploiMode: null, photoNouvelle: null, photoSupprimee: false
+  photoEmploi: null, photoEmploiMode: null, photoNouvelle: null, photoSupprimee: false,
+  scanEmploi: null, scanEdition: false
 };
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -658,7 +659,7 @@ function rendreClasses() {
     </div>
     <div class="card p-5 mt-5">
       <div class="flex flex-wrap justify-between gap-2 items-center"><h3 class="font-extrabold text-[16px]">🗓️ Mon emploi du temps</h3><span class="text-[11px] text-slate-400">Photo en français ou en arabe — analyse OCR bilingue, affichée dans le tableau (Vie de classe)</span></div>
-      <p class="text-[13px] text-slate-500 mt-1">Chargez la <b>photo de votre emploi du temps</b> (en français ou en arabe) et/ou saisissez vos séances hebdomadaires : le bouton d’analyse OCR lit les deux langues, puis le site affiche les séances en tableau et s'en sert pour proposer vos devoirs les jours de séance.</p>
+      <p class="text-[13px] text-slate-500 mt-1">Chargez la <b>photo de votre emploi du temps</b> (en français ou en arabe), puis cliquez sur <b>« Scanner la photo »</b> : le site crée un <b>tableau à vérifier</b> que vous pourrez <b>confirmer, rectifier ou annuler</b> — avec ses propres boutons, indépendants de ceux des classes. Vous pouvez aussi saisir vos séances manuellement ci-dessous.</p>
       <div class="grid md:grid-cols-[220px_1fr] gap-4 mt-4">
         <div>
           <div class="rounded-2xl border-2 border-dashed border-violet-300 bg-violet-50 overflow-hidden flex items-center justify-center min-h-[140px]" id="emploiPhotoApercu">${photoEmploiHTML()}</div>
@@ -668,20 +669,22 @@ function rendreClasses() {
           </div>
         </div>
         <div>
+          <p class="text-[11px] font-extrabold text-slate-400 mb-2">✍️ SÉANCES ACTUELLES / SAISIE MANUELLE <span class="normal-case font-semibold">(enregistrement par le bouton « Confirmer » des classes, plus bas)</span></p>
           <div id="seancesZone" class="grid gap-2">${seancesTriees().map((x, i) => seanceRowHTML(x)).join("") || `<p class="text-sm text-slate-400" id="seancesVide">Aucune séance saisie pour le moment — ajoutez vos créneaux (ils définissent aussi vos jours de séance).</p>`}</div>
           <div class="flex flex-wrap gap-2 mt-3">
             <button type="button" onclick="ajouterSeanceDOM()" class="pill !text-xs">＋ Ajouter une séance</button>
-            <button type="button" onclick="transformerPhotoEnTableau(this)" class="ai-grad text-white px-4 py-2 rounded-full text-xs font-extrabold">🔍 Transformer la photo en tableau (FR/AR)</button>
+            <button type="button" onclick="transformerPhotoEnTableau(this)" class="ai-grad text-white px-4 py-2 rounded-full text-xs font-extrabold">🔎 Scanner la photo et créer le tableau (FR/AR)</button>
           </div>
           <details class="mt-3"><summary class="text-xs font-bold text-violet-700 cursor-pointer">📝 Texte reconnu (OCR français + arabe) — corriger si besoin</summary>
             <textarea id="ocrTexte" dir="auto" rows="5" class="input mt-2" placeholder="Le texte lu dans la photo apparaîtra ici (français ou arabe). Vous pouvez aussi coller un emploi du temps puis analyser. Exemple : الثلاثاء ٠٨:٠٠ - ١٠:٠٠ — الثالثة إعلامية 1 — الإعلامية — قاعة 5"></textarea>
-            <button type="button" onclick="analyserTexteOCR()" class="pill mt-2 !text-xs">Analyser ce texte</button>
+            <button type="button" onclick="analyserTexteOCR()" class="pill mt-2 !text-xs">Créer le tableau à vérifier</button>
           </details>
+          <div id="scanEmploiZone" class="mt-4">${scanEmploiHTML()}</div>
         </div>
       </div>
     </div>
     <div id="barreClasses" class="card p-4 mt-5 flex flex-wrap gap-3 items-center hidden" style="border:2px solid #F59E0B">
-      <p class="text-sm font-bold flex-1">⚠️ Vous avez modifié vos classes/matières — ce n'est pas encore enregistré.</p>
+      <p class="text-sm font-bold flex-1">⚠️ Vous avez modifié vos classes/matières ou vos séances manuelles — ce n'est pas encore enregistré. (Le tableau issu d’un scan a ses propres boutons.)</p>
       <button onclick="annulerModifsClasses()" class="pill">↩️ Annuler</button>
       <button onclick="enregistrerMesClasses()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">✅ Confirmer l'enregistrement</button>
     </div>
@@ -695,6 +698,7 @@ function rendreClasses() {
   }));
   $$(".mm-mat1, .mm-mat2").forEach(sel => sel.addEventListener("change", majBarreClasses));
   lierLignesSeances();
+  if (ETAT.scanEdition) lierScanSeances();
 }
 function basculerJourSeance(btn) { btn.classList.toggle("active"); majBarreClasses(); }
 let classesDirty = false;
@@ -757,7 +761,7 @@ async function chargerPhotoEmploi(input) {
     ETAT.photoSupprimee = false;
     const z = $("#emploiPhotoApercu"); if (z) z.innerHTML = photoEmploiHTML();
     majBarreClasses();
-    toast("📷 Photo prête — cliquez « Confirmer l'enregistrement » pour l'enregistrer.", "info");
+    toast("📷 Photo prête — cliquez « Scanner la photo et créer le tableau », puis confirmez, rectifiez ou annulez le tableau créé.", "info");
   } catch (e) { toast("Photo illisible : " + e.message, "erreur"); }
 }
 function supprimerPhotoEmploi() {
@@ -1042,34 +1046,192 @@ function analyserEmploiTexte(texte) {
   return uniques;
 }
 function lierLignesSeances() { $$(".seance-row select, .seance-row input").forEach(el => el.addEventListener("change", majBarreClasses)); }
-function verserSeances(seances) {
-  const zone = $("#seancesZone"); if (!zone) return 0;
-  const existantes = new Set(lireSeancesDOM().map(x => [x.jour, x.debut, x.fin, x.classe].join("|")));
-  let ajout = 0;
-  (seances || []).forEach(x => {
-    const k = [x.jour, x.debut, x.fin, x.classe].join("|");
-    if (existantes.has(k)) return;
-    existantes.add(k);
-    const vide = $("#seancesVide"); if (vide) vide.remove();
-    zone.insertAdjacentHTML("beforeend", seanceRowHTML(x));
-    ajout++;
-  });
-  lierLignesSeances();
-  if (ajout) majBarreClasses();
-  return ajout;
+/* ----- Tableau créé par le scan : confirmer / rectifier / annuler -----
+   Ce tableau a SES PROPRES boutons : sa confirmation enregistre uniquement
+   l'emploi du temps (profils.emploi), sans passer par le bouton des classes. */
+function trierSeancesScan(liste) {
+  return (liste || []).map(x => ({
+    jour: Number(x.jour) || 1, debut: x.debut || "", fin: x.fin || "",
+    classe: x.classe || "", matiere: x.matiere || "", salle: x.salle || ""
+  })).sort((a, b) => a.jour - b.jour || String(a.debut).localeCompare(String(b.debut)));
 }
+function scanEmploiHTML() {
+  if (!ETAT.scanEmploi) return "";
+  const liste = trierSeancesScan(ETAT.scanEmploi);
+  if (!ETAT.scanEdition) {
+    return `<div class="card p-4" style="border:2px solid #7C3AED;background:rgba(124,58,237,.07)">
+      <h4 class="font-black text-[15px]">📋 Tableau créé à partir de la photo — à vérifier</h4>
+      <p class="text-xs text-slate-500 mt-1">Ce tableau <b>n'est pas encore enregistré</b>. Vérifiez-le, puis <b>Confirmez</b>, <b>Rectifiez</b> ou <b>Annulez</b> — ces boutons ne concernent que l'emploi du temps scanné, pas vos classes.</p>
+      <div class="overflow-x-auto mt-3"><table class="w-full text-[13px]" style="border-collapse:collapse">
+        <thead><tr><th class="text-left p-2">Jour</th><th class="text-left p-2">Horaire</th><th class="text-left p-2">Classe</th><th class="text-left p-2">Matière</th><th class="text-left p-2">Salle</th></tr></thead>
+        <tbody>${liste.map(x => `<tr style="border-top:1px solid rgba(120,130,160,.25)"><td class="p-2 font-bold capitalize">${esc((JOURS_SEANCE.find(j => j[0] === Number(x.jour)) || [0, "?"])[1])}</td><td class="p-2"><b>${esc(x.debut)}</b> → <b>${esc(x.fin)}</b></td><td class="p-2">${esc(x.classe ? nomClasse(x.classe) : "—")}</td><td class="p-2">${esc(x.matiere || "—")}</td><td class="p-2">${esc(x.salle || "—")}</td></tr>`).join("") || `<tr><td class="p-2 text-slate-400" colspan="5">Aucune séance dans ce tableau.</td></tr>`}</tbody>
+      </table></div>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button type="button" onclick="confirmerScanEmploi(this)" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold">✅ Confirmer ce tableau</button>
+        <button type="button" onclick="rectifierScanEmploi()" class="pill !text-xs">✏️ Rectifier</button>
+        <button type="button" onclick="annulerScanEmploi()" class="pill !text-xs !text-red-500">✕ Annuler le scan</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="card p-4" style="border:2px solid #F59E0B;background:rgba(245,158,11,.07)">
+    <h4 class="font-black text-[15px]">✏️ Rectification du tableau scanné</h4>
+    <p class="text-xs text-slate-500 mt-1">Corrigez les jours, horaires, classes, matières et salles, puis confirmez. Rien n'est enregistré tant que vous n'avez pas confirmé.</p>
+    <div id="scanRowsZone" class="grid gap-2 mt-3">${liste.map(x => scanRowHTML(x)).join("") || `<p class="text-sm text-slate-400" id="scanRowsVide">Toutes les séances ont été retirées — ajoutez-en une ou annulez le scan.</p>`}</div>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button type="button" onclick="ajouterScanRow()" class="pill !text-xs">＋ Ajouter une séance</button>
+      <button type="button" onclick="confirmerScanEmploi(this)" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold">✅ Confirmer les rectifications</button>
+      <button type="button" onclick="revoirScanEmploi()" class="pill !text-xs">👁️ Revoir le tableau</button>
+      <button type="button" onclick="annulerScanEmploi()" class="pill !text-xs !text-red-500">✕ Annuler le scan</button>
+    </div>
+  </div>`;
+}
+function scanRowHTML(x) {
+  x = x || {};
+  return `<div class="scan-row flex flex-wrap gap-2 items-center bg-white/60 border rounded-2xl p-2.5">
+    <select class="input !w-auto !py-2 scan-jour">${JOURS_SEANCE.map(([j, nom]) => `<option value="${j}" ${Number(x.jour) === j ? "selected" : ""}>${nom}</option>`).join("")}</select>
+    <input type="time" class="input !w-auto !py-2 scan-debut" value="${esc(x.debut || "08:00")}">
+    <span class="text-slate-400 font-bold">→</span>
+    <input type="time" class="input !w-auto !py-2 scan-fin" value="${esc(x.fin || "10:00")}">
+    <select class="input !w-auto !py-2 scan-classe">${optionsClasses(x.classe || (ETAT.classes[0] && ETAT.classes[0].cle))}</select>
+    <select class="input !w-auto !py-2 scan-matiere">${optionsMatieres(x.matiere || "")}</select>
+    <input class="input !w-auto !py-2 flex-1 min-w-[90px] scan-salle" placeholder="Salle" value="${esc(x.salle || "")}">
+    <button type="button" onclick="supprimerScanRow(this)" class="text-red-500 font-black px-2" title="Retirer cette séance du tableau scanné">✕</button>
+  </div>`;
+}
+function majScanZone(defiler) {
+  const z = $("#scanEmploiZone"); if (!z) return;
+  z.innerHTML = scanEmploiHTML();
+  if (ETAT.scanEdition) lierScanSeances();
+  if (defiler) z.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function afficherScanEmploi(liste) {
+  ETAT.scanEmploi = trierSeancesScan(liste);
+  ETAT.scanEdition = false;
+  majScanZone(true);
+  return ETAT.scanEmploi.length;
+}
+function rectifierScanEmploi() {
+  if (!ETAT.scanEmploi) return;
+  ETAT.scanEdition = true;
+  majScanZone(true);
+  setTimeout(() => { const el = $("#scanEmploiZone select, #scanEmploiZone input"); if (el) el.focus(); }, 60);
+}
+function revoirScanEmploi() {
+  ETAT.scanEmploi = lireScanSeancesDOM();
+  ETAT.scanEdition = false;
+  majScanZone(true);
+}
+function annulerScanEmploi() {
+  ETAT.scanEmploi = null;
+  ETAT.scanEdition = false;
+  majScanZone(false);
+  toast("✕ Scan annulé : le tableau créé à partir de la photo a été jeté, votre emploi du temps enregistré est inchangé.", "info");
+}
+function lireScanSeancesDOM() {
+  return $$(".scan-row").map(row => ({
+    jour: Number(row.querySelector(".scan-jour") ? row.querySelector(".scan-jour").value : 1) || 1,
+    debut: row.querySelector(".scan-debut") ? row.querySelector(".scan-debut").value : "",
+    fin: row.querySelector(".scan-fin") ? row.querySelector(".scan-fin").value : "",
+    classe: row.querySelector(".scan-classe") ? row.querySelector(".scan-classe").value : "",
+    matiere: row.querySelector(".scan-matiere") ? row.querySelector(".scan-matiere").value : "",
+    salle: row.querySelector(".scan-salle") ? row.querySelector(".scan-salle").value.trim() : ""
+  }));
+}
+function lierScanSeances() {
+  $$(".scan-row select, .scan-row input").forEach(el => {
+    const maj = () => { ETAT.scanEmploi = lireScanSeancesDOM(); };
+    el.addEventListener("change", maj);
+    el.addEventListener("input", maj);
+  });
+}
+function ajouterScanRow() {
+  const zone = $("#scanRowsZone"); if (!zone) return;
+  const vide = $("#scanRowsVide"); if (vide) vide.remove();
+  zone.insertAdjacentHTML("beforeend", scanRowHTML({ jour: 1, debut: "08:00", fin: "10:00", classe: ETAT.classes[0] && ETAT.classes[0].cle, matiere: (ETAT.profil && toutesSesMatieres(ETAT.profil)[0]) || "" }));
+  lierScanSeances();
+  ETAT.scanEmploi = lireScanSeancesDOM();
+}
+function supprimerScanRow(btn) {
+  const r = btn.closest(".scan-row"); if (r) r.remove();
+  ETAT.scanEmploi = lireScanSeancesDOM();
+  if (!ETAT.scanEmploi.length) majScanZone(false);
+}
+function signatureSeances(liste) {
+  return (liste || []).map(x => [Number(x.jour) || 1, x.debut || "", x.fin || "", x.classe || "", x.matiere || "", x.salle || ""].join("|")).sort().join(";");
+}
+function validerSeancesScan(liste) {
+  const propre = trierSeancesScan(liste);
+  if (!propre.length) return { ok: false, message: "Le tableau scanné est vide : ajoutez au moins une séance, ou annulez le scan." };
+  for (const x of propre) {
+    if (!x.debut || !x.fin) return { ok: false, message: "Un horaire est incomplet dans le tableau scanné : vérifiez chaque séance." };
+    if (x.fin <= x.debut) return { ok: false, message: `Horaire incohérent (${x.debut} → ${x.fin}) : l'heure de fin doit être après l'heure de début.` };
+    if (!ETAT.classes.some(c => c.cle === x.classe)) x.classe = ETAT.classes[0] ? ETAT.classes[0].cle : x.classe;
+  }
+  const uniques = [], vus = new Set();
+  propre.forEach(x => { const k = signatureSeances([x]); if (!vus.has(k)) { vus.add(k); uniques.push(x); } });
+  return { ok: true, liste: uniques };
+}
+/* Confirmation PROPRE au scan : enregistre seulement l'emploi du temps. */
+async function confirmerScanEmploi(btn) {
+  const source = ETAT.scanEdition ? lireScanSeancesDOM() : ETAT.scanEmploi;
+  const v = validerSeancesScan(source);
+  if (!v.ok) return toast(v.message, "erreur");
+  if (!ETAT.session || !ETAT.profil) return toast("Session introuvable : reconnectez-vous.", "erreur");
+  const ancien = btn ? btn.textContent : "";
+  const avaitModifsClasses = (typeof classesDirty !== "undefined" && classesDirty);
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Enregistrement du tableau…"; }
+    await preparerPhotoEmploi(); /* enregistre aussi la photo scannée si elle est nouvelle */
+    const actuel = normaliserEmploi(ETAT.profil.emploi);
+    const emploi = { jours: actuel.jours || {}, seances: v.liste, photo: ETAT.photoSupprimee ? null : (ETAT.photoEmploiMode || actuel.photo || null) };
+    await sbPatch("profils", `id=eq.${ETAT.session.user.id}`, { emploi });
+    let relu = null;
+    try { relu = await sbMonProfil(); } catch (e) { }
+    if (relu) {
+      if (signatureSeances(normaliserEmploi(relu.emploi).seances) !== signatureSeances(v.liste)) {
+        return toast("⚠️ La base n'a pas pris en compte le tableau scanné. Il reste affiché : vérifiez la connexion puis cliquez à nouveau sur Confirmer.", "erreur");
+      }
+      ETAT.profil = relu;
+    } else {
+      ETAT.profil.emploi = emploi;
+    }
+    sbStockerProfil(ETAT.profil);
+    const idx = (ETAT.profils || []).findIndex(p => p.id === ETAT.session.user.id);
+    if (idx >= 0) ETAT.profils[idx] = Object.assign({}, ETAT.profils[idx], { emploi: ETAT.profil.emploi });
+    ETAT.scanEmploi = null;
+    ETAT.scanEdition = false;
+    if (!avaitModifsClasses) {
+      rendreClasses();
+    } else {
+      const zone = $("#seancesZone");
+      if (zone) { zone.innerHTML = v.liste.map(x => seanceRowHTML(x)).join(""); lierLignesSeances(); }
+      const ap = $("#emploiPhotoApercu"); if (ap) ap.innerHTML = photoEmploiHTML();
+      majScanZone(false);
+      majBarreClasses();
+      if (!classesDirty) rendreClasses();
+    }
+    toast("✅ Tableau scanné confirmé et enregistré : c'est maintenant votre emploi du temps (visible dans Vie de classe).", "success");
+  } catch (e) {
+    if (/emploi/i.test(e.message || "")) toast("Le tableau est prêt, mais la base ne peut pas encore l'enregistrer : exécutez la mise à jour de supabase/schema.sql (colonne « emploi »). Le tableau reste affiché pour réessayer.", "erreur");
+    else toast(e.message, "erreur");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = ancien || "✅ Confirmer ce tableau"; }
+  }
+}
+
 function analyserTexteOCR() {
   const z = $("#ocrTexte"); if (!z) return;
   const lignes = analyserEmploiTexte(z.value);
   if (!lignes.length) return toast("Aucune séance reconnue dans ce texte. Indiquez un jour (français ou arabe) et des horaires, puis réessayez.", "erreur");
-  const ajout = verserSeances(lignes);
-  toast(`✅ ${lignes.length} séance(s) reconnue(s), ${ajout} ajoutée(s) au tableau — vérifiez puis Confirmez.`, "success");
+  afficherScanEmploi(lignes);
+  toast(`📋 Tableau créé : ${lignes.length} séance(s) à vérifier ci-dessous — Confirmez, Rectifiez ou Annulez (boutons du tableau, pas ceux des classes).`, "info");
 }
 async function transformerPhotoEnTableau(btn) {
   const src = ETAT.photoNouvelle || ETAT.photoEmploi;
   if (!src) return toast("Chargez d'abord la photo de votre emploi du temps.", "erreur");
   if (typeof Tesseract === "undefined") return toast("Le moteur de reconnaissance (OCR) n'est pas chargé — vérifiez votre connexion Internet, ou collez le texte via « Texte reconnu ».", "erreur");
   const ancien = btn ? btn.textContent : "";
+  if (ETAT.scanEmploi && !confirm("Un tableau scanné est déjà en attente de confirmation. Le remplacer par un nouveau scan ?")) return;
   try {
     if (btn) { btn.disabled = true; btn.textContent = "⏳ Analyse FR/AR de la photo…"; }
     let image = src;
@@ -1081,11 +1243,11 @@ async function transformerPhotoEnTableau(btn) {
     const texte = (data && data.text) || "";
     const z = $("#ocrTexte"); if (z) z.value = texte;
     const lignes = analyserEmploiTexte(texte);
-    if (!lignes.length) { toast("Photo analysée (français + arabe), mais aucune séance reconnue automatiquement. Corrigez le texte reconnu ci-dessous puis « Analyser ce texte ».", "info"); return; }
-    const ajout = verserSeances(lignes);
-    toast(`✅ Photo transformée (FR/AR) : ${lignes.length} séance(s) reconnue(s), ${ajout} ajoutée(s) au tableau — vérifiez puis Confirmez l'enregistrement.`, "success");
+    if (!lignes.length) { const det = z && z.closest ? z.closest("details") : null; if (det) det.open = true; toast("Photo analysée (français + arabe), mais aucune séance reconnue automatiquement. Corrigez le texte reconnu ci-dessous puis « Créer le tableau à vérifier ».", "info"); return; }
+    afficherScanEmploi(lignes);
+    toast(`📋 Photo scannée : tableau de ${lignes.length} séance(s) créé ci-dessous — Confirmez-le, Rectifiez-le ou Annulez le scan (boutons du tableau, pas ceux des classes).`, "info");
   } catch (e) { toast("Analyse impossible : " + e.message, "erreur"); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = ancien || "🔍 Transformer en tableau"; } }
+  finally { if (btn) { btn.disabled = false; btn.textContent = ancien || "🔎 Scanner la photo et créer le tableau (FR/AR)"; } }
 }
 function lireChoixClasses() {
   const classes = [], carte = {}, emploiJours = {};
@@ -1112,7 +1274,10 @@ function signatureChoix(classes, carte, emploi) {
   Object.keys(carte || {}).sort().forEach(k => { c[k] = (carte[k] || []).slice().sort(); });
   const n = normaliserEmploi(emploi);
   const e = {};
-  (classes || []).slice().sort().forEach(k => { e[k] = ((n.jours || {})[k] || []).map(Number).slice().sort((a, b) => a - b); });
+  (classes || []).slice().sort().forEach(k => {
+    const desSeances = [...new Set((n.seances || []).filter(x => x.classe === k).map(x => Number(x.jour)))].filter(j => j >= 1 && j <= 6).sort((a, b) => a - b);
+    e[k] = desSeances.length ? desSeances : ((n.jours || {})[k] || []).map(Number).slice().sort((a, b) => a - b);
+  });
   const seances = (n.seances || []).map(x => [Number(x.jour) || 1, x.debut || "", x.fin || "", x.classe || "", x.matiere || "", x.salle || ""].join("|")).sort();
   return JSON.stringify({ classes: (classes || []).slice().sort(), carte: c, emploi: e, seances, photo: n.photo || null });
 }
