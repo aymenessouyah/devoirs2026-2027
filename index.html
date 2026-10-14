@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.6</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.7</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.6</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.7</p>
 </main>
 </div>
 </div>
@@ -1889,6 +1889,12 @@ function correctionIAHTML(devoir, eleves) {
       <label class="text-xs font-extrabold">IMPORTER LE FICHIER D'UN ÉLÈVE<br><select id="ia-import-eleve" class="input mt-1 !w-auto">${eleves.map(e => `<option value="${e.id}">${esc(e.nom || e.email || "")}</option>`).join("")}</select></label>
       <label class="pill cursor-pointer !text-xs !py-2.5">📥 Importer un fichier<input type="file" accept=".pdf,.docx,.txt,.py,.pas,.sql,.md,.csv,.png,.jpg,.jpeg,.webp" class="hidden" onchange="importerSolutionProf(this,'${devoir.id}')"></label>
     </div>
+    <div class="mt-3 p-3 rounded-2xl" style="background:rgba(124,58,237,.05)">
+      <p class="text-xs font-extrabold">📁 IMPORTER LE DOSSIER DE LA CLASSE</p>
+      <p class="text-[11px] text-slate-500 mt-0.5">Choisissez le dossier qui contient le travail de <b>tous les élèves</b> (un fichier par élève). Le site reconnaît chaque élève grâce au nom du fichier — <b>code</b> (ex. <i>3SI1-01.pdf</i>) ou <b>nom</b> (ex. <i>Ahmad.pdf</i>) — puis vous vérifiez la répartition avant l'import. Ensuite, « 🤖 Tout corriger » en haut du panneau corrige toutes les copies.</p>
+      <label class="pill cursor-pointer !text-xs !py-2.5 mt-2">📁 Choisir le dossier de la classe<input type="file" webkitdirectory directory class="hidden" onchange="preparerImportDossier(this,'${devoir.id}')"></label>
+      ${importDossierHTML(devoir)}
+    </div>
     ${!eleves.length ? `<p class="text-[13px] text-amber-600 mt-2">⚠️ Aucun élève dans cette classe pour le moment.${estAdmin() ? ` <button type="button" class="underline font-bold" onclick="showSection('admin')">➕ Ajoutez-les dans ⭐ Administration (« Ajouter des élèves »)</button>` : " Demandez à l'administrateur de les ajouter (⭐ Administration → « Ajouter des élèves »)."}</p>` : ""}
     <div class="grid gap-2 mt-3">
       ${rendusD.map(r => `<div class="border rounded-2xl p-3" style="background:rgba(124,58,237,.04)">
@@ -1918,6 +1924,140 @@ function correctionIAHTML(devoir, eleves) {
       </div>
     </details>
   </div>`;
+}
+/* ---------- Import du dossier de la classe (travaux de tous les élèves) ----------
+   L'enseignant choisit un dossier local : un fichier par élève. Chaque
+   fichier est attribué à un élève grâce à son nom (code élève ou nom),
+   l'enseignant vérifie/corrige la répartition, puis tout est importé. */
+const EXT_DOSSIER_OK = ["pdf", "docx", "txt", "py", "pas", "sql", "md", "csv", "png", "jpg", "jpeg", "webp", "json", "js", "html", "css"];
+function normaliserNomFichier(txt) {
+  return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+function jetonsNomFichier(txt) {
+  return normaliserNomFichier(txt).replace(/\.[a-z0-9]+$/, "").split(/[^a-z0-9]+/).filter(t => t.length >= 2);
+}
+function identifierElevePourFichier(nomFichier, eleves) {
+  const base = String(nomFichier || "").split(/[\\/]/).pop() || "";
+  const compactF = normaliserNomFichier(base).replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]/g, "");
+  for (const e of eleves) {
+    const code = normaliserNomFichier(e.code || "").replace(/[^a-z0-9]/g, "");
+    if (code && compactF.includes(code)) return { eleveId: e.id, niveau: "code" };
+    const mail = normaliserNomFichier(String(e.email || "").split("@")[0]).replace(/[^a-z0-9]/g, "");
+    if (mail && mail.length >= 4 && compactF.includes(mail)) return { eleveId: e.id, niveau: "code" };
+  }
+  const jetonsF = new Set(jetonsNomFichier(base));
+  let meilleur = null, scoreMax = 0, exaequo = false;
+  for (const e of eleves) {
+    const jetonsE = jetonsNomFichier(e.nom || "");
+    if (!jetonsE.length) continue;
+    const communs = jetonsE.filter(t => jetonsF.has(t)).length;
+    let score = 0;
+    if (communs > 0 && communs === jetonsE.length) score = 3;
+    else if (communs > 0 && communs === jetonsF.size) score = 2;
+    else if (communs >= 2) score = 1;
+    if (score > scoreMax) { scoreMax = score; meilleur = e; exaequo = false; }
+    else if (score === scoreMax && score > 0) exaequo = true;
+  }
+  if (meilleur && scoreMax > 0 && !exaequo) return { eleveId: meilleur.id, niveau: "nom" };
+  return { eleveId: null, niveau: exaequo ? "ambigu" : "aucun" };
+}
+function elevesDeLaClasseDuDevoir(devoir) {
+  return (ETAT.profils || [])
+    .filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(cleCanoniqueClasse(p.classe), cleCanoniqueClasse(devoir.classe)))
+    .slice().sort((a, b) => (a.nom || "").localeCompare(b.nom || "", "fr"));
+}
+function preparerLignesDossier(fichiers, eleves) {
+  const lignes = [], ignores = [];
+  for (const f of fichiers || []) {
+    const nom = f.name || "";
+    const chemin = f.webkitRelativePath || nom;
+    if (!nom || nom.startsWith(".") || /^(Thumbs\.db|desktop\.ini)$/i.test(nom) || chemin.indexOf("__MACOSX") >= 0) continue;
+    const ext = (nom.split(".").pop() || "").toLowerCase();
+    if (!EXT_DOSSIER_OK.includes(ext)) { ignores.push(nom); continue; }
+    if (f.size > 10 * 1024 * 1024) { ignores.push(nom + " (plus de 10 Mo)"); continue; }
+    const idt = identifierElevePourFichier(nom, eleves);
+    lignes.push({ fichier: f, nom, chemin, taille: f.size || 0, eleveId: idt.eleveId, niveau: idt.niveau });
+  }
+  return { lignes, ignores };
+}
+function preparerImportDossier(input, devoirId) {
+  const fichiers = input.files ? Array.prototype.slice.call(input.files) : [];
+  const devoir = ETAT.devoirs.find(d => String(d.id) === String(devoirId));
+  if (!devoir || !fichiers.length) return;
+  const eleves = elevesDeLaClasseDuDevoir(devoir);
+  if (!eleves.length) return toast("Aucun élève dans la classe de ce devoir : impossible de répartir les fichiers.", "erreur");
+  const prep = preparerLignesDossier(fichiers, eleves);
+  if (!prep.lignes.length) return toast("Aucun fichier exploitable dans ce dossier (PDF, Word, images, texte/code ; 10 Mo maximum).", "erreur");
+  ETAT.importDossier = { devoirId: devoir.id, lignes: prep.lignes, ignores: prep.ignores };
+  const reconnus = prep.lignes.filter(l => l.eleveId).length;
+  toast(`📁 ${prep.lignes.length} fichier(s) lu(s) : ${reconnus} élève(s) reconnu(s) automatiquement. Vérifiez la répartition ci-dessous puis importez.`, "info");
+  rendreEleves();
+}
+function importDossierHTML(devoir) {
+  const d = ETAT.importDossier;
+  if (!d || String(d.devoirId) !== String(devoir.id)) return "";
+  const eleves = elevesDeLaClasseDuDevoir(devoir);
+  const reconnus = d.lignes.filter(l => l.eleveId).length;
+  const badgeNiveau = (l) => l.eleveId
+    ? (l.niveau === "code" ? `<span class="badge bg-emerald-100 text-emerald-700">✅ par code</span>` : `<span class="badge bg-sky-100 text-sky-700">✅ par nom</span>`)
+    : (l.niveau === "ambigu" ? `<span class="badge bg-amber-100 text-amber-700">⚠️ ambigu — choisissez</span>` : `<span class="badge bg-amber-100 text-amber-700">❓ non reconnu — choisissez</span>`);
+  return `<div class="mt-3">
+    <p class="text-xs font-bold">${d.lignes.length} fichier(s) dans le dossier — <span class="text-emerald-600">${reconnus} reconnu(s)</span>, <span class="text-amber-600">${d.lignes.length - reconnus} à classer</span>. Un fichier importé remplace le dépôt éventuel du même élève pour ce devoir.</p>
+    <div class="grid gap-1.5 mt-2">
+      ${d.lignes.map((l, i) => `<div class="flex flex-wrap gap-2 items-center border rounded-xl px-2.5 py-1.5" style="background:#fff">
+        <span class="text-[13px] font-bold">📎 ${esc(l.nom)}</span>
+        <span class="text-[11px] text-slate-400">${Math.max(1, Math.round(l.taille / 1024))} Ko</span>
+        ${badgeNiveau(l)}
+        <span class="flex-1"></span>
+        <select class="input !w-auto !py-1.5 !text-xs" onchange="definirEleveDossier(${i}, this.value)">
+          <option value="">— Choisir l'élève —</option>
+          ${eleves.map(e => `<option value="${e.id}" ${l.eleveId === e.id ? "selected" : ""}>${esc(e.nom || e.email || "")}${e.code ? " (" + esc(e.code) + ")" : ""}</option>`).join("")}
+        </select>
+      </div>`).join("")}
+    </div>
+    ${d.ignores && d.ignores.length ? `<p class="text-[11px] text-slate-400 mt-1.5">Fichiers ignorés (format non pris en charge ou trop lourds) : ${d.ignores.map(esc).join(", ")}</p>` : ""}
+    <div class="flex flex-wrap gap-2 mt-2.5">
+      <button type="button" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold" onclick="confirmerImportDossier(this)">📥 Importer les ${reconnus} fichier(s) classé(s)</button>
+      <button type="button" class="pill !text-xs" onclick="annulerImportDossier()">❌ Annuler</button>
+    </div>
+  </div>`;
+}
+function definirEleveDossier(i, val) {
+  const d = ETAT.importDossier;
+  if (!d || !d.lignes[i]) return;
+  d.lignes[i].eleveId = val || null;
+  if (val) d.lignes[i].niveau = "manuel";
+  rendreEleves();
+}
+function annulerImportDossier() { ETAT.importDossier = null; rendreEleves(); }
+async function confirmerImportDossier(btn) {
+  const d = ETAT.importDossier;
+  if (!d) return;
+  const devoir = ETAT.devoirs.find(x => String(x.id) === String(d.devoirId));
+  if (!devoir) return;
+  const aImporter = d.lignes.filter(l => l.eleveId);
+  if (!aImporter.length) return toast("Classez au moins un fichier (choisissez son élève) avant d'importer.", "erreur");
+  const ancien = btn ? btn.textContent : "";
+  let ok = 0; const erreurs = [];
+  try {
+    if (btn) btn.disabled = true;
+    for (const l of aImporter) {
+      if (btn) btn.textContent = `⏳ Import ${ok + erreurs.length + 1}/${aImporter.length}…`;
+      try {
+        const chemin = sbCheminFichier(l.eleveId, devoir.id, l.nom);
+        await sbEnvoyerFichier(chemin, l.fichier);
+        await sbUpsert("rendus", { eleve_id: l.eleveId, devoir_id: devoir.id, fichier: chemin, nom_fichier: l.nom, statut: "en_attente", note_ia: null, appreciation_ia: "", details_ia: "" }, "eleve_id,devoir_id");
+        ok++;
+      } catch (e) { erreurs.push(`${l.nom} (${e.message})`); }
+    }
+    try { ETAT.rendus = await sbSelect("rendus", "select=*&order=date.desc"); } catch (e) { }
+    ETAT.importDossier = null;
+    if (ok) toast(`📁 Dossier importé : ${ok} copie(s) prête(s). Lancez « 🤖 Tout corriger » en haut du panneau pour lancer la correction IA de toute la classe.`, "success");
+    if (erreurs.length) toast("⚠️ Échec(s) : " + erreurs.join(" ; "), "erreur");
+  } finally {
+    if (btn) { btn.disabled = false; if (ancien) btn.textContent = ancien; }
+    rendreEleves();
+  }
 }
 async function importerSolutionProf(input, devoirId) {
   const f = input.files && input.files[0]; if (!f) return;
