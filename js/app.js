@@ -585,7 +585,7 @@ function injectLayout() {
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
-        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.4</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.5</div>
       </div>
     </footer>`;
 
@@ -1652,6 +1652,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
+/* Filet de sécurité : si le serveur propose une version plus récente que
+   ce code-ci, on nettoie caches et Service Worker puis on recharge. */
+window.__VERSION_ATTENDUE = 17; /* numéro du cache de sw.js correspondant */
+setTimeout(async () => {
+  try {
+    if (sessionStorage.getItem("maj-verifiee")) return;
+    sessionStorage.setItem("maj-verifiee", "1");
+    const rep = await fetch("sw.js", { cache: "no-store" });
+    const txt = await rep.text();
+    const m = txt.match(/devoirs-v(\d+)/);
+    if (m && parseInt(m[1], 10) > window.__VERSION_ATTENDUE) {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if (window.caches) {
+        const cles = await caches.keys();
+        await Promise.all(cles.map((k) => caches.delete(k)));
+      }
+      location.reload();
+    }
+  } catch (e) { /* silencieux : ne jamais gêner la navigation */ }
+}, 1200);
 
 /* Applique le thème le plus tôt possible (anti-flash) */
 initTheme();
