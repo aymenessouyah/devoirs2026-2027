@@ -1429,7 +1429,7 @@ async function renderEspaceAdmin() {
 
     <div class="card mb-3">
       <h2 class="card-title">👥 Tous les comptes (${profilsTous.length})</h2>
-      <p class="text-muted">Corrigez le rôle, la classe et la matière de chacun, ré-acceptez un compte refusé ou supprimez un profil.</p>
+      <p class="text-muted">Corrigez le rôle, la classe et la matière de chacun, ré-acceptez un compte refusé ou supprimez un profil. Pour un <strong>enseignant</strong>, la colonne <strong>Détails</strong> affiche toutes ses informations : ses <strong>classes enseignées</strong> et sa matière — ou ses <strong>2 matières</strong>.</p>
       <div id="admin-comptes" class="mt-2"></div>
     </div>
 
@@ -1458,6 +1458,25 @@ async function renderEspaceAdmin() {
       : `<span class="badge badge-afaire">⏳ En attente</span>`;
   };
   const erreurAdmin = (e) => espaceMessage("#admin-msg", "erreur", esc(e.message));
+  const chipsClasses = (cles) => (Array.isArray(cles) && cles.length)
+    ? cles.map((c) => `<span class="badge badge-attente">${esc(nomClasseDyn(c))}</span>`).join(" ")
+    : `<span class="text-muted">Aucune classe choisie</span>`;
+  const detailsCompte = (x) => {
+    if (x.role === "enseignant") {
+      const mats = sesMatieres(x);
+      return `<div class="details-compte">
+        <div>🏫 <strong>Classes enseignées :</strong> ${chipsClasses(x.classes)}</div>
+        <div>📚 <strong>Matière(s) :</strong> ${mats.length ? mats.map((m) => esc(m)).join(" + ") : "—"}</div>
+        <div class="text-muted">Compte créé le ${dateHeureFr(x.created_at)}</div>
+      </div>`;
+    }
+    return `<div class="details-compte">
+      <div>🏫 <strong>Classe :</strong> ${x.classe ? esc(nomClasseDyn(x.classe)) : "—"}</div>
+      ${x.code ? `<div>🔑 <strong>Code élève :</strong> ${esc(x.code)}</div>` : ""}
+      ${x.observation && x.observation.trim() ? `<div>📝 <strong>Observation :</strong> ${esc(x.observation)}</div>` : ""}
+      <div class="text-muted">Compte créé le ${dateHeureFr(x.created_at)}</div>
+    </div>`;
+  };
 
   brancherDeconnexion();
   rendreAttente();
@@ -1487,7 +1506,7 @@ async function renderEspaceAdmin() {
           <tr>
             <td><strong>${esc(x.nom)}</strong></td>
             <td>${x.role === "enseignant" ? "🧑‍🏫 Enseignant" : "👨‍🎓 Élève"}</td>
-            <td>${x.classe ? esc(nomClasseDyn(x.classe)) : "—"}${x.matiere ? ` · ${esc(x.matiere)}` : ""}</td>
+            <td>${detailsCompte(x)}</td>
             <td>${esc(x.email || "—")}</td>
             <td>${dateHeureFr(x.created_at)}</td>
             <td>
@@ -1514,7 +1533,7 @@ async function renderEspaceAdmin() {
     if (!zone) return;
     zone.innerHTML = profilsTous.length ? `
       <div class="table-wrap"><table class="table">
-        <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Classe</th><th>Matière</th><th>Statut</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Classe</th><th>Matière</th><th>Détails</th><th>Statut</th><th>Actions</th></tr></thead>
         <tbody>
         ${profilsTous.map((x) => `
           <tr>
@@ -1527,10 +1546,12 @@ async function renderEspaceAdmin() {
               </select>
             </td>
             <td>
-              <select class="adm-classe" data-id="${esc(x.id)}">
+              ${x.role === "enseignant"
+                ? `<span class="text-muted" title="L'enseignant choisit ses classes dans son espace ; elles sont affichées dans la colonne Détails.">🏫 voir Détails →</span>`
+                : `<select class="adm-classe" data-id="${esc(x.id)}">
                 <option value="" ${!x.classe ? "selected" : ""}>—</option>
                 ${optionsClassesHTML(x.classe || "")}
-              </select>
+              </select>`}
             </td>
             <td>
               <select class="adm-matiere" data-id="${esc(x.id)}">
@@ -1538,6 +1559,7 @@ async function renderEspaceAdmin() {
                 ${optionsMatieresHTML(x.matiere || "")}
               </select>
             </td>
+            <td>${detailsCompte(x)}</td>
             <td>${badgeStatut(x)}</td>
             <td>
               ${statutProfil(x) !== "accepte" ? `<button class="btn btn-primary btn-sm adm-accepter" data-id="${esc(x.id)}">✅ Accepter</button>` : ""}
