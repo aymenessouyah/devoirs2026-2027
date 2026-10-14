@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.4</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.5</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.4</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.5</p>
 </main>
 </div>
 </div>
@@ -471,6 +471,14 @@ function construireNav() {
       ${n.badge ? `<span class="ml-auto bg-amber-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full">${n.badge}</span>` : ""}
     </div>`).join("");
 }
+const memeClasse = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+async function rafraichirProfils() {
+  if (!ETAT.session || !ETAT.profil || ETAT.profil.role !== "enseignant") return;
+  try {
+    const p = await sbSelect("profils", "select=*&order=created_at.asc");
+    if (Array.isArray(p)) ETAT.profils = p;
+  } catch (e) { console.warn("Rafraîchissement des profils :", e); }
+}
 function showSection(nom) {
   if (typeof classesDirty !== "undefined" && classesDirty && ETAT.section === "classes" && nom !== "classes") {
     if (!confirm("⚠️ Vous avez modifié vos classes/matières sans confirmer. Quitter « Mes Classes » sans enregistrer ? (les modifications seront perdues)")) return;
@@ -483,6 +491,7 @@ function showSection(nom) {
   construireNav();
   $("#sidebar").classList.add("-translate-x-full");
   ({ dashboard: rendreDashboard, classes: rendreClasses, devoirs: rendreDevoirs, eleves: rendreEleves, admin: rendreAdmin, calendrier: rendreCalendrier, vie: rendreVie })[nom]?.();
+  if (nom === "eleves" || nom === "admin") rafraichirProfils().then(() => { if (ETAT.section === nom) ({ eleves: rendreEleves, admin: rendreAdmin })[nom]?.(); });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function rechercheGlobale(val) {
@@ -1788,7 +1797,8 @@ function rendreElevesEns() {
   const devoirsClasse = ETAT.devoirs.filter(d => d.classe === ETAT.selNotes.classe && d.enseignant_id === ETAT.session.user.id).slice().sort((a,b) => a.date.localeCompare(b.date));
   if (!devoirsClasse.some(d => d.id === ETAT.selNotes.devoirId)) ETAT.selNotes.devoirId = devoirsClasse.length ? devoirsClasse[devoirsClasse.length - 1].id : null;
   const devoir = devoirsClasse.find(d => d.id === ETAT.selNotes.devoirId) || null;
-  const eleves = ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && p.classe === ETAT.selNotes.classe).slice().sort((a,b) => (a.nom||"").localeCompare(b.nom||"", "fr"));
+  const nbElevesClasse = (cle) => ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(p.classe, cle)).length;
+  const eleves = ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(p.classe, ETAT.selNotes.classe)).slice().sort((a,b) => (a.nom||"").localeCompare(b.nom||"", "fr"));
   const notesD = ETAT.notes.filter(n => devoir && n.devoir_id === devoir.id);
   const moy = notesD.length ? notesD.reduce((s,n) => s + (Number(n.note)/ (Number(n.sur)||20) * 20), 0) / notesD.length : null;
   zone.innerHTML = `
@@ -1796,7 +1806,7 @@ function rendreElevesEns() {
     <p class="text-sm text-slate-500">Choisissez la classe, puis le devoir : saisissez les notes et les remarques (vues par l'élève), ainsi qu'une observation générale par élève.</p>
     <div class="card p-4 md:p-5 mt-5">
       <div class="flex flex-wrap gap-3 items-end">
-        <label class="text-xs font-extrabold">CLASSE<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.classe=this.value;ETAT.selNotes.devoirId=null;rendreEleves()">${classesDispo.map(c => `<option value="${esc(c)}" ${c === ETAT.selNotes.classe ? "selected" : ""}>${esc(nomClasse(c))}</option>`).join("")}</select></label>
+        <label class="text-xs font-extrabold">CLASSE<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.classe=this.value;ETAT.selNotes.devoirId=null;rendreEleves()">${classesDispo.map(c => `<option value="${esc(c)}" ${c === ETAT.selNotes.classe ? "selected" : ""}>${esc(nomClasse(c))} — ${nbElevesClasse(c)} élève(s)</option>`).join("")}</select></label>
         <label class="text-xs font-extrabold">DEVOIR<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.devoirId=this.value;rendreEleves()">${devoirsClasse.map(d => `<option value="${d.id}" ${devoir && d.id === devoir.id ? "selected" : ""}>${esc(d.type)} · ${esc(fmtDateCourte(d.date))} · ${esc(d.matiere||"")} · ${esc(d.titre)}</option>`).join("") || `<option value="">Aucun devoir dans cette classe</option>`}</select></label>
         <span class="badge bg-violet-100 text-violet-700">${eleves.length} élève(s)</span>
         ${devoir ? `<span class="badge !text-[12px] !py-1.5 !px-3" style="background:#6D28D9;color:#fff">📚 Matière : ${esc(devoir.matiere || "—")}</span><span class="badge bg-slate-100 text-slate-600">${esc(devoir.type === "DS" ? "Devoir de synthèse" : "Devoir de contrôle")} · ${fmtDate(devoir.date)}</span>` : ""}
@@ -1813,7 +1823,7 @@ function rendreElevesEns() {
             <td class="pr-3"><input id="ap-${e.id}" class="input !py-2" value="${n ? esc(n.appreciation || "") : ""}" placeholder="Ex. : Bon travail"></td>
             <td><input id="ob-${e.id}" class="input !py-2" value="${esc(e.observation || "")}" placeholder="Visible par l'élève"></td>`
             : `<td class="pr-3 text-slate-300">—</td><td class="pr-3 text-slate-300">—</td><td class="text-slate-400">${esc(e.observation || "—")}</td>`}
-          </tr>`; }).join("") || `<tr><td colspan="4" class="py-4 text-slate-400">Aucun élève actif dans cette classe pour le moment. Pour apparaître ici, un élève doit avoir un compte <b>accepté</b> et être inscrit dans <b>cette classe</b>.${estAdmin() ? `<br><button onclick="showSection('admin')" class="pill mt-2 !text-xs">➕ Ajouter des élèves (⭐ Administration)</button>` : `<br>Vérifiez dans « Mes Classes » que cette classe est bien cochée.`}</td></tr>`}
+          </tr>`; }).join("") || `<tr><td colspan="4" class="py-4 text-slate-400">Aucun élève actif dans cette classe pour le moment. Pour apparaître ici, un élève doit avoir un compte <b>accepté</b> et être inscrit dans <b>cette classe</b>.<br>📊 Élèves acceptés par classe : ${ETAT.classesAll.map(c => `${esc(c.nom)} : <b>${nbElevesClasse(c.cle)}</b>`).join(" · ") || "—"}${ETAT.profils.some(p => p.role === "eleve" && statutProfil(p) === "en_attente") ? `<br>⏳ Des comptes élèves sont <b>en attente de validation</b> dans ⭐ Administration.` : ""}${estAdmin() ? `<br><button onclick="showSection('admin')" class="pill mt-2 !text-xs">➕ Ajouter des élèves (⭐ Administration)</button>` : `<br>Vérifiez dans « Mes Classes » que cette classe est bien cochée.`}</td></tr>`}
         </tbody>
       </table>
       </div>
@@ -2169,8 +2179,8 @@ function rendreAdmin() {
     <div class="card p-5 mt-5">
       <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Enseignants à part, élèves regroupés par classe.</span></div>
       ${groupeComptesHTML("🧑‍🏫 Enseignants", comptes.filter(x => x.role === "enseignant"), "Aucun enseignant.", true)}
-      ${ETAT.classesAll.map(c => ({ cle: c.cle, nom: c.nom, liste: comptes.filter(x => x.role !== "enseignant" && x.classe === c.cle) }))
-        .concat((() => { const sc = comptes.filter(x => x.role !== "enseignant" && !ETAT.classesAll.some(c => c.cle === x.classe)); return sc.length ? [{ cle: "", nom: "Sans classe (ou classe supprimée)", liste: sc }] : []; })())
+      ${ETAT.classesAll.map(c => ({ cle: c.cle, nom: c.nom, liste: comptes.filter(x => x.role !== "enseignant" && memeClasse(x.classe, c.cle)) }))
+        .concat((() => { const sc = comptes.filter(x => x.role !== "enseignant" && !ETAT.classesAll.some(c => memeClasse(c.cle, x.classe))); return sc.length ? [{ cle: "", nom: "Sans classe (ou classe supprimée)", liste: sc }] : []; })())
         .map(g => groupeComptesHTML(`🎓 Élèves — ${esc(g.nom)}`, g.liste, "Aucun élève dans cette classe.", false)).join("")}
     </div>
 
