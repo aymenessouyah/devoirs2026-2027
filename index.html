@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.1</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.2</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.1</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.2</p>
 </main>
 </div>
 </div>
@@ -2084,6 +2084,27 @@ function detailsCompte(p) {
   if (p.role === "eleve") return `Classe : <b>${esc(nomClasse(p.classe))}</b>${p.code ? ` • Code : <b>${esc(p.code)}</b>` : ""}${p.observation ? ` • 💬 ${esc(p.observation)}` : ""} • inscrit le ${cree}`;
   return `${chipsClasses(p)}<br><span class="text-slate-400">Inscrit le ${cree} • ${Array.isArray(p.classes) ? p.classes.length : 0} classe(s)</span>`;
 }
+function ligneCompteHTML(p) {
+  return `<tr class="border-b table-row">
+    <td class="py-3 pr-3"><p class="font-bold">${esc(p.nom || "")} ${p.email === SB_ADMIN_EMAIL ? `<span class="badge bg-amber-100 text-amber-700">ADMIN</span>` : ""}</p><p class="text-[11px] text-slate-400">${esc(p.email || p.code || "")}</p></td>
+    <td><span class="badge ${p.role === "enseignant" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}">${p.role === "enseignant" ? "Enseignant" : "Élève"}</span></td>
+    <td class="text-[13px]">${detailsCompte(p)}</td>
+    <td><span class="badge ${statutProfil(p) === "suspendu" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}">${statutProfil(p) === "suspendu" ? "Suspendu" : "Actif"}</span></td>
+    <td class="text-right whitespace-nowrap">
+      ${p.email !== SB_ADMIN_EMAIL ? `<button class="pill !py-1.5 text-xs" onclick="modifierCompte('${p.id}')">✏️ Modifier</button>
+      <button class="pill !py-1.5 text-xs" onclick="basculerStatut('${p.id}')">${statutProfil(p) === "suspendu" ? "▶️ Réactiver" : "⏸️ Suspendre"}</button>
+      <button class="pill !py-1.5 text-xs !text-red-500" onclick="supprimerCompte('${p.id}')">🗑️</button>` : `<span class="text-slate-300 text-xs">—</span>`}
+    </td></tr>`;
+}
+function tableComptesHTML(liste, messageVide) {
+  if (!liste.length) return `<p class="text-sm text-slate-400 py-2">${messageVide}</p>`;
+  return `<div class="overflow-auto mt-2">
+    <table class="w-full text-sm min-w-[820px]">
+      <thead><tr class="text-left text-[11px] text-slate-400 uppercase tracking-wider border-b"><th class="py-2">Compte</th><th>Rôle</th><th>Détails (classes · matières)</th><th>Statut</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>${liste.map(ligneCompteHTML).join("")}</tbody>
+    </table>
+  </div>`;
+}
 function rendreAdmin() {
   const zone = $("#section-admin");
   if (!estAdmin()) { zone.innerHTML = `<div class="card p-6">Réservé à l'administrateur.</div>`; return; }
@@ -2139,24 +2160,12 @@ function rendreAdmin() {
     </div>
 
     <div class="card p-5 mt-5">
-      <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Les enseignants choisissent ensuite leurs classes et matières (2 max par classe) dans leur espace.</span></div>
-      <div class="overflow-auto mt-3">
-      <table class="w-full text-sm min-w-[820px]">
-        <thead><tr class="text-left text-[11px] text-slate-400 uppercase tracking-wider border-b"><th class="py-2">Compte</th><th>Rôle</th><th>Détails (classes · matières)</th><th>Statut</th><th class="text-right">Actions</th></tr></thead>
-        <tbody>
-        ${comptes.map(p => `<tr class="border-b table-row">
-          <td class="py-3 pr-3"><p class="font-bold">${esc(p.nom || "")} ${p.email === SB_ADMIN_EMAIL ? `<span class="badge bg-amber-100 text-amber-700">ADMIN</span>` : ""}</p><p class="text-[11px] text-slate-400">${esc(p.email || p.code || "")}</p></td>
-          <td><span class="badge ${p.role === "enseignant" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}">${p.role === "enseignant" ? "Enseignant" : "Élève"}</span></td>
-          <td class="text-[13px]">${detailsCompte(p)}</td>
-          <td><span class="badge ${statutProfil(p) === "suspendu" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}">${statutProfil(p) === "suspendu" ? "Suspendu" : "Actif"}</span></td>
-          <td class="text-right whitespace-nowrap">
-            ${p.email !== SB_ADMIN_EMAIL ? `<button class="pill !py-1.5 text-xs" onclick="modifierCompte('${p.id}')">✏️ Modifier</button>
-            <button class="pill !py-1.5 text-xs" onclick="basculerStatut('${p.id}')">${statutProfil(p) === "suspendu" ? "▶️ Réactiver" : "⏸️ Suspendre"}</button>
-            <button class="pill !py-1.5 text-xs !text-red-500" onclick="supprimerCompte('${p.id}')">🗑️</button>` : `<span class="text-slate-300 text-xs">—</span>`}
-          </td></tr>`).join("") || `<tr><td colspan="5" class="py-4 text-slate-400">Aucun compte.</td></tr>`}
-        </tbody>
-      </table>
-      </div>
+      <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Enseignants à part, élèves regroupés par classe.</span></div>
+      <h4 class="font-extrabold text-[15px] mt-4">🧑‍🏫 Enseignants (${comptes.filter(x => x.role === "enseignant").length})</h4>
+      ${tableComptesHTML(comptes.filter(x => x.role === "enseignant"), "Aucun enseignant.")}
+      ${ETAT.classesAll.map(c => ({ cle: c.cle, nom: c.nom, liste: comptes.filter(x => x.role !== "enseignant" && x.classe === c.cle) }))
+        .concat((() => { const sc = comptes.filter(x => x.role !== "enseignant" && !ETAT.classesAll.some(c => c.cle === x.classe)); return sc.length ? [{ cle: "", nom: "Sans classe (ou classe supprimée)", liste: sc }] : []; })())
+        .map(g => `<h4 class="font-extrabold text-[15px] mt-5">🎓 Élèves — ${esc(g.nom)} (${g.liste.length})</h4>${tableComptesHTML(g.liste, "Aucun élève dans cette classe.")}`).join("")}
     </div>
 
     ${emploisAdminHTML()}
