@@ -4,13 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Espace enseignant · 3SI1 &amp; 4SI2 — STI 2026-2027</title>
-  <meta name="description" content="Espace enseignant : ajoutez des devoirs, des notes et des dépôts au site." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234338ca'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3ED%3C/text%3E%3C/svg%3E" />
+  <meta name="description" content="Espace enseignant : ajoutez des devoirs, des notes, des dépôts et des annonces au site." />
+  <link rel="icon" type="image/png" href="favicon-32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#f43f5e" />
+  <script>(function(){var t=localStorage.getItem('theme');if(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t)document.documentElement.dataset.theme=t;})()</script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body data-page="admin">
 
   <section class="page-hero">
+    <div class="blob blob-1"></div>
     <div class="container">
       <h1>🔐 Espace enseignant</h1>
       <p class="sub">Remplissez un formulaire, copiez le bloc généré et collez-le dans le fichier de données correspondant sur GitHub. C'est tout !</p>
@@ -25,14 +30,14 @@
         <div class="section-head">
           <div>
             <h2>📖 Mode d'emploi</h2>
-            <p>La même méthode pour tous les ajouts (devoir, note, dépôt).</p>
+            <p>La même méthode pour tous les ajouts (devoir, note, dépôt, annonce).</p>
           </div>
         </div>
         <div class="steps mb-3">
           <div class="step">
             <div>
               <h4>Remplissez le formulaire ci-dessous</h4>
-              <p>Choisissez l'onglet concerné (devoir, note ou dépôt) et remplissez les champs.</p>
+              <p>Choisissez la section concernée et remplissez les champs.</p>
             </div>
           </div>
           <div class="step">
@@ -53,7 +58,9 @@
                 Fichiers :
                 <a class="lien-edition" data-fichier="devoirs.js" href="#">data/devoirs.js</a> ·
                 <a class="lien-edition" data-fichier="notes.js" href="#">data/notes.js</a> ·
-                <a class="lien-edition" data-fichier="eleves.js" href="#">data/eleves.js</a>
+                <a class="lien-edition" data-fichier="annonces.js" href="#">data/annonces.js</a> ·
+                <a class="lien-edition" data-fichier="eleves.js" href="#">data/eleves.js</a> ·
+                <a class="lien-edition" data-fichier="vie.js" href="#">data/vie.js</a>
               </p>
             </div>
           </div>
@@ -103,6 +110,44 @@
             <div class="copy-row">
               <button class="btn btn-outline btn-sm btn-copy">📋 Copier</button>
               <a class="btn btn-ghost btn-sm lien-edition" data-fichier="devoirs.js" href="#">✏️ Ouvrir data/devoirs.js</a>
+              <span class="copy-feedback">Copié ✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Générateur d'annonce -->
+        <div class="card mb-3">
+          <h2 class="card-title">📣 Ajouter une annonce</h2>
+          <p class="text-muted">Le bloc généré s'ajoute dans <code>data/annonces.js</code> (tableau <code>window.ANNONCES</code>).</p>
+          <div class="form-grid mt-2">
+            <div class="field full">
+              <label for="admin-anonce-titre">Titre de l'annonce *</label>
+              <input type="text" id="admin-anonce-titre" placeholder="Ex. : Interrogation lundi prochain" />
+            </div>
+            <div class="field">
+              <label for="admin-anonce-date">Date de publication</label>
+              <input type="date" id="admin-anonce-date" />
+            </div>
+            <div class="field">
+              <label for="admin-anonce-importante">Épingler cette annonce</label>
+              <label style="display:flex; align-items:center; gap:.6rem; font-weight:600; font-size:.95rem; padding-top:.35rem">
+                <input type="checkbox" id="admin-anonce-importante" style="width:20px; height:20px;" />
+                Afficher en priorité (📌)
+              </label>
+            </div>
+            <div class="field full">
+              <label for="admin-anonce-texte">Texte de l'annonce</label>
+              <textarea id="admin-anonce-texte" placeholder="Le contenu de l'annonce…"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btn-gen-anonce">🧾 Générer le bloc</button>
+          </div>
+          <div id="zone-anonce" class="hidden">
+            <div class="code-block"></div>
+            <div class="copy-row">
+              <button class="btn btn-outline btn-sm btn-copy">📋 Copier</button>
+              <a class="btn btn-ghost btn-sm lien-edition" data-fichier="annonces.js" href="#">✏️ Ouvrir data/annonces.js</a>
               <span class="copy-feedback">Copié ✓</span>
             </div>
           </div>
@@ -194,13 +239,15 @@
           </div>
         </div>
 
-        <!-- Personnel -->
+        <!-- Personnalisation -->
         <div class="card">
           <h2 class="card-title">⚙️ Personnalisation</h2>
           <p class="text-muted">Votre nom, votre e-mail, le titre du site et les classes se modifient dans
             <a class="lien-edition" data-fichier="config.js" href="#">data/config.js</a>.
-            La liste des élèves et de leurs codes est dans
-            <a class="lien-edition" data-fichier="eleves.js" href="#">data/eleves.js</a>.</p>
+            Les élèves et leurs codes sont dans
+            <a class="lien-edition" data-fichier="eleves.js" href="#">data/eleves.js</a>.
+            L'emploi du temps, les ressources et les règles sont dans
+            <a class="lien-edition" data-fichier="vie.js" href="#">data/vie.js</a>.</p>
         </div>
 
       </div>
@@ -211,6 +258,8 @@
   <script src="data/devoirs.js"></script>
   <script src="data/eleves.js"></script>
   <script src="data/notes.js"></script>
+  <script src="data/annonces.js"></script>
+  <script src="data/vie.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

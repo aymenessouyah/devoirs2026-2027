@@ -1,0 +1,16 @@
+{
+  "name": "3SI1 & 4SI2 — Devoirs · STI",
+  "short_name": "Devoirs 3SI/4SI",
+  "description": "Devoirs, dépôts et notes des classes 3ème SI 1 et 4ème SI 2 — matière STI, année 2026-2027.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#f43f5e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

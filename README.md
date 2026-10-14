@@ -4,22 +4,22 @@ Site de gestion des devoirs pour les classes **3ème SI 1** et **4ème SI 2** �
 année scolaire **2026-2027**. Hébergé gratuitement sur **GitHub Pages**.
 
 **🚀 Phase 1** : publication de devoirs + dépôt par lien + suivi des notes avec code élève.
-**🔮 Phase 2 (prévue)** : comptes élèves avec connexion et dépôt de fichiers (Firebase/Supabase).
+**✨ Version 2** : design « Dynamique Coloré » 🎨, mode sombre 🌙, calendrier 🗓️, vie de classe 🏫,
+graphiques & relevé imprimable 📊, application installable (PWA) 📱.
+**🔮 Phase 3 (prévue)** : comptes élèves avec connexion et dépôt de fichiers (Firebase/Supabase).
 
 ---
 
-## 🌐 Publier le site sur GitHub Pages
+## 🌐 Mettre le site à jour sur GitHub Pages
 
-1. Poussez ce dossier dans le dépôt `aymenessouyah/devoirs2026-2027` :
-   ```bash
-   git remote add origin https://github.com/aymenessouyah/devoirs2026-2027.git
-   git branch -M main
-   git push -u origin main
-   ```
-   *(ou glissez-déposez les fichiers directement sur github.com dans votre dépôt)*
-2. Sur GitHub : **Settings → Pages** → Source : **Deploy from a branch** → branche **main**, dossier **/ (root)** → **Save**.
-3. Dans la minute, le site est en ligne sur :
+1. Récupérez les fichiers de cette version (le dossier `devoirs2026-2027` ou le fichier ZIP).
+2. Sur GitHub, dans votre dépôt : **Add file → Upload files**, puis glissez-déposez
+   **tous les fichiers du dossier** (acceptez le remplacement des fichiers existants) → **Commit**.
+3. Le site est mis à jour en ~1 minute sur :
    **https://aymenessouyah.github.io/devoirs2026-2027/**
+
+> 💡 Les visiteurs qui ont installé l'application verront la nouvelle version au prochain
+> chargement. Si vous modifiez le site plus tard, pensez à changer `VERSION` dans `sw.js`.
 
 ---
 
@@ -27,44 +27,49 @@ année scolaire **2026-2027**. Hébergé gratuitement sur **GitHub Pages**.
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | Accueil (stats, derniers devoirs, accès classes) |
+| `index.html` | Accueil (stats, annonces, derniers devoirs, classes) |
 | `devoirs.html` | Liste de tous les devoirs + filtres (classe, statut, recherche) |
-| `classe-3si1.html` | Espace de la classe 3ème SI 1 (devoirs, échéances, moyennes) |
+| `calendrier.html` | 🆕 Calendrier mensuel des échéances |
+| `vie-de-classe.html` | 🆕 Annonces, emploi du temps, ressources, règles |
+| `classe-3si1.html` | Espace de la classe 3ème SI 1 |
 | `classe-4si2.html` | Espace de la classe 4ème SI 2 |
 | `depot.html` | Dépôt de devoirs : génère un message à envoyer à l'enseignant |
-| `suivi.html` | Espace élève : devoirs, notes, appréciations, moyenne (avec code) |
-| `admin.html` | Espace enseignant : générateurs de devoirs / notes / dépôts |
+| `suivi.html` | Espace élève : notes, progression, graphique, relevé imprimable |
+| `admin.html` | Espace enseignant : générateurs (devoirs, notes, dépôts, annonces) |
 | `data/config.js` | ⚙️ Titre, matière, nom et e-mail de l'enseignant, classes |
 | `data/devoirs.js` | 📌 **Liste des devoirs** |
+| `data/annonces.js` | 📣 **Annonces du cours** |
 | `data/eleves.js` | 👨‍🎓 **Liste des élèves + codes personnels** |
 | `data/notes.js` | 🎯 **Notes et dépôts (rendus)** |
-| `css/style.css` | Design (responsive, mobile + desktop) |
+| `data/vie.js` | 🏫 **Emploi du temps, ressources, règles** |
+| `css/style.css` | Design « Dynamique Coloré » + mode sombre |
 | `js/app.js` | Logique du site |
+| `sw.js` + `manifest.webmanifest` | PWA : installation et mode hors-ligne |
+| `icon-*.png` | Icônes de l'application |
 
-> 💡 **Astuce** : une page **admin.html** intégrée vous génère les blocs de code à copier-coller !
+> 💡 **Astuce** : la page **admin.html** vous génère les blocs de code à copier-coller !
 > Il suffit d'ouvrir le fichier correspondant sur GitHub, de coller le bloc et d'enregistrer.
 
 ---
 
-## 📌 Ajouter un devoir
+## 📌 Ajouter un devoir / une annonce / une note
 
-1. Ouvrez **admin.html** → « Ajouter un devoir » → remplissez → **Générer** → **Copier**.
-2. Sur GitHub, ouvrez [`data/devoirs.js`](data/devoirs.js) (clic sur le crayon ✏️).
-3. Collez le bloc **juste après le `[`** du tableau `window.DEVOIRS`.
+1. Ouvrez **admin.html** → choisissez le formulaire → remplissez → **Générer** → **Copier**.
+2. Sur GitHub, ouvrez le fichier indiqué (clic sur le crayon ✏️).
+3. Collez le bloc **juste après le `[`** du tableau concerné.
 4. Cliquez **Commit changes** → le site se met à jour en ~1 minute.
 
-*(Vous pouvez aussi rédiger le bloc directement dans le fichier, sans passer par admin.html.)*
+## 🌙 Mode sombre & 📱 Application
 
-## 🎯 Ajouter une note / 📥 enregistrer un dépôt
-
-Même méthode avec les générateurs « Ajouter une note » et « Enregistrer un dépôt »
-de **admin.html**, dans le fichier [`data/notes.js`](data/notes.js).
+- Le bouton 🌙/☀️ en haut à droite bascule entre le thème clair et le thème sombre
+  (le choix est mémorisé, et suit la préférence du téléphone par défaut).
+- Sur mobile, le site est **installable comme une application**
+  (menu du navigateur → « Ajouter à l'écran d'accueil »). Il fonctionne même hors-ligne.
 
 ## 👨‍🎓 Gérer les élèves
 
 Dans [`data/eleves.js`](data/eleves.js) : chaque élève a un **code unique** (ex. `3SI1-01`)
-à lui communiquer en début d'année. C'est avec ce code qu'il consulte ses notes
-sur la page **Mon suivi**. Pensez à remplacer les élèves d'exemple par vos vrais élèves.
+à lui communiquer en début d'année. Pensez à remplacer les élèves d'exemple par vos vrais élèves.
 
 ## ⚙️ Personnaliser le site
 
@@ -77,14 +82,11 @@ email: "vous@exemple.com",   // votre e-mail (cible des dépôts)
 
 ---
 
-## 🔮 Roadmap — Phase 2 (évolutif)
-
-Le code est prévu pour accueillir plus tard, sans tout refaire :
+## 🔮 Roadmap — Phase 3 (évolutif)
 
 - 🔐 **Connexion élèves** (comptes, plus besoin de codes)
 - 📤 **Dépôt de fichiers direct** sur le site (Firebase Storage / Supabase)
 - 📊 **Notes en temps réel** et bulletins calculés automatiquement
-- 📅 **Calendrier** et rappels d'échéances
 - 📱 **Notifications** (nouveau devoir publié)
 
 ---

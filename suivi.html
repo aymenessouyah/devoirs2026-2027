@@ -4,16 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mon suivi · 3SI1 &amp; 4SI2 — STI 2026-2027</title>
-  <meta name="description" content="Consultez vos devoirs rendus, vos notes et votre moyenne avec votre code personnel." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234338ca'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3ED%3C/text%3E%3C/svg%3E" />
+  <meta name="description" content="Consultez vos devoirs rendus, vos notes, votre progression et votre moyenne avec votre code personnel." />
+  <link rel="icon" type="image/png" href="favicon-32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#f43f5e" />
+  <script>(function(){var t=localStorage.getItem('theme');if(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t)document.documentElement.dataset.theme=t;})()</script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body data-page="suivi">
 
   <section class="page-hero">
+    <div class="blob blob-1"></div>
     <div class="container">
       <h1>🎯 Mon suivi</h1>
-      <p class="sub">Vos devoirs, vos notes et votre moyenne — avec votre code personnel donné par votre enseignant.</p>
+      <p class="sub">Vos devoirs, vos notes, votre progression et un relevé imprimable — avec votre code personnel.</p>
     </div>
   </section>
 
@@ -49,11 +54,21 @@
                 <h2 id="suivi-nom" style="font-size:1.55rem">—</h2>
                 <span class="pill" id="suivi-classe">—</span>
               </div>
-              <button class="btn btn-ghost btn-sm" id="btn-deconnexion">Changer d'élève</button>
+              <div style="display:flex; gap:.65rem; flex-wrap:wrap">
+                <button class="btn btn-secondary btn-sm" id="btn-imprimer">🖨️ Imprimer mon relevé</button>
+                <button class="btn btn-ghost btn-sm" id="btn-deconnexion">Changer d'élève</button>
+              </div>
             </div>
           </div>
 
           <div class="stat-grid mb-3" id="suivi-resume"></div>
+
+          <div class="card mb-3">
+            <h3 class="card-title">📊 Ma progression</h3>
+            <div class="mt-2" id="suivi-progression"></div>
+          </div>
+
+          <div class="mb-3" id="suivi-graphique"></div>
 
           <div class="section-head">
             <div>
@@ -62,6 +77,9 @@
             </div>
           </div>
           <div id="suivi-tableau"></div>
+
+          <!-- Relevé imprimable (visible uniquement à l'impression) -->
+          <div id="releve" class="releve-print"></div>
         </div>
 
       </div>
@@ -72,6 +90,8 @@
   <script src="data/devoirs.js"></script>
   <script src="data/eleves.js"></script>
   <script src="data/notes.js"></script>
+  <script src="data/annonces.js"></script>
+  <script src="data/vie.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

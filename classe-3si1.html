@@ -4,13 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>3ème SI 1 · Devoirs — STI 2026-2027</title>
-  <meta name="description" content="Espace de la classe 3ème SI 1 : devoirs, échéances et moyennes." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234338ca'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3ED%3C/text%3E%3C/svg%3E" />
+  <meta name="description" content="Espace de la classe 3ème SI 1 : devoirs, échéances, emploi du temps et moyennes." />
+  <link rel="icon" type="image/png" href="favicon-32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#f43f5e" />
+  <script>(function(){var t=localStorage.getItem('theme');if(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t)document.documentElement.dataset.theme=t;})()</script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body data-page="classe" data-classe="3si1">
 
   <section class="page-hero">
+    <div class="blob blob-1"></div>
     <div class="container">
       <p class="hero-kicker">🎓 Classe</p>
       <h1 id="classe-titre">3ème SI 1</h1>
@@ -39,8 +44,21 @@
             <h2>🗓️ Prochaines échéances</h2>
             <p>Les dates limites à venir pour cette classe.</p>
           </div>
+          <a class="btn btn-secondary btn-sm" href="calendrier.html">Voir le calendrier</a>
         </div>
         <div id="classe-planning"></div>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>🕒 Emploi du temps</h2>
+            <p>Les séances de STI de la classe.</p>
+          </div>
+        </div>
+        <div id="classe-horaire"></div>
       </div>
     </section>
 
@@ -61,6 +79,8 @@
   <script src="data/devoirs.js"></script>
   <script src="data/eleves.js"></script>
   <script src="data/notes.js"></script>
+  <script src="data/annonces.js"></script>
+  <script src="data/vie.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -8,7 +8,9 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const MOIS_LONG = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+const JOURS_COURTS = ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"];
 
 function parseDate(iso) {
   const [y, m, d] = iso.split("-").map(Number);
@@ -64,6 +66,10 @@ const DEVOIRS = window.DEVOIRS || [];
 const ELEVES = window.ELEVES || [];
 const NOTES = window.NOTES || [];
 const RENDUS = window.RENDUS || [];
+const ANNONCES = window.ANNONCES || [];
+const EMPLOI = window.EMPLOI || {};
+const RESSOURCES = window.RESSOURCES || [];
+const REGLES = window.REGLES || [];
 
 function nomClasse(cle) {
   return (CFG.classes && CFG.classes[cle]) || cle;
@@ -102,14 +108,12 @@ function typeLabel(t) {
   return { exercices: "Exercices", lecon: "Leçon", projet: "Projet", tp: "TP", interro: "Interrogation" }[t] || t;
 }
 
-/* Statut « public » d'un devoir */
 function statutDevoir(d) {
   if (d.corrige) return { key: "corrigé", label: "Corrigé", cls: "badge-corrigé" };
   if (joursRestants(d.echeance) < 0) return { key: "attente", label: "En attente de correction", cls: "badge-attente" };
   return { key: "afaire", label: "À faire", cls: "badge-afaire" };
 }
 
-/* Statut personnalisé pour un élève */
 function statutEleve(d, eleveId) {
   if (getNote(eleveId, d.id)) return { key: "note", label: "Noté", cls: "badge-note" };
   if (estRendu(eleveId, d.id)) return { key: "rendu", label: "Rendu", cls: "badge-rendu" };
@@ -142,6 +146,8 @@ function classeNoteCls(val) {
 const ICONS = {
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
   menu: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
@@ -153,10 +159,60 @@ const ICONS = {
   copy: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
   inbox: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
   alert: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
-  award: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>'
+  award: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
+  megaphone: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+  link: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  print: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+  sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8L20 10.7l-5.3 3.2L12 20l-2.7-6.1L4 10.7l6.1-1.9L12 3z"/></svg>'
 };
 
-/* ---------- Mise en page commune (en-tête + pied de page) ---------- */
+/* ---------- Thème clair / sombre ---------- */
+function initTheme() {
+  const saved = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = saved || (prefersDark ? "dark" : "light");
+  document.documentElement.dataset.theme = theme;
+}
+
+function themeIcon() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  return dark ? ICONS.sun : ICONS.moon;
+}
+
+function toggleTheme() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  const next = dark ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem("theme", next);
+  const btn = $("#theme-toggle");
+  if (btn) {
+    btn.innerHTML = themeIcon();
+    btn.setAttribute("aria-label", next === "dark" ? "Passer en mode clair" : "Passer en mode sombre");
+  }
+}
+
+/* ---------- Animations au défilement ---------- */
+function initReveal() {
+  const els = $$(".reveal");
+  if (!("IntersectionObserver" in window)) {
+    els.forEach((el) => el.classList.add("visible"));
+    return;
+  }
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) {
+          en.target.classList.add("visible");
+          io.unobserve(en.target);
+        }
+      });
+    },
+    { threshold: 0.12 }
+  );
+  els.forEach((el) => io.observe(el));
+}
+
+/* ---------- Mise en page commune ---------- */
 function injectLayout() {
   const page = document.body.dataset.page || "";
   const titre = CFG.titre || "Devoirs";
@@ -165,8 +221,10 @@ function injectLayout() {
   const liens = [
     { key: "accueil", href: "index.html", label: "Accueil" },
     { key: "devoirs", href: "devoirs.html", label: "Devoirs" },
+    { key: "calendrier", href: "calendrier.html", label: "Calendrier" },
     { key: "classe-3si1", href: "classe-3si1.html", label: "3ème SI 1" },
     { key: "classe-4si2", href: "classe-4si2.html", label: "4ème SI 2" },
+    { key: "vie", href: "vie-de-classe.html", label: "Vie de classe" },
     { key: "depot", href: "depot.html", label: "Déposer" },
     { key: "suivi", href: "suivi.html", label: "Mon suivi" },
     { key: "admin", href: "admin.html", label: "Admin" }
@@ -185,6 +243,7 @@ function injectLayout() {
         </a>
         <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">${ICONS.menu}</button>
         <nav class="main-nav" id="main-nav">${nav}</nav>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Changer de thème">${themeIcon()}</button>
       </div>
     </header>`;
 
@@ -197,28 +256,28 @@ function injectLayout() {
         </div>
         <div class="footer-links">
           <a href="devoirs.html">Devoirs</a>
-          <a href="depot.html">Déposer un devoir</a>
+          <a href="calendrier.html">Calendrier</a>
+          <a href="vie-de-classe.html">Vie de classe</a>
+          <a href="depot.html">Déposer</a>
           <a href="suivi.html">Mon suivi</a>
           <a href="admin.html">Espace enseignant</a>
         </div>
-        <div class="muted">Publié avec GitHub Pages</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱</div>
       </div>
     </footer>`;
 
   document.body.insertAdjacentHTML("afterbegin", header);
   document.body.insertAdjacentHTML("beforeend", footer);
 
-  const toggle = $("#nav-toggle");
-  const navEl = $("#main-nav");
-  if (toggle && navEl) {
-    toggle.addEventListener("click", () => {
-      const ouvert = navEl.classList.toggle("open");
-      toggle.setAttribute("aria-expanded", String(ouvert));
-    });
-  }
+  $("#nav-toggle")?.addEventListener("click", () => {
+    const navEl = $("#main-nav");
+    const ouvert = navEl.classList.toggle("open");
+    $("#nav-toggle").setAttribute("aria-expanded", String(ouvert));
+  });
 
-  const h1 = $("title");
-  if (h1 && CFG.titre) document.title = document.title || `${titre}`;
+  $("#theme-toggle")?.addEventListener("click", toggleTheme);
+
+  if (CFG.titre) document.title = document.title || titre;
 }
 
 /* ---------- Composant : carte de devoir ---------- */
@@ -227,22 +286,25 @@ function carteDevoirHTML(d, opts = {}) {
   const eleveId = opts.eleveId;
   const note = eleveId ? getNote(eleveId, d.id) : null;
   const classeNom = nomClasse(d.classe);
-  const j = joursRestants(d.echeance);
 
   let bandeauNote = "";
   if (note) {
-    const val = (note.note / note.sur) * 20;
     bandeauNote = `
-      <div class="pill" style="border-color:#bbf7d0;background:#f0fdf4;color:#166534">
+      <div class="pill" style="border-color:var(--green);background:var(--soft-green)">
         ${ICONS.award} Ma note : <strong>&nbsp;${fmtNote(note.note)}/${fmtNote(note.sur)}</strong>
       </div>`;
   }
 
+  const actions = d.corrige
+    ? `<a class="btn btn-ghost btn-sm" href="suivi.html">Voir mon suivi</a>`
+    : `<a class="btn btn-primary btn-sm" href="depot.html?devoir=${encodeURIComponent(d.id)}">${ICONS.upload} Déposer ce devoir</a>
+       <a class="btn btn-ghost btn-sm" href="suivi.html">Voir mon suivi</a>`;
+
   return `
-    <article class="devoir-card">
+    <article class="devoir-card reveal" data-type="${esc(d.type)}">
       <div class="devoir-top">
         <div>
-          <span class="devoir-type">${TYPE_ICONS[d.type] || "📄"} ${esc(typeLabel(d.type))}</span>
+          <span class="devoir-type t-${esc(d.type)}">${TYPE_ICONS[d.type] || "📄"} ${esc(typeLabel(d.type))}</span>
           <h3 class="mt-1">${esc(d.titre)}</h3>
         </div>
         <span class="badge ${st.cls}">${st.label}</span>
@@ -254,10 +316,7 @@ function carteDevoirHTML(d, opts = {}) {
         <span class="item">${ICONS.calendar} Échéance : ${fmtDate(d.echeance)} <em style="font-style:normal;opacity:.75">(${echeanceTexte(d.echeance)})</em></span>
         <span class="item">${ICONS.clock} Publié le ${fmtDateCourte(d.date_ajout)}</span>
       </div>
-      <div class="devoir-actions">
-        <a class="btn btn-primary btn-sm" href="depot.html?devoir=${encodeURIComponent(d.id)}">${ICONS.upload} Déposer ce devoir</a>
-        <a class="btn btn-ghost btn-sm" href="suivi.html">Voir mon suivi</a>
-      </div>
+      <div class="devoir-actions">${actions}</div>
     </article>`;
 }
 
@@ -282,6 +341,21 @@ function trierDevoirs(list) {
   });
 }
 
+/* ---------- Composant : annonce ---------- */
+function carteAnnonceHTML(a, compact = false) {
+  return `
+    <article class="anonce-card reveal ${a.important ? "importante" : ""}">
+      ${a.important ? `<span class="anonce-pin">📌 Épinglée</span>` : ""}
+      <div class="anonce-date">${fmtDate(a.date)}</div>
+      <h3>${esc(a.titre)}</h3>
+      ${compact ? "" : `<p>${esc(a.texte)}</p>`}
+    </article>`;
+}
+
+function trierAnnonces(list) {
+  return [...list].sort((a, b) => parseDate(b.date) - parseDate(a.date));
+}
+
 /* ============================================================
    PAGES
    ============================================================ */
@@ -293,7 +367,6 @@ function renderAccueil() {
   const prochain = trierDevoirs(afaire)[0];
   const derniers = trierDevoirs(DEVOIRS).slice(0, 6);
 
-  $("#stats")?.replaceChildren();
   const stats = $("#stats");
   if (stats) {
     stats.innerHTML = `
@@ -305,14 +378,23 @@ function renderAccueil() {
   const prochainEl = $("#prochaine-echeance");
   if (prochainEl) {
     prochainEl.innerHTML = prochain
-      ? `<div class="callout callout-info">
+      ? `<div class="callout callout-info reveal">
            ${ICONS.clock}
            <div>
              <strong>Prochaine échéance : ${esc(prochain.titre)}</strong> — ${nomClasse(prochain.classe)}<br/>
              ${fmtDate(prochain.echeance)} <em style="font-style:normal;opacity:.8">(${echeanceTexte(prochain.echeance)})</em>
+             · <a href="calendrier.html"><strong>Voir le calendrier →</strong></a>
            </div>
          </div>`
       : "";
+  }
+
+  const annoncesEl = $("#dernieres-annonces");
+  if (annoncesEl) {
+    const dernAnnonces = trierAnnonces(ANNONCES).slice(0, 3);
+    annoncesEl.innerHTML = dernAnnonces.length
+      ? `<div class="grid grid-3">${dernAnnonces.map((a) => carteAnnonceHTML(a)).join("")}</div>`
+      : `<div class="empty">${ICONS.megaphone}<p>Aucune annonce pour le moment.</p></div>`;
   }
 
   const derniersEl = $("#derniers-devoirs");
@@ -325,7 +407,7 @@ function renderAccueil() {
         const nb = DEVOIRS.filter((d) => d.classe === cle).length;
         const nbEleves = ELEVES.filter((e) => e.classe === cle).length;
         return `
-          <a class="class-tile" href="classe-${cle}.html">
+          <a class="class-tile reveal" href="classe-${cle}.html">
             <span class="cl-badge">${esc(cle.toUpperCase())}</span>
             <h3>${esc(nom)}</h3>
             <p>${nbEleves} élèves · ${nb} devoir${nb > 1 ? "s" : ""} en ligne</p>
@@ -335,7 +417,7 @@ function renderAccueil() {
   }
 }
 
-/* ---------- Page Devoirs (filtres) ---------- */
+/* ---------- Page Devoirs ---------- */
 function renderDevoirs() {
   const selClasse = $("#filtre-classe");
   const selStatut = $("#filtre-statut");
@@ -394,12 +476,11 @@ function renderClasse() {
   const liste = $("#classe-devoirs");
   if (liste) liste.innerHTML = listeDevoirsHTML(devoirs);
 
-  /* Planning : prochaines échéances */
   const planning = $("#classe-planning");
   if (planning) {
     const aVenir = devoirs.filter((d) => joursRestants(d.echeance) >= 0 && !d.corrige);
     planning.innerHTML = aVenir.length
-      ? `<div class="table-wrap"><table>
+      ? `<div class="table-wrap reveal"><table>
            <thead><tr><th>Devoir</th><th>Échéance</th><th>Restant</th><th>Statut</th></tr></thead>
            <tbody>${aVenir
              .map((d) => {
@@ -416,12 +497,11 @@ function renderClasse() {
       : `<div class="empty">${ICONS.calendar}<p>Aucune échéance à venir pour cette classe.</p></div>`;
   }
 
-  /* Moyennes de classe par devoir corrigé */
   const moyennes = $("#classe-moyennes");
   if (moyennes) {
     const avecNotes = devoirs.filter((d) => notesDuDevoir(d.id).length > 0);
     moyennes.innerHTML = avecNotes.length
-      ? `<div class="table-wrap"><table>
+      ? `<div class="table-wrap reveal"><table>
            <thead><tr><th>Devoir</th><th>Notes mises</th><th>Moyenne de la classe</th></tr></thead>
            <tbody>${avecNotes
              .map((d) => {
@@ -435,6 +515,198 @@ function renderClasse() {
              .join("")}</tbody>
          </table></div>`
       : `<div class="empty">${ICONS.award}<p>Les moyennes apparaîtront ici dès la première correction.</p></div>`;
+  }
+
+  const horaire = $("#classe-horaire");
+  if (horaire) horaire.innerHTML = emploiHTML(cle);
+}
+
+/* ---------- Emploi du temps ---------- */
+function emploiHTML(cle) {
+  const seances = (EMPLOI[cle] || []).slice();
+  if (!seances.length) {
+    return `<div class="empty">${ICONS.clock}<p>L'emploi du temps sera publié prochainement.</p></div>`;
+  }
+  const ordre = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  seances.sort((a, b) => ordre.indexOf(a.jour) - ordre.indexOf(b.jour) || a.debut.localeCompare(b.debut));
+
+  const parJour = {};
+  seances.forEach((s) => {
+    (parJour[s.jour] = parJour[s.jour] || []).push(s);
+  });
+
+  return ordre
+    .filter((j) => parJour[j])
+    .map(
+      (j) => `
+      <div class="horaire-jour reveal">
+        <h4>${j}</h4>
+        ${parJour[j]
+          .map(
+            (s) => `
+          <div class="horaire-cours">
+            <span class="horaire-heure">${s.debut} – ${s.fin}</span>
+            <span class="intitule">${esc(s.intitule)}</span>
+            <span class="salle">📍 ${esc(s.salle)}</span>
+          </div>`
+          )
+          .join("")}
+      </div>`
+    )
+    .join("");
+}
+
+/* ---------- Page Vie de classe ---------- */
+function renderVie() {
+  /* Annonces */
+  const annoncesEl = $("#vie-annonces");
+  if (annoncesEl) {
+    const list = trierAnnonces(ANNONCES);
+    annoncesEl.innerHTML = list.length
+      ? list.map((a) => carteAnnonceHTML(a)).join("")
+      : `<div class="empty">${ICONS.megaphone}<p>Aucune annonce pour le moment.</p></div>`;
+  }
+
+  /* Emploi du temps (onglets) */
+  const emploiEl = $("#vie-emploi");
+  if (emploiEl) {
+    const classes = Object.keys(CFG.classes || {});
+    const onglets = classes
+      .map((cle, i) => `<button class="btn ${i === 0 ? "btn-secondary" : "btn-ghost"} btn-sm onglet-emploi" data-cle="${cle}">${esc(nomClasse(cle))}</button>`)
+      .join(" ");
+    emploiEl.innerHTML = `
+      <div class="form-actions" style="margin:0 0 1.15rem">${onglets}</div>
+      <div id="vie-emploi-zone">${emploiHTML(classes[0])}</div>`;
+
+    $$(".onglet-emploi", emploiEl).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        $$(".onglet-emploi", emploiEl).forEach((b) => b.classList.replace("btn-secondary", "btn-ghost"));
+        btn.classList.replace("btn-ghost", "btn-secondary");
+        $("#vie-emploi-zone").innerHTML = emploiHTML(btn.dataset.cle);
+      });
+    });
+  }
+
+  /* Ressources */
+  const resEl = $("#vie-ressources");
+  if (resEl) {
+    resEl.innerHTML = RESSOURCES.length
+      ? `<div class="grid grid-3">${RESSOURCES
+          .map(
+            (r) => `
+          <a class="ressource-card reveal" href="${esc(r.url)}" target="_blank" rel="noopener">
+            <div class="ressource-pastille c-${esc(r.couleur || "violet")}">${ICONS.link}</div>
+            <h3>${esc(r.titre)}</h3>
+            <p>${esc(r.desc)}</p>
+            <span class="url">Ouvrir le lien ↗</span>
+          </a>`
+          )
+          .join("")}</div>`
+      : `<div class="empty">${ICONS.link}<p>Les ressources utiles seront ajoutées ici.</p></div>`;
+  }
+
+  /* Règles */
+  const reglesEl = $("#vie-regles");
+  if (reglesEl) {
+    reglesEl.innerHTML = REGLES.length
+      ? REGLES.map(
+          (r, i) => `
+        <div class="regle-item reveal">
+          <span class="regle-num">${i + 1}</span>
+          <div>${esc(r)}</div>
+        </div>`
+        ).join("")
+      : `<div class="empty">${ICONS.info}<p>Les règles du cours seront affichées ici.</p></div>`;
+  }
+}
+
+/* ---------- Page Calendrier ---------- */
+function renderCalendrier() {
+  const grid = $("#cal-grid");
+  const titre = $("#cal-titre");
+  if (!grid) return;
+
+  const auj = new Date();
+  let annee = auj.getFullYear();
+  let mois = auj.getMonth();
+
+  function dessiner() {
+    if (titre) titre.textContent = `${MOIS_LONG[mois]} ${annee}`;
+
+    const premier = new Date(annee, mois, 1);
+    /* Lundi = 1er colonne */
+    let debut = (premier.getDay() + 6) % 7;
+    const nbJours = new Date(annee, mois + 1, 0).getDate();
+
+    const evts = DEVOIRS.filter((d) => {
+      const dt = parseDate(d.echeance);
+      return dt.getFullYear() === annee && dt.getMonth() === mois;
+    });
+
+    let html = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"]
+      .map((j) => `<div class="cal-jour-nom">${j}</div>`)
+      .join("");
+
+    for (let i = 0; i < debut; i++) html += `<div class="cal-case vide"></div>`;
+
+    for (let jour = 1; jour <= nbJours; jour++) {
+      const iso = `${annee}-${String(mois + 1).padStart(2, "0")}-${String(jour).padStart(2, "0")}`;
+      const estAujourdhui = iso === todayISO();
+      const duJour = evts.filter((d) => d.echeance === iso);
+      html += `
+        <div class="cal-case ${estAujourdhui ? "aujourdhui" : ""}">
+          <div class="cal-num">${jour}</div>
+          ${duJour
+            .map(
+              (d) =>
+                `<button class="cal-event e-${esc(d.classe)}" data-id="${esc(d.id)}" title="${esc(d.titre)}">${esc(d.titre)}</button>`
+            )
+            .join("")}
+        </div>`;
+    }
+
+    const reste = (7 - ((debut + nbJours) % 7)) % 7;
+    for (let i = 0; i < reste; i++) html += `<div class="cal-case vide"></div>`;
+
+    grid.innerHTML = html;
+
+    $$(".cal-event", grid).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        location.href = `devoirs.html?q=${encodeURIComponent(getDevoir(btn.dataset.id)?.titre || "")}`;
+      });
+    });
+  }
+
+  $("#cal-prev")?.addEventListener("click", () => {
+    mois--;
+    if (mois < 0) { mois = 11; annee--; }
+    dessiner();
+  });
+
+  $("#cal-next")?.addEventListener("click", () => {
+    mois++;
+    if (mois > 11) { mois = 0; annee++; }
+    dessiner();
+  });
+
+  dessiner();
+
+  /* Liste des prochaines échéances */
+  const liste = $("#cal-liste");
+  if (liste) {
+    const aVenir = trierDevoirs(DEVOIRS.filter((d) => joursRestants(d.echeance) >= 0 && !d.corrige));
+    liste.innerHTML = aVenir.length
+      ? aVenir
+          .map(
+            (d) => `
+        <div class="horaire-cours reveal" style="border-left-color:${d.classe === "3si1" ? "var(--rose)" : "var(--cyan)"}">
+          <span class="horaire-heure" style="background:${d.classe === "3si1" ? "var(--soft-rose);color:var(--rose)" : "var(--soft-cyan);color:#0e7490"}">${fmtDateCourte(d.echeance)}</span>
+          <span class="intitule">${esc(d.titre)} <span class="text-muted" style="font-weight:400">(${esc(nomClasse(d.classe))})</span></span>
+          <span class="salle">${echeanceTexte(d.echeance)}</span>
+        </div>`
+          )
+          .join("")
+      : `<div class="empty">${ICONS.calendar}<p>Aucune échéance à venir.</p></div>`;
   }
 }
 
@@ -464,8 +736,6 @@ function renderDepot() {
 
   const zone = $("#depot-confirmation");
   const btnGen = $("#btn-generer");
-  const btnCopy = $("#btn-copier");
-  const btnMail = $("#btn-mail");
 
   function construireTexte() {
     const d = getDevoir(selDevoir.value);
@@ -511,27 +781,7 @@ function renderDepot() {
     const mailto = `mailto:${encodeURIComponent(CFG.email || "")}?subject=${encodeURIComponent(info.sujet)}&body=${encodeURIComponent(info.corps)}`;
     $("#btn-mail-2")?.setAttribute("href", mailto);
 
-    $("#btn-copier-2")?.addEventListener("click", () => {
-      copierTexte(info.corps);
-    });
-  });
-
-  btnCopy?.addEventListener("click", () => {
-    const info = construireTexte();
-    if (info) copierTexte(info.corps);
-  });
-
-  btnMail?.addEventListener("click", (ev) => {
-    const info = construireTexte();
-    if (!info) {
-      ev.preventDefault();
-      alert("Merci de choisir un devoir et votre nom avant d'envoyer.");
-      return;
-    }
-    const mailto = `mailto:${encodeURIComponent(CFG.email || "")}?subject=${encodeURIComponent(info.sujet)}&body=${encodeURIComponent(info.corps)}`;
-    ev.target.setAttribute("href", mailto);
-    setTimeout(() => { window.location.href = mailto; }, 50);
-    ev.preventDefault();
+    $("#btn-copier-2")?.addEventListener("click", () => copierTexte(info.corps));
   });
 }
 
@@ -582,10 +832,35 @@ function renderSuivi() {
     const moy = moyenneEleve(eleveId);
     const nbNotes = NOTES.filter((n) => n.eleve === eleveId).length;
     const nbRendus = RENDUS.filter((r) => r.eleve === eleveId).length;
+    const total = devoirs.length || 1;
+    const pctRendus = Math.round((nbRendus / total) * 100);
+    const pctNotes = Math.round((nbNotes / total) * 100);
 
     $("#suivi-nom").textContent = eleve.nom;
     $("#suivi-classe").textContent = nomClasse(eleve.classe);
 
+    /* Progression */
+    const prog = $("#suivi-progression");
+    if (prog) {
+      prog.innerHTML = `
+        <div class="mb-3 progress-block">
+          <p style="font-weight:700; margin-bottom:.55rem">📥 Devoirs rendus</p>
+          <div class="progress"><div class="progress-fill" style="width:0%" data-width="${pctRendus}%"></div></div>
+          <div class="progress-legend"><span>${nbRendus} sur ${devoirs.length} devoirs</span><span>${pctRendus}%</span></div>
+        </div>
+        <div class="progress-block">
+          <p style="font-weight:700; margin-bottom:.55rem">🎯 Devoirs notés</p>
+          <div class="progress"><div class="progress-fill" style="width:0%" data-width="${pctNotes}%; background: var(--grad-2)"></div></div>
+          <div class="progress-legend"><span>${nbNotes} notes reçues</span><span>${pctNotes}%</span></div>
+        </div>`;
+      requestAnimationFrame(() => {
+        $$(".progress-fill", prog).forEach((el) => {
+          el.style.width = el.dataset.width.split("%")[0] + "%";
+        });
+      });
+    }
+
+    /* Statistiques */
     const resume = $("#suivi-resume");
     resume.innerHTML = `
       <div class="stat-card">
@@ -601,12 +876,47 @@ function renderSuivi() {
         <div><div class="num">${nbNotes}</div><div class="label">notes reçues</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon purple">${ICONS.star}</div>
+        <div class="stat-icon rose">${ICONS.star}</div>
         <div>
           <div class="num moyenne-big"><span class="val ${moy !== null ? classeNoteCls(moy) : ""}">${moy !== null ? fmtNote(moy) : "—"}</span><span class="sur">/ 20</span></div>
           <div class="label">moyenne générale</div>
         </div>
       </div>`;
+
+    /* Graphique des notes */
+    const chart = $("#suivi-graphique");
+    if (chart) {
+      const avecNotes = NOTES.filter((n) => n.eleve === eleveId)
+        .map((n) => ({ ...n, devoirInfo: getDevoir(n.devoir) }))
+        .filter((n) => n.devoirInfo)
+        .sort((a, b) => parseDate(a.date) - parseDate(b.date));
+
+      chart.innerHTML = avecNotes.length
+        ? `<div class="chart-box reveal">
+            <h3 class="card-title">📈 Mes notes dans le temps</h3>
+            <p class="text-muted" style="margin-bottom:1.5rem">Chaque barre représente une note ramenée sur 20.</p>
+            <div class="chart-bars">
+              ${avecNotes
+                .map((n) => {
+                  const val = (n.note / n.sur) * 20;
+                  return `
+                  <div class="chart-col">
+                    <div class="chart-bar" style="height:0%" data-height="${Math.max(6, (val / 20) * 100)}%">
+                      <span class="val">${fmtNote(val)}</span>
+                    </div>
+                    <div class="chart-label">${esc(n.devoirInfo.titre)}</div>
+                  </div>`;
+                })
+                .join("")}
+            </div>
+          </div>`
+        : `<div class="empty">${ICONS.star}<p>Votre graphique de notes apparaîtra dès la première note.</p></div>`;
+      requestAnimationFrame(() => {
+        $$(".chart-bar", chart).forEach((el) => {
+          el.style.height = el.dataset.height;
+        });
+      });
+    }
 
     /* Tableau de suivi */
     const corps = devoirs
@@ -627,11 +937,54 @@ function renderSuivi() {
       .join("");
 
     $("#suivi-tableau").innerHTML = devoirs.length
-      ? `<div class="table-wrap"><table>
+      ? `<div class="table-wrap reveal"><table>
           <thead><tr><th>Devoir</th><th>Statut</th><th>Note</th><th>Appréciation</th></tr></thead>
           <tbody>${corps}</tbody>
         </table></div>`
       : `<div class="empty">${ICONS.inbox}<p>Aucun devoir pour votre classe.</p></div>`;
+
+    /* Relevé de notes imprimable */
+    const releve = $("#releve");
+    if (releve) {
+      const lignes = NOTES.filter((n) => n.eleve === eleveId)
+        .map((n) => ({ ...n, devoirInfo: getDevoir(n.devoir) }))
+        .filter((n) => n.devoirInfo)
+        .sort((a, b) => parseDate(a.date) - parseDate(b.date));
+      releve.innerHTML = `
+        <div class="releve-head">
+          <div>
+            <h1>Relevé de notes</h1>
+            <p><strong>${esc(eleve.nom)}</strong> — ${esc(nomClasse(eleve.classe))}</p>
+            <p>${esc(CFG.matiere || "")} · Année scolaire ${esc(CFG.annee || "")}</p>
+          </div>
+          <div class="sceau">
+            ${esc(CFG.prof || "")}<br/>
+            Édité le ${fmtDate(todayISO())}
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Devoir</th><th>Date</th><th>Note</th><th>Appréciation</th></tr>
+          </thead>
+          <tbody>
+            ${lignes
+              .map(
+                (n) => `<tr>
+                <td>${esc(n.devoirInfo.titre)}</td>
+                <td>${fmtDate(n.date)}</td>
+                <td><strong>${fmtNote(n.note)} / ${fmtNote(n.sur)}</strong></td>
+                <td>${esc(n.appreciation || "")}</td>
+              </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+        <div class="moyenne-finale">
+          Moyenne générale : ${moy !== null ? fmtNote(moy) : "—"} / 20
+        </div>`;
+    }
+
+    $("#btn-imprimer")?.addEventListener("click", () => window.print());
 
     $("#btn-deconnexion")?.addEventListener("click", () => {
       localStorage.removeItem("suivi_eleve");
@@ -654,14 +1007,13 @@ function renderSuivi() {
     if (ev.key === "Enter") btnValider?.click();
   });
 
-  /* Session existante ? */
   const connu = localStorage.getItem("suivi_eleve");
   if (connu && getEleve(connu)) afficher(connu);
 }
 
-/* ---------- Page Admin (générateurs de code) ---------- */
+/* ---------- Page Admin ---------- */
 function renderAdmin() {
-  /* Remplissage des listes déroulantes */
+  /* Devoirs */
   const selClasseD = $("#admin-devoir-classe");
   if (selClasseD) {
     selClasseD.innerHTML = Object.entries(CFG.classes || {})
@@ -669,6 +1021,7 @@ function renderAdmin() {
       .join("");
   }
 
+  /* Notes */
   const selClasseN = $("#admin-note-classe");
   const selEleveN = $("#admin-note-eleve");
   if (selClasseN) {
@@ -690,6 +1043,7 @@ function renderAdmin() {
     selDevoirN.innerHTML = DEVOIRS.map((d) => `<option value="${d.id}">${esc(nomClasse(d.classe))} · ${esc(d.titre)}</option>`).join("");
   }
 
+  /* Rendus */
   const selClasseR = $("#admin-rendu-classe");
   const selEleveR = $("#admin-rendu-eleve");
   if (selClasseR) {
@@ -711,9 +1065,8 @@ function renderAdmin() {
     selDevoirR.innerHTML = DEVOIRS.map((d) => `<option value="${d.id}">${esc(nomClasse(d.classe))} · ${esc(d.titre)}</option>`).join("");
   }
 
-  /* Date du jour par défaut */
   const today = todayISO();
-  ["#admin-devoir-ajout", "#admin-note-date", "#admin-rendu-date"].forEach((sel) => {
+  ["#admin-devoir-ajout", "#admin-note-date", "#admin-rendu-date", "#admin-anonce-date"].forEach((sel) => {
     const el = $(sel);
     if (el) el.value = today;
   });
@@ -728,7 +1081,6 @@ function renderAdmin() {
     btn.onclick = () => copierTexte(texte, fb);
   }
 
-  /* Générateur : devoir */
   $("#btn-gen-devoir")?.addEventListener("click", () => {
     const titre = $("#admin-devoir-titre").value.trim();
     if (!titre) { alert("Donnez un titre au devoir."); return; }
@@ -747,7 +1099,6 @@ function renderAdmin() {
     afficherBloc("#zone-devoir", bloc);
   });
 
-  /* Générateur : note */
   $("#btn-gen-note")?.addEventListener("click", () => {
     const eleveId = $("#admin-note-eleve").value;
     const devoirId = $("#admin-note-devoir").value;
@@ -759,7 +1110,6 @@ function renderAdmin() {
     afficherBloc("#zone-note", bloc);
   });
 
-  /* Générateur : rendu */
   $("#btn-gen-rendu")?.addEventListener("click", () => {
     const eleveId = $("#admin-rendu-eleve").value;
     const devoirId = $("#admin-rendu-devoir").value;
@@ -769,7 +1119,21 @@ function renderAdmin() {
     afficherBloc("#zone-rendu", bloc);
   });
 
-  /* Liens d'édition GitHub */
+  $("#btn-gen-anonce")?.addEventListener("click", () => {
+    const titre = $("#admin-anonce-titre").value.trim();
+    if (!titre) { alert("Donnez un titre à l'annonce."); return; }
+    const id = "a" + (Math.max(0, ...ANNONCES.map((a) => Number(String(a.id).replace(/\D/g, "")) || 0)) + 1);
+    const important = $("#admin-anonce-importante").checked;
+    const bloc = `  {
+    id: "${id}",
+    titre: ${JSON.stringify(titre)},
+    date: "${$("#admin-anonce-date").value}",
+    texte: ${JSON.stringify($("#admin-anonce-texte").value.trim())},
+    important: ${important}
+  },`;
+    afficherBloc("#zone-anonce", bloc);
+  });
+
   $$(".lien-edition").forEach((a) => {
     const repo = a.dataset.repo || "aymenessouyah/devoirs2026-2027";
     a.href = `https://github.com/${repo}/edit/main/data/${a.dataset.fichier}`;
@@ -785,8 +1149,20 @@ document.addEventListener("DOMContentLoaded", () => {
     case "accueil": renderAccueil(); break;
     case "devoirs": renderDevoirs(); break;
     case "classe": renderClasse(); break;
+    case "calendrier": renderCalendrier(); break;
+    case "vie": renderVie(); break;
     case "depot": renderDepot(); break;
     case "suivi": renderSuivi(); break;
     case "admin": renderAdmin(); break;
   }
+
+  initReveal();
+
+  /* Service worker (PWA installable + fonctionnement hors-ligne) */
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* ignoré */ });
+  }
 });
+
+/* Applique le thème le plus tôt possible (anti-flash) */
+initTheme();
