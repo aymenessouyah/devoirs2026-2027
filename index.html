@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.2</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.3</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.2</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.3</p>
 </main>
 </div>
 </div>
@@ -2105,6 +2105,12 @@ function tableComptesHTML(liste, messageVide) {
     </table>
   </div>`;
 }
+function groupeComptesHTML(titre, liste, messageVide, ouvert) {
+  return `<details ${ouvert ? "open" : ""} class="mt-3 border rounded-2xl px-3 py-2" style="background:rgba(124,58,237,.03)">
+    <summary class="font-extrabold text-[15px] cursor-pointer py-1">${titre} (${liste.length})</summary>
+    ${tableComptesHTML(liste, messageVide)}
+  </details>`;
+}
 function rendreAdmin() {
   const zone = $("#section-admin");
   if (!estAdmin()) { zone.innerHTML = `<div class="card p-6">Réservé à l'administrateur.</div>`; return; }
@@ -2161,11 +2167,10 @@ function rendreAdmin() {
 
     <div class="card p-5 mt-5">
       <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Enseignants à part, élèves regroupés par classe.</span></div>
-      <h4 class="font-extrabold text-[15px] mt-4">🧑‍🏫 Enseignants (${comptes.filter(x => x.role === "enseignant").length})</h4>
-      ${tableComptesHTML(comptes.filter(x => x.role === "enseignant"), "Aucun enseignant.")}
+      ${groupeComptesHTML("🧑‍🏫 Enseignants", comptes.filter(x => x.role === "enseignant"), "Aucun enseignant.", true)}
       ${ETAT.classesAll.map(c => ({ cle: c.cle, nom: c.nom, liste: comptes.filter(x => x.role !== "enseignant" && x.classe === c.cle) }))
         .concat((() => { const sc = comptes.filter(x => x.role !== "enseignant" && !ETAT.classesAll.some(c => c.cle === x.classe)); return sc.length ? [{ cle: "", nom: "Sans classe (ou classe supprimée)", liste: sc }] : []; })())
-        .map(g => `<h4 class="font-extrabold text-[15px] mt-5">🎓 Élèves — ${esc(g.nom)} (${g.liste.length})</h4>${tableComptesHTML(g.liste, "Aucun élève dans cette classe.")}`).join("")}
+        .map(g => groupeComptesHTML(`🎓 Élèves — ${esc(g.nom)}`, g.liste, "Aucun élève dans cette classe.", false)).join("")}
     </div>
 
     ${emploisAdminHTML()}
