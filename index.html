@@ -45,6 +45,49 @@ select.input{appearance:none}
 .seg button{padding:8px 14px;font-weight:700;font-size:13px;background:#EFF2F8;cursor:pointer}
 .seg button.actif{background:#6D28D9;color:#fff}
 @media (max-width:640px){.cal-cell{min-height:74px}}
+/* ===== Thème sombre — partie droite (zone principale) ===== */
+main{background:#0B1322;color:#E6ECF5;color-scheme:dark}
+main header{background:#0D1830!important;border-color:#24365A!important}
+main .card{background:#182642;border-color:#2E3F63;box-shadow:0 10px 26px rgba(0,0,0,.35);color:#E6ECF5}
+main .input{background:#101C33;border-color:#3A4E78;color:#EDF2FA}
+main .input::placeholder{color:#7286AB}
+main .input:focus{border-color:#8B5CF6;background:#13223F}
+main select.input option{background:#101C33;color:#EDF2FA}
+main .pill{background:#1B2A49;border-color:#3A4E78;color:#D8E4F6}
+main .pill.active{background:#E8EDF7;color:#0B1322;border-color:#E8EDF7}
+main .jeton{background:#1B2A49;color:#EAF0FA}
+main .seg{border-color:#3A4E78}
+main .seg button{background:#14233F;color:#C9D7EF}
+main .cal-cell{background:#152441;border-color:#2C3E61}
+main .cal-cell.valide{background:#0D2B21;border-color:#1E7A55}
+main .cal-token{background:rgba(148,170,220,.16)}
+main .mm-row{background:#152441;border-color:#2C3E61}
+main .table-row:hover{background:#1D2F52}
+main .progress-bar{background:#22335A}
+main .text-slate-400{color:#8FA5C8!important}
+main .text-slate-500{color:#A7BBD9!important}
+main .text-slate-600{color:#C4D3EA!important}
+main .text-slate-700{color:#D9E5F5!important}
+main .text-slate-800,main .text-slate-900{color:#F2F7FE!important}
+main .bg-white{background-color:#1B2A49!important}
+main .bg-slate-50{background-color:#121F3A!important}
+main .bg-slate-100{background-color:#22335A!important}
+main .bg-violet-50{background-color:#241B4D!important}
+main .bg-violet-100{background-color:#2D2160!important;color:#CFC2FF!important}
+main .bg-emerald-50{background-color:#0C2B20!important}
+main .bg-emerald-100{background-color:#0E3325!important;color:#6EE7B7!important}
+main .bg-amber-50{background-color:#33270E!important}
+main .bg-amber-100{background-color:#3A2C10!important;color:#FCD34D!important}
+main .bg-red-50{background-color:#381625!important}
+main .bg-red-100{background-color:#401A2B!important;color:#FCA5A5!important}
+main .bg-sky-100{background-color:#0E2A40!important;color:#7DD3FC!important}
+main .bg-rose-100{background-color:#381628!important;color:#FDA4AF!important}
+main .border,main .border-b,main .border-t,main .border-slate-100,main .border-slate-200{border-color:#2C3E61!important}
+main [style*="#FFFBEB"]{background:#2E2410!important;border-color:#6B5518!important}
+main .cal-cell[style*="#ECFDF5"]{background:#0C2B20!important}
+main .cal-cell[style*="#F5F3FF"]{background:#241B4D!important}
+main .cal-cell[style*="#FFF7ED"]{background:#33200E!important}
+
 </style>
 </head>
 <body class="bg-[#E6EAF3] text-slate-800">
@@ -86,7 +129,7 @@ select.input{appearance:none}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.1.0</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.1.1</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -516,6 +559,7 @@ function dessinerGraphique() {
     const labels = (CFG.trimestres || []).map(t => t.label);
     const dc = (CFG.trimestres || []).map(t => mesDevoirs().filter(d => d.type === "DC" && (trimestreDe(d.date) || {}).id === t.id).length);
     const ds = (CFG.trimestres || []).map(t => mesDevoirs().filter(d => d.type === "DS" && (trimestreDe(d.date) || {}).id === t.id).length);
+    if (window.Chart) { Chart.defaults.color = "#A7BBD9"; Chart.defaults.borderColor = "rgba(148,170,220,.14)"; }
     new Chart(ctx, { type: "bar", data: { labels, datasets: [ { label: "Devoirs de contrôle", data: dc, backgroundColor: "#6D28D9", borderRadius: 8 }, { label: "Devoirs de synthèse", data: ds, backgroundColor: "#0EA5E9", borderRadius: 8 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { font: { family: "Plus Jakarta Sans", weight: "700" } } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
   } catch (e) { /* graphique optionnel */ }
 }
