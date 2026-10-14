@@ -71,6 +71,177 @@ const EMPLOI = window.EMPLOI || {};
 const RESSOURCES = window.RESSOURCES || [];
 const REGLES = window.REGLES || [];
 
+/* ---------- Calendrier officiel (collaboration avec l'espace Vie scolaire) ---------- */
+/* En ligne : chargement dynamique depuis aymenessouyah.github.io/viescolaire
+   (data/reference.js + data/repartition.js). Hors-ligne : copie locale
+   data/calendrier.js (window.CAL_OFFICIEL). */
+const VIESCOLAIRE_DATA = "https://aymenessouyah.github.io/viescolaire/data/";
+let OFFICIEL = window.CAL_OFFICIEL || null;
+let officielEnLigne = false;
+const _officielCallbacks = [];
+
+function stripHTML(s) {
+  return String(s || "").replace(/<[^>]*>/g, "").trim();
+}
+
+function dansPlage(isoDate, from, to) {
+  return isoDate >= from && isoDate <= to;
+}
+
+function normaliserOfficiel(ref, plan) {
+  const cours = {};
+  Object.entries(ref.CLASSES || {}).forEach(([k, v]) => { cours[k.toLowerCase()] = v.days; });
+  const epreuves = plan ? simulerEpreuves(ref, plan) : {};
+  const ds1 = {};
+  Object.entries(ref.DS1 || {}).forEach(([k, v]) => {
+    const cle = k.toLowerCase();
+    ds1[cle] = { dates: v.dates, main: v.main };
+    epreuves[cle] = epreuves[cle] || [];
+    if (!epreuves[cle].some((e) => e.date === v.main)) {
+      epreuves[cle].push({ nom: "Devoir de synthèse n°1", date: v.main });
+    }
+    epreuves[cle].sort((a, b) => a.date.localeCompare(b.date));
+  });
+  return {
+    source: "viescolaire",
+    cours,
+    vacances: (ref.VACANCES || []).map((v) => ({ label: stripHTML(v.label), from: v.from, to: v.to })),
+    feries: (ref.FERIES || []).map((f) => ({ date: f.date, label: stripHTML(f.label) })),
+    suspensions: (ref.SUSPENSIONS || []).map((s) => ({
+      label: stripHTML(s.label), from: s.from, to: s.to,
+      classes: (s.classes || []).map((c) => String(c).toLowerCase())
+    })),
+    jalons: (ref.JALONS || []).map((j) => ({
+      ...(j.date ? { date: j.date } : { from: j.from, to: j.to }),
+      type: j.type, label: stripHTML(j.label), s: stripHTML(j.s)
+    })),
+    ds1,
+    epreuves
+  };
+}
+
+function simulerEpreuves(ref, plan) {
+  /* Rejoue le planning : jours de cours − vacances − fériés − suspensions */
+  const resultat = {};
+  const rentree = (ref.SCHOOL || {}).rentreeEleves || "2026-09-15";
+  Object.entries(plan || {}).forEach(([classe, blocs]) => {
+    const cfg = (ref.CLASSES || {})[classe];
+    if (!cfg || !Array.isArray(blocs)) return;
+    const cle = classe.toLowerCase();
+    const liste = [];
+    let bi = 0;
+    let reste = blocs.length ? blocs[0].n : 0;
+    const d = parseDate(rentree);
+    const fin = parseDate(cfg.fin || "2027-06-30");
+    while (d <= fin && bi < blocs.length) {
+      const dateIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const repos =
+        (ref.VACANCES || []).some((v) => dansPlage(dateIso, v.from, v.to)) ||
+        (ref.FERIES || []).some((f) => f.date === dateIso) ||
+        (ref.SUSPENSIONS || []).some((s) => (!s.classes || s.classes.includes(classe)) && dansPlage(dateIso, s.from, s.to));
+      if ((cfg.days || []).includes(d.getDay()) && !repos) {
+        const bloc = blocs[bi];
+        if (bloc.k === "dc") liste.push({ nom: stripHTML(bloc.t), date: dateIso });
+        reste--;
+        if (reste <= 0) { bi++; if (bi < blocs.length) reste = blocs[bi].n; }
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    resultat[cle] = liste;
+  });
+  return resultat;
+}
+
+function chargerScriptDistant(url, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    const minuteur = setTimeout(() => { s.remove(); reject(new Error("délai dépassé")); }, timeoutMs || 6000);
+    s.onload = () => { clearTimeout(minuteur); resolve(); };
+    s.onerror = () => { clearTimeout(minuteur); reject(new Error("chargement impossible")); };
+    s.src = url;
+    document.head.appendChild(s);
+  });
+}
+
+function chargerOfficiel() {
+  chargerScriptDistant(VIESCOLAIRE_DATA + "reference.js")
+    .then(() => chargerScriptDistant(VIESCOLAIRE_DATA + "repartition.js"))
+    .then(() => {
+      const data = window.STI_DATA || {};
+      if (data.reference) {
+        OFFICIEL = normaliserOfficiel(data.reference, data.repartition);
+        officielEnLigne = true;
+      }
+    })
+    .catch(() => { /* copie locale conservée */ })
+    .finally(() => {
+      _officielCallbacks.splice(0).forEach((fn) => { try { fn(); } catch (e) { /* ignoré */ } });
+    });
+}
+
+function quandOfficielPret(fn) {
+  _officielCallbacks.push(fn);
+}
+
+/* Événements officiels d'une date : [{type, label}] */
+function evenementsOfficiels(isoDate) {
+  if (!OFFICIEL) return [];
+  const evts = [];
+  (OFFICIEL.feries || []).forEach((f) => { if (f.date === isoDate) evts.push({ type: "ferie", label: f.label }); });
+  (OFFICIEL.vacances || []).forEach((v) => { if (dansPlage(isoDate, v.from, v.to)) evts.push({ type: "vacances", label: v.label }); });
+  (OFFICIEL.suspensions || []).forEach((s) => { if (dansPlage(isoDate, s.from, s.to)) evts.push({ type: "suspension", label: s.label }); });
+  (OFFICIEL.jalons || []).forEach((j) => {
+    const ok = j.date ? j.date === isoDate : dansPlage(isoDate, j.from, j.to);
+    if (ok && j.type !== "vac" && j.type !== "hol") evts.push({ type: "jalon", label: j.label });
+  });
+  return evts;
+}
+
+function epreuveLe(classe, isoDate) {
+  if (!OFFICIEL) return null;
+  return ((OFFICIEL.epreuves || {})[classe] || []).find((e) => e.date === isoDate) || null;
+}
+
+/* Conflits entre les échéances des devoirs et le calendrier officiel */
+function conflitsDates() {
+  if (!OFFICIEL) return [];
+  const conflits = [];
+  DEVOIRS.filter((d) => !d.corrige).forEach((d) => {
+    const raisons = [];
+    const epr = epreuveLe(d.classe, d.echeance);
+    if (epr) raisons.push(`jour du ${epr.nom}`);
+    evenementsOfficiels(d.echeance).forEach((ev) => {
+      if (ev.type === "ferie") raisons.push(`jour férié (${ev.label})`);
+      else if (ev.type === "vacances") raisons.push(ev.label.toLowerCase());
+      else if (ev.type === "suspension") raisons.push(ev.label.toLowerCase());
+    });
+    if (raisons.length) conflits.push({ devoir: d, raisons });
+  });
+  return conflits;
+}
+
+/* Prochain jour de cours d'une classe strictement après une date */
+function prochainJourCours(classe, apresIso) {
+  if (!OFFICIEL) return null;
+  const jours = (OFFICIEL.cours || {})[classe];
+  if (!jours) return null;
+  const d = parseDate(apresIso);
+  for (let i = 0; i < 370; i++) {
+    d.setDate(d.getDate() + 1);
+    const isoJ = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (!jours.includes(d.getDay())) continue;
+    const bloque = evenementsOfficiels(isoJ).some((e) => e.type !== "jalon") || epreuveLe(classe, isoJ);
+    if (!bloque) return isoJ;
+  }
+  return null;
+}
+
+function sourceOfficielHTML() {
+  return officielEnLigne
+    ? `🔄 Synchronisé en direct avec <a href="https://aymenessouyah.github.io/viescolaire/" target="_blank" rel="noopener">l'espace Vie scolaire</a>`
+    : `📁 Copie locale du calendrier officiel (connexion à Vie scolaire impossible)`;
+}
+
 function nomClasse(cle) {
   return (CFG.classes && CFG.classes[cle]) || cle;
 }
@@ -389,6 +560,30 @@ function renderAccueil() {
       : "";
   }
 
+  const jalonEl = $("#prochain-jalon");
+  if (jalonEl) {
+    const majJalon = () => {
+      if (!OFFICIEL) { jalonEl.innerHTML = ""; return; }
+      const aujIso = todayISO();
+      const j = (OFFICIEL.jalons || [])
+        .filter((x) => (x.to || x.date) >= aujIso)
+        .sort((a, b) => (a.from || a.date).localeCompare(b.from || b.date))[0];
+      if (!j) { jalonEl.innerHTML = ""; return; }
+      const quand = j.date ? fmtDate(j.date) : `du ${fmtDate(j.from)} au ${fmtDate(j.to)}`;
+      jalonEl.innerHTML = `
+        <div class="callout reveal" style="border-left:4px solid var(--green);background:var(--soft-green,rgba(34,197,94,.1))">
+          ${ICONS.calendar}
+          <div>
+            <strong>Prochain jalon officiel : ${esc(j.label)}</strong><br/>
+            ${esc(quand)} · <a href="calendrier.html"><strong>Calendrier officiel →</strong></a>
+            <span class="text-muted" style="font-size:.82rem">(${officielEnLigne ? "synchronisé avec Vie scolaire" : "copie locale"})</span>
+          </div>
+        </div>`;
+    };
+    majJalon();
+    quandOfficielPret(majJalon);
+  }
+
   const annoncesEl = $("#dernieres-annonces");
   if (annoncesEl) {
     const dernAnnonces = trierAnnonces(ANNONCES).slice(0, 3);
@@ -653,8 +848,27 @@ function renderCalendrier() {
       const iso = `${annee}-${String(mois + 1).padStart(2, "0")}-${String(jour).padStart(2, "0")}`;
       const estAujourdhui = iso === todayISO();
       const duJour = evts.filter((d) => d.echeance === iso);
+      const offs = evenementsOfficiels(iso);
+      const estVac = offs.some((e) => e.type === "vacances");
+      const estFerie = offs.some((e) => e.type === "ferie");
+      const classesCase = ["cal-case"];
+      if (estAujourdhui) classesCase.push("aujourdhui");
+      if (estVac) classesCase.push("cal-vac");
+      if (estFerie) classesCase.push("cal-ferie");
+      const epreuvesHTML = ["3si1", "4si2"]
+        .map((cle) => {
+          const ep = epreuveLe(cle, iso);
+          if (!ep) return "";
+          const court = ep.nom.replace("Devoir de contrôle", "DC").replace("Devoir de synthèse", "DS");
+          return `<div class="cal-off epreuve" title="${esc(ep.nom)} — ${esc(nomClasse(cle))}">📝 ${esc(court)} · ${cle === "3si1" ? "3SI1" : "4SI2"}</div>`;
+        })
+        .join("");
+      const offsHTML =
+        epreuvesHTML +
+        (estFerie ? `<div class="cal-off">🚩 Férié</div>` : "") +
+        (estVac ? `<div class="cal-off">🏖️ Vacances</div>` : "");
       html += `
-        <div class="cal-case ${estAujourdhui ? "aujourdhui" : ""}">
+        <div class="${classesCase.join(" ")}">
           <div class="cal-num">${jour}</div>
           ${duJour
             .map(
@@ -662,6 +876,7 @@ function renderCalendrier() {
                 `<button class="cal-event e-${esc(d.classe)}" data-id="${esc(d.id)}" title="${esc(d.titre)}">${esc(d.titre)}</button>`
             )
             .join("")}
+          ${offsHTML}
         </div>`;
     }
 
@@ -708,6 +923,64 @@ function renderCalendrier() {
           .join("")
       : `<div class="empty">${ICONS.calendar}<p>Aucune échéance à venir.</p></div>`;
   }
+
+  /* Calendrier officiel tunisien (Vie scolaire) : jalons + épreuves */
+  const TYPES_JALON = {
+    eval: ["📝 Évaluation", "var(--rose)"],
+    bloc: ["🔒 Semaine bloquée", "var(--violet)"],
+    vac: ["🏖️ Vacances", "var(--green)"],
+    hol: ["🚩 Jour férié", "var(--orange)"],
+    admin: ["🗂️ Administration", "var(--cyan)"],
+    info: ["ℹ️ Repère", "var(--amber)"],
+    start: ["🎒 Rentrée", "var(--green)"],
+    end: ["🏁 Fin d'année", "var(--violet)"]
+  };
+
+  function rendreOfficiel() {
+    const zone = $("#cal-officiel");
+    const src = $("#cal-source");
+    if (src) src.innerHTML = sourceOfficielHTML();
+    if (!zone) return;
+    if (!OFFICIEL) {
+      zone.innerHTML = `<div class="empty">${ICONS.calendar}<p>Calendrier officiel indisponible pour le moment.</p></div>`;
+      return;
+    }
+    const aujIso = todayISO();
+    const jalons = (OFFICIEL.jalons || [])
+      .filter((j) => (j.to || j.date) >= aujIso)
+      .sort((a, b) => (a.from || a.date).localeCompare(b.from || b.date))
+      .slice(0, 8);
+    const jalonsHTML = jalons
+      .map((j) => {
+        const [badge, couleur] = TYPES_JALON[j.type] || TYPES_JALON.info;
+        const quand = j.date ? fmtDate(j.date) : `du ${fmtDate(j.from)} au ${fmtDate(j.to)}`;
+        return `
+        <div class="horaire-cours reveal" style="border-left-color:${couleur}">
+          <span class="horaire-heure">${esc(badge)}</span>
+          <span class="intitule">${esc(j.label)}${j.s ? ` <span class="text-muted" style="font-weight:400">— ${esc(j.s)}</span>` : ""}</span>
+          <span class="salle">${esc(quand)}</span>
+        </div>`;
+      })
+      .join("");
+
+    const epreuvesHTML = Object.keys(CFG.classes || {})
+      .map((cle) => {
+        const prochaines = ((OFFICIEL.epreuves || {})[cle] || []).filter((e) => e.date >= aujIso).slice(0, 4);
+        if (!prochaines.length) return "";
+        return `
+        <div class="horaire-cours reveal" style="border-left-color:${cle === "3si1" ? "var(--rose)" : "var(--cyan)"}">
+          <span class="horaire-heure" style="background:${cle === "3si1" ? "var(--soft-rose);color:var(--rose)" : "var(--soft-cyan);color:#0e7490"}">${esc(nomClasse(cle))}</span>
+          <span class="intitule">${prochaines.map((e) => `${esc(e.nom)} : <strong>${fmtDateCourte(e.date)}</strong>`).join(" · ")}</span>
+          <span class="salle">épreuves officielles</span>
+        </div>`;
+      })
+      .join("");
+
+    zone.innerHTML = (epreuvesHTML || "") + (jalonsHTML || `<div class="empty">${ICONS.calendar}<p>Aucun jalon officiel à venir.</p></div>`);
+  }
+
+  rendreOfficiel();
+  quandOfficielPret(() => { dessiner(); rendreOfficiel(); });
 }
 
 /* ---------- Page Dépôt ---------- */
@@ -1134,6 +1407,39 @@ function renderAdmin() {
     afficherBloc("#zone-anonce", bloc);
   });
 
+  /* Alertes : échéances en conflit avec le calendrier officiel */
+  const alertesEl = $("#admin-alertes");
+  if (alertesEl) {
+    const majAlertes = () => {
+      if (!OFFICIEL) {
+        alertesEl.innerHTML = `<div class="callout callout-warning">${ICONS.alert}<div>Calendrier officiel indisponible : impossible de vérifier les dates.</div></div>`;
+        return;
+      }
+      const conflits = conflitsDates();
+      if (!conflits.length) {
+        alertesEl.innerHTML = `
+          <div class="callout callout-success">${ICONS.check}<div><strong>Aucun conflit détecté</strong> : toutes les échéances à venir sont compatibles avec le calendrier officiel (vacances, jours fériés, semaines bloquées et épreuves DC/DS).</div></div>
+          <p class="text-muted mt-1" style="font-size:.85rem">${sourceOfficielHTML()}</p>`;
+        return;
+      }
+      alertesEl.innerHTML =
+        conflits
+          .map(({ devoir: d, raisons }) => {
+            const suggestion = prochainJourCours(d.classe, d.echeance);
+            return `
+          <div class="callout callout-warning mb-1">${ICONS.alert}<div>
+            <strong>${esc(d.titre)}</strong> (${esc(nomClasse(d.classe))}) — échéance le ${fmtDate(d.echeance)}<br/>
+            ⚠️ ${raisons.map((r) => esc(r)).join(" · ")}
+            ${suggestion ? `<br/>💡 Prochain jour de cours possible : <strong>${fmtDate(suggestion)}</strong>` : ""}
+          </div></div>`;
+          })
+          .join("") +
+        `<p class="text-muted mt-1" style="font-size:.85rem">${sourceOfficielHTML()} · Modifiez la date dans <code>data/devoirs.js</code> si besoin.</p>`;
+    };
+    majAlertes();
+    quandOfficielPret(majAlertes);
+  }
+
   $$(".lien-edition").forEach((a) => {
     const repo = a.dataset.repo || "aymenessouyah/devoirs2026-2027";
     a.href = `https://github.com/${repo}/edit/main/data/${a.dataset.fichier}`;
@@ -1155,6 +1461,9 @@ document.addEventListener("DOMContentLoaded", () => {
     case "suivi": renderSuivi(); break;
     case "admin": renderAdmin(); break;
   }
+
+  /* Collaboration Vie scolaire : calendrier officiel synchronisé en direct */
+  if (["accueil", "calendrier", "admin"].includes(page)) chargerOfficiel();
 
   initReveal();
 

@@ -92,3 +92,23 @@ email: "vous@exemple.com",   // votre e-mail (cible des dépôts)
 ---
 
 *Site statique en HTML/CSS/JS pur — aucune dépendance, aucun coût, publié avec GitHub Pages.*
+
+---
+
+## 🤝 Collaboration avec l'espace « Vie scolaire »
+
+Le site est **synchronisé avec l'espace enseignant**
+[aymenessouyah.github.io/viescolaire](https://aymenessouyah.github.io/viescolaire/) :
+
+- **Page Calendrier** : les vacances, jours fériés, semaines bloquées et épreuves
+  officielles (DC1 à DC6, DS1) s'affichent automatiquement dans la grille mensuelle,
+  avec la liste des prochains jalons officiels.
+- **Accueil** : le prochain jalon officiel est affiché sous la prochaine échéance.
+- **Espace enseignant** : contrôle automatique des dates — une alerte signale toute
+  échéance qui tombe pendant les vacances, un jour férié, une semaine bloquée ou le
+  jour d'une épreuve officielle, avec suggestion du prochain jour de cours.
+
+⚡ En ligne, les données sont chargées en direct depuis `viescolaire/data/` —
+toute modification du planning là-bas se répercute ici sans rien toucher.
+📁 Hors-ligne, la copie locale `data/calendrier.js` prend le relais
+(régénérable depuis les fichiers de viescolaire).

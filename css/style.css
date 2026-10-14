@@ -800,6 +800,33 @@ tbody tr:hover { background: var(--surface-2); }
 
 [data-theme="dark"] .cal-event.e-4si2 { color: #67e8f9; }
 
+/* Événements du calendrier officiel (Vie scolaire) dans la grille */
+.cal-case.cal-vac { background: var(--soft-green); border-color: var(--green); }
+.cal-case.cal-ferie { background: var(--soft-orange); border-color: var(--orange); }
+
+.cal-off {
+  margin-top: 0.32rem;
+  padding: 0.18rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
+.cal-off.epreuve { background: var(--soft-violet); color: var(--violet); border-left: 3px solid var(--violet); }
+.cal-case.cal-vac .cal-off { color: #15803d; }
+.cal-case.cal-ferie .cal-off { color: #c2410c; }
+[data-theme="dark"] .cal-case.cal-vac .cal-off { color: #4ade80; }
+[data-theme="dark"] .cal-case.cal-ferie .cal-off { color: #fdba74; }
+
+@media (max-width: 520px) {
+  .cal-off { font-size: 0.58rem; padding: 0.12rem 0.3rem; }
+  .cal-case { min-height: 78px; }
+}
+
 /* ---------- Annonces ---------- */
 .anonce-card {
   background: var(--surface);

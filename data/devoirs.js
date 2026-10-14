@@ -24,7 +24,7 @@ window.DEVOIRS = [
     classe: "3si1",
     type: "exercices",
     date_ajout: "2026-10-12",
-    echeance: "2026-10-20",
+    echeance: "2026-10-22",
     description:
       "Faire les exercices 1 à 5 de la fiche distribuée sur les structures conditionnelles (si / sinon). Écrire l'algorithme de chaque exercice, puis le programme correspondant.",
     fichiers: [],
@@ -72,7 +72,7 @@ window.DEVOIRS = [
     classe: "4si2",
     type: "exercices",
     date_ajout: "2026-10-13",
-    echeance: "2026-10-28",
+    echeance: "2026-11-02",
     description:
       "Exercices 1 à 8 sur les clés primaires, les clés étrangères et les relations entre tables. Modéliser les deux situations proposées avec un schéma relationnel complet.",
     fichiers: [],

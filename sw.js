@@ -22,6 +22,7 @@ const FICHIERS = [
   "./data/notes.js",
   "./data/annonces.js",
   "./data/vie.js",
+  "./data/calendrier.js",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
