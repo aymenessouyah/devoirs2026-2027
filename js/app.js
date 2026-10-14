@@ -253,11 +253,24 @@ function prochainJourCours(classe, apresIso) {
 
 /* ---------- Choix d'une date de devoir dans le respect du calendrier officiel ---------- */
 /* type : "controle" (jour de cours ordinaire) ou "synthese" (semaine bloquée).
-   devoirIgnoreId : le devoir qu'on est en train de déplacer (sa date actuelle ne compte pas comme occupée). */
-function evaluerDateChoix(classe, iso, type, devoirIgnoreId) {
+   devoirIgnoreId : le devoir qu'on est en train de déplacer (sa date actuelle ne compte pas comme occupée).
+   extra (optionnel) : { occupees: [iso…], ignorees: [iso…] } — dates occupées en plus
+   (devoirs enregistrés dans la base) et dates à ne pas considérer comme occupées. */
+function evaluerDateChoix(classe, iso, type, devoirIgnoreId, extra) {
   if (!OFFICIEL) return { etat: "inconnu", ok: false, raison: "Calendrier officiel indisponible" };
+  const occupeesExtra = (extra && extra.occupees) || [];
+  const ignorees = (extra && extra.ignorees) || [];
+  /* La date actuelle du devoir qu'on est en train de modifier reste
+     toujours acceptée, même si elle est passée (on peut encore écrire
+     sa correction ou changer son titre après l'épreuve). */
+  if (ignorees.includes(iso)) return { etat: "valide", ok: true, raison: "Date actuelle du devoir (conservée)" };
   if (iso < todayISO()) return { etat: "passe", ok: false, raison: "Date déjà passée" };
-  const occupe = DEVOIRS.find((d) => d.examen && d.classe === classe && d.echeance === iso && d.id !== devoirIgnoreId);
+  let occupe = DEVOIRS.find((d) => d.examen && d.classe === classe && d.echeance === iso && d.id !== devoirIgnoreId);
+  if (!ignorees.includes(iso)) {
+    if (!occupe && occupeesExtra.includes(iso)) occupe = { titre: "un devoir déjà enregistré" };
+  } else {
+    occupe = null;
+  }
   const evts = evenementsOfficiels(iso);
   const ferie = evts.find((e) => e.type === "ferie");
   const vac = evts.find((e) => e.type === "vacances");
@@ -628,22 +641,23 @@ function injectLayout() {
   const titre = CFG.titre || "Devoirs";
   const sous = CFG.sousTitre || "";
 
-  const liens = [
-    { key: "accueil", href: "index.html", label: "Accueil" },
-    { key: "devoirs", href: "devoirs.html", label: "Devoirs" },
-    { key: "calendrier", href: "calendrier.html", label: "Calendrier" },
-    { key: "classe-3si1", href: "classe-3si1.html", label: "3ème SI 1" },
-    { key: "classe-4si2", href: "classe-4si2.html", label: "4ème SI 2" },
-    { key: "vie", href: "vie-de-classe.html", label: "Vie de classe" },
-    { key: "suivi", href: "suivi.html", label: "Mon suivi" },
-    { key: "admin", href: "admin.html", label: "Admin" },
-    (typeof sbConnecte === "function" && sbConnecte())
-      ? { key: "espace-eleve", href: "espace-eleve.html", label: "👤 Mon espace" }
-      : { key: "connexion", href: "connexion.html", label: "Connexion" }
-  ];
+  const connecte = typeof sbConnecte === "function" && sbConnecte();
+  const cacheP = connecte && typeof sbProfilCache === "function" ? sbProfilCache() : null;
+  const espaceHref = cacheP && cacheP.role === "enseignant" ? "espace-enseignant.html" : "espace-eleve.html";
+  const liens = connecte
+    ? [
+        { key: "espace", href: espaceHref, label: "👤 Mon espace" },
+        { key: "calendrier", href: "calendrier.html", label: "Calendrier" },
+        { key: "vie", href: "vie-de-classe.html", label: "Vie de classe" },
+        { key: "deconnexion", href: "#", label: "Se déconnecter", id: "lien-deconnexion" }
+      ]
+    : [{ key: "connexion", href: "index.html", label: "Connexion" }];
 
   const nav = liens
-    .map((l) => `<a href="${l.href}"${page === l.key ? ' class="active" aria-current="page"' : ""}>${l.label}</a>`)
+    .map((l) => {
+      const actif = page === l.key || (l.key === "espace" && page.startsWith("espace"));
+      return `<a href="${l.href}"${l.id ? ` id="${l.id}"` : ""}${actif ? ' class="active" aria-current="page"' : ""}>${l.label}</a>`;
+    })
     .join("");
 
   const header = `
@@ -667,11 +681,9 @@ function injectLayout() {
           <span class="muted">${esc(CFG.matiere || "")} · ${esc(CFG.annee || "")} — ${esc(CFG.prof || "")}</span>
         </div>
         <div class="footer-links">
-          <a href="devoirs.html">Devoirs</a>
+          ${connecte ? `<a href="${espaceHref}">Mon espace</a>
           <a href="calendrier.html">Calendrier</a>
-          <a href="vie-de-classe.html">Vie de classe</a>
-          <a href="suivi.html">Mon suivi</a>
-          <a href="admin.html">Espace enseignant</a>
+          <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
         <div class="muted">Publié avec GitHub Pages · PWA installable 📱</div>
       </div>
@@ -687,6 +699,12 @@ function injectLayout() {
   });
 
   $("#theme-toggle")?.addEventListener("click", toggleTheme);
+
+  $("#lien-deconnexion")?.addEventListener("click", async (ev) => {
+    ev.preventDefault();
+    if (typeof sbDeconnexion === "function") await sbDeconnexion();
+    location.href = "index.html";
+  });
 
   if (CFG.titre) document.title = document.title || titre;
 }
@@ -1129,11 +1147,8 @@ function renderCalendrier() {
 
     grid.innerHTML = html;
 
-    $$(".cal-event", grid).forEach((btn) => {
-      btn.addEventListener("click", () => {
-        location.href = `devoirs.html?q=${encodeURIComponent(getDevoir(btn.dataset.id)?.titre || "")}`;
-      });
-    });
+    /* Les détails des devoirs se consultent dans l'espace de chacun
+       (sujet et correction visibles à partir du lendemain de l'épreuve). */
   }
 
   $("#cal-prev")?.addEventListener("click", () => {
@@ -1697,9 +1712,18 @@ function renderAdmin() {
 
 /* ---------- Démarrage ---------- */
 document.addEventListener("DOMContentLoaded", () => {
-  injectLayout();
-
   const page = document.body.dataset.page;
+
+  /* Réorganisation v4 : la page d'accueil EST la page de connexion ;
+     toutes les autres pages sont réservées aux comptes connectés
+     (la validation par l'admin est vérifiée dans les espaces). */
+  const PAGES_PUBLIQUES = ["connexion"];
+  if (!PAGES_PUBLIQUES.includes(page) && !(typeof sbConnecte === "function" && sbConnecte())) {
+    location.replace("index.html");
+    return;
+  }
+
+  injectLayout();
   switch (page) {
     case "accueil": renderAccueil(); break;
     case "devoirs": renderDevoirs(); break;

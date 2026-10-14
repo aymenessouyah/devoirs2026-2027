@@ -134,6 +134,7 @@ async function sbConnexion(email, password) {
 async function sbDeconnexion() {
   const s = sbSession();
   sbSetSession(null);
+  sbEffacerProfilCache();
   if (s && s.access_token) {
     try {
       await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
@@ -142,6 +143,78 @@ async function sbDeconnexion() {
       });
     } catch (e) { /* session locale déjà supprimée */ }
   }
+}
+
+/* ---------- Profil courant (cache léger pour la navigation) ---------- */
+const SB_PROFIL_KEY = "sb-profil-devoirs";
+
+function sbStockerProfil(p) {
+  if (!p) return;
+  try {
+    localStorage.setItem(SB_PROFIL_KEY, JSON.stringify({
+      role: p.role, statut: p.statut || "accepte", nom: p.nom,
+      classe: p.classe, matiere: p.matiere
+    }));
+  } catch (e) { /* stockage indisponible */ }
+}
+
+function sbProfilCache() {
+  try { return JSON.parse(localStorage.getItem(SB_PROFIL_KEY)) || null; }
+  catch (e) { return null; }
+}
+
+function sbEffacerProfilCache() {
+  try { localStorage.removeItem(SB_PROFIL_KEY); } catch (e) { /* ignoré */ }
+}
+
+/* Connexion par identifiant libre : e-mail, ou ancien code élève
+   (ex. 3SI1-01) pour les comptes créés avant la v4. */
+async function sbConnexionIdentifiant(identifiant, password) {
+  const idf = String(identifiant || "").trim();
+  const email = idf.includes("@") ? idf : emailEleve(idf);
+  return sbConnexion(email, password);
+}
+
+/* Récupère le profil du compte connecté ; le crée si une inscription a été
+   interrompue (confirmation e-mail activée dans Supabase) et que les
+   informations sont encore en attente dans le navigateur. */
+async function sbAssurerProfil() {
+  let profil = await sbMonProfil();
+  if (profil) { sbStockerProfil(profil); return profil; }
+  try {
+    const session = sbSession();
+    const attente = JSON.parse(localStorage.getItem("sb-inscription") || "null");
+    if (session && session.user && attente && attente.email &&
+        attente.email.toLowerCase() === String(session.user.email || "").toLowerCase()) {
+      const rows = await sbCreerProfil({
+        id: session.user.id,
+        role: attente.role || "eleve",
+        nom: attente.nom || "",
+        classe: attente.classe || null,
+        matiere: attente.matiere || null,
+        code: null,
+        email: session.user.email,
+        statut: "en_attente"
+      });
+      localStorage.removeItem("sb-inscription");
+      profil = Array.isArray(rows) ? rows[0] : rows;
+      if (profil) sbStockerProfil(profil);
+    }
+  } catch (e) { /* le profil sera créé depuis l'écran prévu à cet effet */ }
+  return profil;
+}
+
+/* Écritures génériques */
+function sbInsert(table, ligne) {
+  return sbReq(table, { method: "POST", body: ligne, prefer: "return=representation" });
+}
+
+function sbPatch(table, filtre, champs) {
+  return sbReq(`${table}?${filtre}`, { method: "PATCH", body: champs, prefer: "return=representation" });
+}
+
+function sbSupprimer(table, filtre) {
+  return sbReq(`${table}?${filtre}`, { method: "DELETE" });
 }
 
 /* ---------- Requêtes REST (PostgREST) ---------- */

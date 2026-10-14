@@ -11,6 +11,25 @@ window.CONFIG = {
   /* Matière enseignée sur ce site */
   matiere: "STI",
 
+  /* Matières proposées à l'inscription (chaque enseignant déclare la
+     sienne ; l'élève choisit la matière de l'enseignant qu'il suit) */
+  matieres: [
+    "STI",
+    "Informatique",
+    "Mathématiques",
+    "Physique",
+    "Chimie",
+    "Sciences naturelles",
+    "Français",
+    "Anglais",
+    "Arabe",
+    "Histoire-Géographie",
+    "Philosophie",
+    "Éducation islamique",
+    "Éducation civile",
+    "Sport"
+  ],
+
   /* Année scolaire */
   annee: "2026-2027",
 

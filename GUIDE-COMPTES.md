@@ -1,109 +1,141 @@
-# 🔐 Guide de mise en place des comptes (Phase 3)
+# Guide des comptes — v4 (validation par l'admin, devoirs en ligne)
 
-Objectif : activer les **comptes élèves et enseignant** sur le site des devoirs —
-dépôt de fichiers directement sur le site, notes saisies en ligne et visibles
-aussitôt par les élèves. La base utilisée est **le même projet Supabase que
-l'espace Vie scolaire** : votre compte enseignant sera identique sur les deux sites.
+Le site s'ouvre désormais sur la **page de connexion**. Chacun crée son
+compte (enseignant ou élève), **l'administrateur du site le valide**,
+puis chacun accède à son espace :
 
-⏱️ Temps estimé : **10 minutes**, une seule fois.
+- **Enseignant validé** : il choisit la **date** de chaque devoir au
+  **calendrier officiel tunisien**, écrit le **sujet** et la
+  **correction**, voit les **élèves de ses classes**, saisit les
+  **notes**, les **remarques** (appréciations) et les **observations**.
+- **Élève validé** : il voit les **dates** des devoirs à l'avance, mais
+  le **sujet** et la **correction** seulement à partir du **lendemain**
+  de l'épreuve (règle **J+1**), ainsi que **ses notes** et les
+  **remarques** de l'enseignant.
+- **Admin du site** : `aymenessouyah@gmail.com` (validé automatiquement).
+  Son espace enseignant contient un tableau de bord **⭐ Administration**
+  pour accepter / refuser les comptes et corriger les rôles.
 
----
-
-## Étape 1 — Créer les tables dans Supabase
-
-1. Ouvrez [supabase.com](https://supabase.com) et connectez-vous → projet
-   **« aymenessouyah-vie-scolaire »** (celui de viescolaire).
-2. Menu de gauche : **SQL Editor** → **New query**.
-3. Collez tout le contenu du fichier
-   [`supabase/schema.sql`](https://github.com/aymenessouyah/devoirs2026-2027/blob/main/supabase/schema.sql)
-   → **Run**.
-4. ✅ Message « Success » : les tables `profils`, `notes`, `rendus` et le
-   bucket privé `depots` sont créés (la table de viescolaire n'est pas touchée).
-
-## Étape 2 — Autoriser les inscriptions
-
-Dans Supabase : **Authentication → Sign In / Providers → Email** :
-
-- **« Allow new users to sign up » : ACTIVÉ** (sinon les élèves ne peuvent pas s'inscrire)
-- **« Confirm email » : DÉSACTIVÉ** (les élèves se connectent avec un code, sans boîte e-mail)
-
-> ℹ️ L'espace Vie scolaire continue de fonctionner normalement avec ces réglages.
-
-## Étape 3 — Créer et activer votre compte enseignant
-
-1. Sur le site : page **Connexion** → onglet **Enseignant** → **Inscription**
-   (votre e-mail `aymenessouyah@gmail.com` + un mot de passe).
-2. Retournez dans Supabase → **SQL Editor** → exécutez cette ligne :
-
-```sql
-update public.profils set role = 'enseignant'
-where id = (select id from auth.users where email = 'aymenessouyah@gmail.com');
-```
-
-3. Reconnectez-vous sur le site → l'**Espace enseignant** s'ouvre :
-   suivi des dépôts par devoir, saisie des notes en ligne, élèves inscrits.
-
-> ⭐ **Votre e-mail `aymenessouyah@gmail.com` est l'admin du site** : avec le
-> schéma SQL à jour (v3.1), la promotion est **automatique** dès la création
-> du profil — l'étape 2 ci-dessus n'est qu'un secours. Et si vous aviez déjà
-> exécuté l'ancien schéma, **relancez simplement le fichier** : il est sans
-> danger et ajoute l'annuaire + la promotion automatique.
-
-## Étape 4 — Inscrire les élèves
-
-Dites simplement aux élèves :
-
-> « Allez sur le site → **Connexion** → créez votre compte avec votre
-> **code élève** (ex. 3SI1-01) et un mot de passe de votre choix. »
-
-Ensuite, depuis leur **Espace élève**, ils peuvent :
-
-- 📤 déposer chaque devoir (fichier joint **ou** lien Google Drive) ;
-- 🎯 voir leurs notes dès que vous les saisissez ;
-- 📝 retrouver leurs prochaines épreuves (DC/DS).
-
-## Étape 5 — Au quotidien
-
-- **Saisir une note** : Espace enseignant → choisissez le devoir → notez chaque
-  élève → *Enregistrer*. Visible immédiatement par l'élève.
-- **Voir un dépôt** : même tableau, bouton « 📎 Fichier » ou « 🔗 Lien ».
-- **Élèves sans compte** : ils n'apparaissent pas encore dans les tableaux —
-  l'ancien système (fichiers `data/`, page « Mon suivi » par code) continue de
-  fonctionner en parallèle le temps que tout le monde s'inscrive.
+La base est le **même projet Supabase** que l'espace Vie scolaire ; la
+table `espace_pedagogique` n'est pas touchée. Les anciens fichiers
+`data/devoirs.js` etc. restent comme **repli** et source d'import.
 
 ---
 
-## 🆘 Dépannage
+## Mise en place (une seule fois, ~5 minutes)
 
-| Message | Cause | Solution |
+### 1. (Ré)exécuter le schéma SQL
+
+Supabase → **SQL Editor** → *New query* → collez tout le contenu de
+[`supabase/schema.sql`](supabase/schema.sql) → **Run**.
+
+Le script est **idempotent** : vous pouvez le relancer sans danger. Déjà
+exécuté en v3 ? Relancez-le : il ajoute la table `devoirs` et les
+colonnes `statut`, `matiere`, `email`, `observation` des profils.
+Les comptes créés avant la v4 sont **acceptés automatiquement** (une
+seule fois) ; les futures inscriptions attendront votre validation.
+
+### 2. Réglages d'authentification
+
+Supabase → **Authentication** → *Sign In / Providers* → **Email** :
+
+- **« Allow new users to sign up » : ACTIVÉ** (sinon aucune inscription) ;
+- **« Confirm email » : DÉSACTIVÉ** (la connexion doit marcher
+  immédiatement ; c'est votre validation qui protège l'accès).
+
+### 3. Créer le compte admin
+
+Sur la page d'accueil du site → **Créer un compte** → **Je suis
+enseignant** → avec **`aymenessouyah@gmail.com`** : le compte est
+**validé automatiquement** (rôle enseignant + admin). Connectez-vous :
+votre espace contient la zone **⭐ Administration du site**.
+
+---
+
+## Au quotidien
+
+### Valider les comptes (admin)
+
+Dans votre espace enseignant, zone **⭐ Administration** :
+
+- **⏳ Demandes en attente** : **✅ Accepter** ou **Refuser** chaque
+  inscription (enseignant ou élève — le type, la classe et la matière
+  demandés sont affichés).
+- **👥 Tous les comptes** : corriger le **rôle** (élève ↔ enseignant),
+  ré-accepter un compte refusé, refuser ou **supprimer** un profil.
+
+Tant qu'un compte n'est pas accepté, la personne voit seulement
+« Compte en attente de validation ».
+
+### Côté enseignant
+
+1. **Créer un compte** (type Enseignant + sa matière) → l'admin
+   l'accepte.
+2. **📝 Mes devoirs** : choisissez la **classe** →
+   **➕ Nouveau devoir** (ou **✏️ Modifier**) :
+   - le type (**devoir de contrôle** / **devoir de synthèse**) ;
+   - la **date**, cliquée dans le calendrier : seuls les jours
+     compatibles avec le **calendrier scolaire officiel tunisien** sont
+     verts (contrôle = jour de cours de la classe, hors vacances,
+     jours fériés et semaines bloquées ; synthèse = uniquement en
+     semaine bloquée ; jamais un dimanche, une date passée ou un jour
+     déjà occupé) ;
+   - le **sujet** et la **correction** (textes libres, visibles par
+     les élèves à partir du lendemain de l'épreuve) ;
+   - le **barème**.
+   Bouton **⬇ Importer les épreuves du fichier** : récupère en un clic
+   les 18 épreuves de `data/devoirs.js` de la classe pour les gérer
+   ensuite en ligne (sans doublons).
+3. **👨‍🎓 Mes élèves — notes et observations** : choisissez la classe
+   et le devoir → saisissez la **note** et la **remarque** de chaque
+   élève validé (**Enregistrer** ligne par ligne ; vider la note puis
+   Enregistrer l'efface). Plus bas, la liste des élèves de la classe
+   avec leur moyenne et un champ **Observation générale** visible par
+   l'élève.
+
+### Côté élève
+
+1. **Créer un compte** (type Élève + sa **classe** + la **matière** de
+   son enseignant) → l'admin l'accepte.
+2. Dans son espace :
+   - **📅 Mes prochains devoirs** : dates et échéances (le sujet reste
+     🔒 jusqu'au lendemain) ;
+   - **📝 Mes devoirs passés** : boutons **📄 Sujet** et **✅ Correction**
+     (ouverts à partir de J+1), sa note et la remarque de l'enseignant ;
+   - **🎯 Mes notes** : toutes ses notes avec les remarques ;
+   - l'**observation générale** de l'enseignant, s'il y en a une.
+
+### Anciens comptes (avant la v4)
+
+- Les profils existants sont **acceptés d'office** par la migration.
+- Les élèves qui se connectaient avec leur **code** (ex. `3SI1-01`)
+  peuvent continuer : le champ « E-mail » de la connexion accepte
+  aussi le code élève.
+
+---
+
+## Sécurité (résumé)
+
+- Règles RLS : un élève ne voit que les devoirs de **sa classe** ; un
+  enseignant ne modifie que **ses** devoirs (l'admin : tous) ; les
+  notes d'un élève ne sont lisibles que par lui et les enseignants.
+- Personne ne peut se valider soi-même ni changer son rôle
+  (déclencheur SQL) : **seul l'admin** accepte/refuse et attribue les
+  rôles. Le compte `aymenessouyah@gmail.com` est validé
+  automatiquement dès sa création.
+- La règle **J+1** (sujet/correction) est appliquée par l'affichage du
+  site : les dates restent visibles, le contenu ne l'est pas avant le
+  lendemain.
+- La clé `service_role` ne doit **jamais** figurer dans le site : seule
+  la clé publique `anon` est utilisée, la sécurité repose sur les RLS.
+
+## Dépannage
+
+| Symptôme | Cause probable | Solution |
 |---|---|---|
-| « La base n'est pas encore installée » | Étape 1 non faite | Exécuter `supabase/schema.sql` |
-| « Les inscriptions sont fermées… » | Étape 2, 1er réglage | Activer « Allow new users to sign up » |
-| « E-mail non confirmé… » | Étape 2, 2e réglage | Désactiver « Confirm email » |
-| « Compte non activé comme enseignant » | Étape 3, promotion non faite | Exécuter la ligne SQL de promotion |
-| « Ce compte existe déjà » | Code élève déjà inscrit | L'élève se connecte (ou voir ci-dessous) |
-| Élève a oublié son mot de passe | — | Supabase → Authentication → Users → supprimez son compte, puis il se réinscrit avec le même code (⚠️ ses notes en ligne liées au compte seront effacées) |
-
-## 👥 Gérer les enseignants et les élèves depuis le site
-
-Une fois connecté comme enseignant, tout se fait dans l'**Espace enseignant**,
-sans repasser par Supabase :
-
-- **📋 Annuaire des élèves** : ajoutez un élève (nom, classe, code proposé
-  automatiquement), corrigez un nom / une classe / un code, ou supprimez une
-  entrée. Le code est utilisable **immédiatement** pour l'inscription.
-  Au premier usage, le bouton **« Importer les élèves des fichiers »** recopie
-  vos listes actuelles (`data/eleves.js`) dans l'annuaire.
-- **🧑‍🏫 Enseignants** : un collègue crée son compte (page Connexion, onglet
-  Enseignant), puis vous le **promouvez** ici en un clic ; vous pouvez aussi
-  renommer un compte ou rétrograder un enseignant.
-- La colonne **« Compte »** de l'annuaire indique quels élèves ont déjà créé
-  leur compte (✓ Créé / En attente).
-
-## 🔒 Sécurité
-
-- La clé affichée dans `js/supabase.js` est la clé **publique** du projet :
-  c'est normal, la protection réelle est assurée par les règles **RLS**
-  (chaque élève ne voit que ses données ; seul l'enseignant voit tout).
-- Ne partagez **jamais** la clé `service_role`.
-- Après chaque utilisation du jeton GitHub dans une conversation, pensez à le révoquer.
+| « Base de données pas encore installée » | Schéma SQL non exécuté | Étape 1 ci-dessus |
+| « La table des devoirs n'existe pas encore » (espace enseignant) | Schéma v3 seulement | (Ré)exécutez le schéma v4 (étape 1) |
+| « Compte en attente de validation » qui dure | L'admin n'a pas encore accepté | Admin → ⭐ Administration → ✅ Accepter |
+| Inscription impossible (« Signups not allowed ») | Inscriptions fermées dans Supabase | Étape 2 : activer « Allow new users to sign up » |
+| « E-mail non confirmé » à la connexion | « Confirm email » activé | Étape 2 : le désactiver |
+| Un élève validé ne voit aucun devoir | Classe/matière de son profil, ou devoirs pas encore créés/importés | Admin : corriger le profil ; Enseignant : importer ou créer les devoirs de sa classe |

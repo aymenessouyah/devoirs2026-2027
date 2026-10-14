@@ -1303,3 +1303,32 @@ tbody tr:hover { background: var(--surface-2); }
   .cal-event { font-size: 0.62rem; padding: 0.18rem 0.35rem; }
   .cal-num { font-size: 0.75rem; }
 }
+
+/* ---------- v4 : espaces connectés ---------- */
+.boite-texte {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--soft-violet, rgba(139, 92, 246, .08));
+  border: 1px solid var(--border, rgba(120, 110, 160, .25));
+  border-radius: .75rem;
+  padding: .8rem 1rem;
+  font-size: .94rem;
+  line-height: 1.55;
+  text-align: left;
+  font-weight: 400;
+}
+.table input[type="text"],
+.table input[type="number"],
+.table select {
+  width: 100%;
+  min-width: 90px;
+  padding: .45rem .6rem;
+  border: 1.5px solid var(--border, rgba(120, 110, 160, .3));
+  border-radius: .55rem;
+  background: var(--card-bg, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: .92rem;
+}
+.table .input-note { min-width: 70px; }
+.btn-bascule { margin-left: .4rem; }

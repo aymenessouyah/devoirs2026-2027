@@ -157,3 +157,37 @@ conformes au calendrier officiel tunisien — jours de cours de la classe pour
 les devoirs de contrôle, semaines bloquées pour les devoirs de synthèse,
 jamais pendant les vacances ni un jour férié. La modification générée se colle
 ensuite dans `data/devoirs.js`.
+
+
+## 🔀 v4.0 — Réorganisation : connexion d'abord, comptes validés, devoirs en ligne
+
+Le site s'ouvre désormais sur la **page de connexion** ; tout le reste
+est réservé aux comptes **validés par l'administrateur du site**
+(`aymenessouyah@gmail.com`, validé automatiquement, tableau de bord
+**⭐ Administration** dans son espace enseignant).
+
+- **Inscription** : e-mail + mot de passe, choix du type
+  (**enseignant** / **élève**) ; l'élève choisit sa **classe** et sa
+  **matière**, l'enseignant sa **matière** (liste dans
+  `data/config.js`). Le compte reste **en attente** jusqu'à la décision
+  de l'admin (accepter / refuser, corriger les rôles, supprimer).
+- **Enseignant validé** : les devoirs vivent dans la **base**
+  (table `devoirs`) — il choisit la **classe**, clique la **date** dans
+  le calendrier (règles du calendrier officiel tunisien : contrôle =
+  jour de cours hors vacances/fériés/semaines bloquées, synthèse =
+  semaine bloquée uniquement), écrit le **sujet** et la
+  **correction**, puis saisit **notes**, **remarques** et
+  **observations** pour les élèves validés de ses classes. Les 18
+  épreuves du fichier s'importent en un clic (sans doublons).
+- **Élève validé** : il voit les **dates** des devoirs à l'avance,
+  mais le **sujet** et la **correction** seulement à partir du
+  **lendemain de l'épreuve (J+1)** ; il consulte ses **notes**, les
+  **remarques** de l'enseignant et son **observation générale**.
+- Les anciennes pages (Devoirs, Dépôt, Mon suivi, Admin, fiches
+  classes) redirigent vers la page de connexion ; le calendrier
+  officiel et la vie de classe restent accessibles après connexion.
+- Les fichiers `data/` restent le **repli** (affichage des épreuves
+  tant que la base est vide) ; les anciens comptes élèves peuvent
+  toujours se connecter avec leur **code** à la place de l'e-mail.
+- Mise en place : (ré)exécuter `supabase/schema.sql` (v4, idempotent)
+  puis suivre [`GUIDE-COMPTES.md`](GUIDE-COMPTES.md).
