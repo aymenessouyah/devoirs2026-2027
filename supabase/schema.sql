@@ -395,6 +395,18 @@ set role = 'enseignant', statut = 'accepte'
 from auth.users u
 where p.id = u.id and lower(u.email) = 'aymenessouyah@gmail.com';
 
+-- Taille de la base : utilisée par le site pour afficher le pourcentage
+-- de remplissage Supabase sous la version (barre latérale). L'offre
+-- gratuite inclut 500 Mo de base de données.
+create or replace function public.taille_base()
+returns bigint
+language sql
+security definer
+set search_path = public
+as $$ select pg_database_size(current_database()) $$;
+revoke all on function public.taille_base() from public;
+grant execute on function public.taille_base() to authenticated;
+
 -- =========================================================================
 --  APRÈS l'exécution de ce script :
 --

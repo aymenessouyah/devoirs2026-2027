@@ -86,7 +86,11 @@ select.input{appearance:none}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.0.1</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.0.2</p>
+    <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
+      <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
+      <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
+    </div>
   </div>
 </aside>
 
@@ -413,6 +417,7 @@ async function entrerApp() {
   }
   $("#btnNouveauDevoir").style.display = p.role === "enseignant" ? "" : "none";
   await chargerDonnees();
+  afficherRemplissageSupabase();
   construireNav();
   showSection("dashboard");
 }
@@ -1138,6 +1143,24 @@ function rendreVie() {
         </div>
       </div>
     </div>`;
+}
+
+/* ---------- Remplissage Supabase (sous la version, barre latérale) ---------- */
+const SB_QUOTA_BASE_MO = 500; /* offre gratuite Supabase : 500 Mo de base */
+async function afficherRemplissageSupabase() {
+  const zone = $("#sbRemplissage"), txt = $("#sbRemplissageTxt"), barre = $("#sbRemplissageBarre");
+  if (!zone || !txt || !barre) return;
+  try {
+    const octets = await sbReq("rpc/taille_base", { method: "POST", body: {} });
+    const mo = Number(octets) / (1024 * 1024);
+    if (!isFinite(mo)) throw new Error("mesure illisible");
+    const pct = Math.max(0, Math.min(100, (mo / SB_QUOTA_BASE_MO) * 100));
+    txt.textContent = `${pct.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % • ${mo.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo / ${SB_QUOTA_BASE_MO} Mo`;
+    barre.style.width = Math.max(pct, 1.5) + "%";
+    barre.style.background = pct >= 90 ? "#E11D63" : pct >= 75 ? "#F59E0B" : "";
+  } catch (e) {
+    zone.style.display = "none"; /* fonction SQL pas encore créée : on n'affiche rien */
+  }
 }
 
 /* ================= DÉMARRAGE ================= */
