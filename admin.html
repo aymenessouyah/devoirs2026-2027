@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Espace enseignant · 3SI1 &amp; 4SI2 — STI 2026-2027</title>
+  <meta name="description" content="Espace enseignant : ajoutez des devoirs, des notes et des dépôts au site." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234338ca'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3ED%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="admin">
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>🔐 Espace enseignant</h1>
+      <p class="sub">Remplissez un formulaire, copiez le bloc généré et collez-le dans le fichier de données correspondant sur GitHub. C'est tout !</p>
+    </div>
+  </section>
+
+  <main>
+    <section class="section">
+      <div class="container">
+
+        <!-- Mode d'emploi -->
+        <div class="section-head">
+          <div>
+            <h2>📖 Mode d'emploi</h2>
+            <p>La même méthode pour tous les ajouts (devoir, note, dépôt).</p>
+          </div>
+        </div>
+        <div class="steps mb-3">
+          <div class="step">
+            <div>
+              <h4>Remplissez le formulaire ci-dessous</h4>
+              <p>Choisissez l'onglet concerné (devoir, note ou dépôt) et remplissez les champs.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div>
+              <h4>Cliquez sur « Générer » puis « Copier »</h4>
+              <p>Le site prépare le bloc de code exact à ajouter dans le fichier de données.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div>
+              <h4>Collez-le sur GitHub et enregistrez</h4>
+              <p>
+                Ouvrez le fichier concerné (liens ci-dessous), cliquez sur le crayon ✏️, collez le bloc
+                <strong>juste après le crochet ouvrant <code>[</code></strong>, puis cliquez sur « Commit changes ».
+                Le site se met à jour en ~1 minute.
+              </p>
+              <p class="mt-1">
+                Fichiers :
+                <a class="lien-edition" data-fichier="devoirs.js" href="#">data/devoirs.js</a> ·
+                <a class="lien-edition" data-fichier="notes.js" href="#">data/notes.js</a> ·
+                <a class="lien-edition" data-fichier="eleves.js" href="#">data/eleves.js</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Générateur de devoir -->
+        <div class="card mb-3">
+          <h2 class="card-title">📌 Ajouter un devoir</h2>
+          <p class="text-muted">Le bloc généré s'ajoute dans <code>data/devoirs.js</code> (tableau <code>window.DEVOIRS</code>).</p>
+          <div class="form-grid mt-2">
+            <div class="field full">
+              <label for="admin-devoir-titre">Titre du devoir *</label>
+              <input type="text" id="admin-devoir-titre" placeholder="Ex. : Exercices sur les boucles" />
+            </div>
+            <div class="field">
+              <label for="admin-devoir-classe">Classe</label>
+              <select id="admin-devoir-classe"></select>
+            </div>
+            <div class="field">
+              <label for="admin-devoir-type">Type</label>
+              <select id="admin-devoir-type">
+                <option value="exercices">Exercices</option>
+                <option value="lecon">Leçon</option>
+                <option value="projet">Projet</option>
+                <option value="tp">TP</option>
+                <option value="interro">Interrogation</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="admin-devoir-ajout">Date de publication</label>
+              <input type="date" id="admin-devoir-ajout" />
+            </div>
+            <div class="field">
+              <label for="admin-devoir-echeance">Échéance *</label>
+              <input type="date" id="admin-devoir-echeance" />
+            </div>
+            <div class="field full">
+              <label for="admin-devoir-desc">Description</label>
+              <textarea id="admin-devoir-desc" placeholder="Consignes détaillées du devoir…"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btn-gen-devoir">🧾 Générer le bloc</button>
+          </div>
+          <div id="zone-devoir" class="hidden">
+            <div class="code-block"></div>
+            <div class="copy-row">
+              <button class="btn btn-outline btn-sm btn-copy">📋 Copier</button>
+              <a class="btn btn-ghost btn-sm lien-edition" data-fichier="devoirs.js" href="#">✏️ Ouvrir data/devoirs.js</a>
+              <span class="copy-feedback">Copié ✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Générateur de note -->
+        <div class="card mb-3">
+          <h2 class="card-title">🎯 Ajouter une note</h2>
+          <p class="text-muted">Le bloc généré s'ajoute dans <code>data/notes.js</code> (tableau <code>window.NOTES</code>).</p>
+          <div class="form-grid mt-2">
+            <div class="field">
+              <label for="admin-note-classe">Classe de l'élève</label>
+              <select id="admin-note-classe"></select>
+            </div>
+            <div class="field">
+              <label for="admin-note-eleve">Élève</label>
+              <select id="admin-note-eleve"></select>
+            </div>
+            <div class="field full">
+              <label for="admin-note-devoir">Devoir</label>
+              <select id="admin-note-devoir"></select>
+            </div>
+            <div class="field">
+              <label for="admin-note-valeur">Note *</label>
+              <input type="text" id="admin-note-valeur" placeholder="Ex. : 14.5" />
+            </div>
+            <div class="field">
+              <label for="admin-note-sur">Sur</label>
+              <input type="text" id="admin-note-sur" value="20" />
+            </div>
+            <div class="field">
+              <label for="admin-note-date">Date de correction</label>
+              <input type="date" id="admin-note-date" />
+            </div>
+            <div class="field full">
+              <label for="admin-note-appreciation">Appréciation</label>
+              <input type="text" id="admin-note-appreciation" placeholder="Ex. : Bon travail, continue ainsi." />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btn-gen-note">🧾 Générer le bloc</button>
+          </div>
+          <div id="zone-note" class="hidden">
+            <div class="code-block"></div>
+            <div class="copy-row">
+              <button class="btn btn-outline btn-sm btn-copy">📋 Copier</button>
+              <a class="btn btn-ghost btn-sm lien-edition" data-fichier="notes.js" href="#">✏️ Ouvrir data/notes.js</a>
+              <span class="copy-feedback">Copié ✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Générateur de rendu -->
+        <div class="card mb-3">
+          <h2 class="card-title">📥 Enregistrer un dépôt (rendu)</h2>
+          <p class="text-muted">Le bloc généré s'ajoute dans <code>data/notes.js</code> (tableau <code>window.RENDUS</code>).</p>
+          <div class="form-grid mt-2">
+            <div class="field">
+              <label for="admin-rendu-classe">Classe de l'élève</label>
+              <select id="admin-rendu-classe"></select>
+            </div>
+            <div class="field">
+              <label for="admin-rendu-eleve">Élève</label>
+              <select id="admin-rendu-eleve"></select>
+            </div>
+            <div class="field full">
+              <label for="admin-rendu-devoir">Devoir</label>
+              <select id="admin-rendu-devoir"></select>
+            </div>
+            <div class="field">
+              <label for="admin-rendu-date">Date du dépôt</label>
+              <input type="date" id="admin-rendu-date" />
+            </div>
+            <div class="field">
+              <label for="admin-rendu-commentaire">Commentaire</label>
+              <input type="text" id="admin-rendu-commentaire" placeholder="Facultatif" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btn-gen-rendu">🧾 Générer le bloc</button>
+          </div>
+          <div id="zone-rendu" class="hidden">
+            <div class="code-block"></div>
+            <div class="copy-row">
+              <button class="btn btn-outline btn-sm btn-copy">📋 Copier</button>
+              <a class="btn btn-ghost btn-sm lien-edition" data-fichier="notes.js" href="#">✏️ Ouvrir data/notes.js</a>
+              <span class="copy-feedback">Copié ✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personnel -->
+        <div class="card">
+          <h2 class="card-title">⚙️ Personnalisation</h2>
+          <p class="text-muted">Votre nom, votre e-mail, le titre du site et les classes se modifient dans
+            <a class="lien-edition" data-fichier="config.js" href="#">data/config.js</a>.
+            La liste des élèves et de leurs codes est dans
+            <a class="lien-edition" data-fichier="eleves.js" href="#">data/eleves.js</a>.</p>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script src="data/config.js"></script>
+  <script src="data/devoirs.js"></script>
+  <script src="data/eleves.js"></script>
+  <script src="data/notes.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

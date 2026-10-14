@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4ème SI 2 · Devoirs — STI 2026-2027</title>
+  <meta name="description" content="Espace de la classe 4ème SI 2 : devoirs, échéances et moyennes." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234338ca'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3ED%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="classe" data-classe="4si2">
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="hero-kicker">🎓 Classe</p>
+      <h1 id="classe-titre">4ème SI 2</h1>
+      <p class="sub" id="classe-sub">Devoirs de la classe</p>
+    </div>
+  </section>
+
+  <main>
+    <section class="section-tight">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>📌 Devoirs de la classe</h2>
+            <p>Retrouvez ici tous les devoirs publiés pour votre classe.</p>
+          </div>
+          <a class="btn btn-outline" href="devoirs.html">Tous les devoirs</a>
+        </div>
+        <div id="classe-devoirs"></div>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>🗓️ Prochaines échéances</h2>
+            <p>Les dates limites à venir pour cette classe.</p>
+          </div>
+        </div>
+        <div id="classe-planning"></div>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>📊 Moyennes de la classe</h2>
+            <p>Moyennes anonymes calculées à partir des notes publiées.</p>
+          </div>
+        </div>
+        <div id="classe-moyennes"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="data/config.js"></script>
+  <script src="data/devoirs.js"></script>
+  <script src="data/eleves.js"></script>
+  <script src="data/notes.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
