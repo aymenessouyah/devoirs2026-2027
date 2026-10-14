@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.0</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.1</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.0</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.1</p>
 </main>
 </div>
 </div>
@@ -1844,6 +1844,7 @@ function correctionIAHTML(devoir, eleves) {
       <label class="text-xs font-extrabold">IMPORTER LE FICHIER D'UN ÉLÈVE<br><select id="ia-import-eleve" class="input mt-1 !w-auto">${eleves.map(e => `<option value="${e.id}">${esc(e.nom || e.email || "")}</option>`).join("")}</select></label>
       <label class="pill cursor-pointer !text-xs !py-2.5">📥 Importer un fichier<input type="file" accept=".pdf,.docx,.txt,.py,.pas,.sql,.md,.csv,.png,.jpg,.jpeg,.webp" class="hidden" onchange="importerSolutionProf(this,'${devoir.id}')"></label>
     </div>
+    ${!eleves.length ? `<p class="text-[13px] text-amber-600 mt-2">⚠️ Aucun élève dans cette classe pour le moment.${estAdmin() ? ` <button type="button" class="underline font-bold" onclick="showSection('admin')">➕ Ajoutez-les dans ⭐ Administration (« Ajouter des élèves »)</button>` : " Demandez à l'administrateur de les ajouter (⭐ Administration → « Ajouter des élèves »)."}</p>` : ""}
     <div class="grid gap-2 mt-3">
       ${rendusD.map(r => `<div class="border rounded-2xl p-3" style="background:rgba(124,58,237,.04)">
         <div class="flex flex-wrap gap-2 items-center">
@@ -2114,6 +2115,29 @@ function rendreAdmin() {
       ${refus.length ? `<p class="text-[12px] text-slate-400 mt-3">${refus.length} compte(s) refusé(s) : ${refus.map(p => esc(p.nom || p.email || "")).join(", ")}</p>` : ""}
     </div>
 
+    <div class="card p-5 mt-5" style="border-color:#BAE6FD">
+      <h3 class="font-extrabold text-[16px]">👨‍🎓 Ajouter des élèves</h3>
+      <p class="text-[13px] text-slate-500 mt-1">Créez vous-même les comptes de vos élèves, sans attendre leur inscription : chacun reçoit un <b>code</b> (son identifiant de connexion) et un <b>mot de passe provisoire</b> à lui communiquer en classe. Le compte est actif immédiatement.</p>
+      <form onsubmit="ajouterEleve(event)" class="grid md:grid-cols-2 xl:grid-cols-5 gap-2 mt-3 items-end">
+        <label class="text-[11px] font-extrabold">NOM COMPLET *<input id="nv-eleve-nom" required class="input mt-1" placeholder="Ex. : Amine Ben Salah"></label>
+        <label class="text-[11px] font-extrabold">CLASSE *<select id="nv-eleve-classe" class="input mt-1">${optionsClasses(ETAT.classesAll[0] && ETAT.classesAll[0].cle)}</select></label>
+        <label class="text-[11px] font-extrabold">CODE (vide = automatique)<input id="nv-eleve-code" class="input mt-1" placeholder="Ex. : 3SI1-07"></label>
+        <label class="text-[11px] font-extrabold">MOT DE PASSE PROVISOIRE *<input id="nv-eleve-mdp" required minlength="6" class="input mt-1" value="Eleve2026"></label>
+        <button class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold">➕ Créer le compte</button>
+      </form>
+      <details class="mt-3"><summary class="text-xs font-bold text-sky-700 cursor-pointer">📋 Ajout en masse (un élève par ligne)</summary>
+        <form onsubmit="ajouterElevesMasse(event)" class="mt-2">
+          <div class="grid md:grid-cols-2 gap-2">
+            <label class="text-[11px] font-extrabold">CLASSE *<select id="masse-eleve-classe" class="input mt-1">${optionsClasses(ETAT.classesAll[0] && ETAT.classesAll[0].cle)}</select></label>
+            <label class="text-[11px] font-extrabold">MOT DE PASSE PROVISOIRE (commun à tous) *<input id="masse-eleve-mdp" required minlength="6" class="input mt-1" value="Eleve2026"></label>
+          </div>
+          <textarea id="masse-eleve-noms" rows="6" class="input mt-2" placeholder="Un nom complet par ligne, par exemple :&#10;Amine Ben Salah&#10;Sarra Gharbi&#10;Yassine Trabelsi"></textarea>
+          <button class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold mt-2">➕ Créer tous ces comptes</button>
+        </form>
+      </details>
+      <div id="recapEleves">${recapElevesCreesHTML()}</div>
+    </div>
+
     <div class="card p-5 mt-5">
       <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Les enseignants choisissent ensuite leurs classes et matières (2 max par classe) dans leur espace.</span></div>
       <div class="overflow-auto mt-3">
@@ -2182,6 +2206,82 @@ function emploisAdminHTML() {
   </div>`;
 }
 async function actualiserAdmin() { await chargerDonnees(); rendreAdmin(); }
+/* ---------- Ajout d'élèves par l'administrateur ----------
+   Crée un vrai compte de connexion (code + mot de passe provisoire) :
+   inscription du compte, profil validé aussitôt, puis retour à la
+   session de l'administrateur. */
+let derniersElevesCrees = [];
+function recapElevesCreesHTML() {
+  if (!derniersElevesCrees.length) return "";
+  return `<div class="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200">
+    <p class="text-xs font-extrabold text-emerald-700">✅ Comptes créés — à communiquer aux élèves (connexion avec le code + ce mot de passe) :</p>
+    <ul class="text-[13px] mt-1.5 space-y-0.5">${derniersElevesCrees.map(e => `<li>🎓 <b>${esc(e.nom)}</b> (${esc(nomClasse(e.classe))}) — code : <b>${esc(e.code)}</b> • mot de passe : <b>${esc(e.mdp)}</b></li>`).join("")}</ul>
+  </div>`;
+}
+function codeEleveSuivant(classeCle, codesUtilises) {
+  const prefixe = String(classeCle || "ELV").toUpperCase().replace(/[^A-Z0-9]/g, "") || "ELV";
+  const utilises = new Set([...(ETAT.profils || []).map(x => (x.code || "").toUpperCase()), ...((codesUtilises || []).map(c => String(c).toUpperCase()))]);
+  let n = 1;
+  while (utilises.has(`${prefixe}-${String(n).padStart(2, "0")}`)) n++;
+  return `${prefixe}-${String(n).padStart(2, "0")}`;
+}
+async function creerCompteEleve(nom, classe, code, mdp) {
+  const sessionAdmin = sbSession();
+  if (!sessionAdmin || !sessionAdmin.user) throw new Error("Session administrateur introuvable : reconnectez-vous.");
+  const profilAdmin = ETAT.profil;
+  const email = emailEleve(code);
+  if ((ETAT.profils || []).some(x => (x.code || "").toLowerCase() === code.toLowerCase() || (x.email || "").toLowerCase() === email)) {
+    throw new Error(`Le code « ${code} » est déjà utilisé : choisissez-en un autre.`);
+  }
+  const sessionEleve = await sbInscription(email, mdp); /* la session devient temporairement celle de l'élève */
+  try {
+    await sbCreerProfil({ id: sessionEleve.user.id, role: "eleve", nom, classe, matiere: null, code, email, statut: "en_attente" });
+  } finally {
+    sbSetSession(sessionAdmin);
+    ETAT.session = sessionAdmin;
+    if (profilAdmin) sbStockerProfil(profilAdmin);
+  }
+  await sbPatch("profils", `id=eq.${sessionEleve.user.id}`, { statut: "accepte" });
+  return { nom, classe, code, email };
+}
+async function ajouterEleve(ev) {
+  ev.preventDefault();
+  const nom = $("#nv-eleve-nom").value.trim();
+  const classe = $("#nv-eleve-classe").value;
+  const mdp = $("#nv-eleve-mdp").value;
+  let code = $("#nv-eleve-code").value.trim().toUpperCase();
+  if (!nom || !classe) return toast("Nom et classe sont obligatoires.", "erreur");
+  if (mdp.length < 6) return toast("Mot de passe trop court (6 caractères minimum).", "erreur");
+  if (!code) code = codeEleveSuivant(classe);
+  try {
+    const cree = await creerCompteEleve(nom, classe, code, mdp);
+    derniersElevesCrees = [{ ...cree, mdp }];
+    await chargerDonnees();
+    rendreAdmin();
+    toast(`✅ Compte élève créé : ${nom} — code ${code}.`, "success");
+  } catch (e) { toast("Création impossible : " + e.message, "erreur"); }
+}
+async function ajouterElevesMasse(ev) {
+  ev.preventDefault();
+  const classe = $("#masse-eleve-classe").value;
+  const mdp = $("#masse-eleve-mdp").value;
+  const noms = $("#masse-eleve-noms").value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  if (!noms.length) return toast("Écrivez au moins un nom (un élève par ligne).", "erreur");
+  if (mdp.length < 6) return toast("Mot de passe trop court (6 caractères minimum).", "erreur");
+  const codesUtilises = [], crees = [], echecs = [];
+  for (const nom of noms) {
+    const code = codeEleveSuivant(classe, codesUtilises);
+    codesUtilises.push(code);
+    try { const c = await creerCompteEleve(nom, classe, code, mdp); crees.push({ ...c, mdp }); }
+    catch (e) { echecs.push(`${nom} (${e.message})`); }
+  }
+  derniersElevesCrees = crees;
+  await chargerDonnees();
+  rendreAdmin();
+  if (crees.length) toast(`✅ ${crees.length} compte(s) élève créé(s) — codes et mot de passe ci-dessus.`, "success");
+  if (echecs.length) toast("⚠️ Échec(s) : " + echecs.join(" ; "), "erreur");
+  if (!crees.length && !echecs.length) toast("Aucun compte créé.", "info");
+}
 async function accepterCompte(id) {
   const role = $("#acc-role-" + id).value;
   const classe = role === "eleve" ? $("#acc-classe-" + id).value : null;
