@@ -81,7 +81,7 @@
 
         <!-- Générateur de devoir -->
         <div class="card mb-3">
-          <h2 class="card-title">📌 Ajouter un devoir</h2>
+          <h2 class="card-title">📌 Ajouter un devoir de contrôle / de synthèse</h2>
           <p class="text-muted">Le bloc généré s'ajoute dans <code>data/devoirs.js</code> (tableau <code>window.DEVOIRS</code>).</p>
           <div class="form-grid mt-2">
             <div class="field full">
@@ -93,13 +93,10 @@
               <select id="admin-devoir-classe"></select>
             </div>
             <div class="field">
-              <label for="admin-devoir-type">Type</label>
+              <label for="admin-devoir-type">Type d'épreuve (seuls DC et DS sont acceptés)</label>
               <select id="admin-devoir-type">
-                <option value="exercices">Exercices</option>
-                <option value="lecon">Leçon</option>
-                <option value="projet">Projet</option>
-                <option value="tp">TP</option>
-                <option value="interro">Interrogation</option>
+                <option value="controle">Devoir de contrôle</option>
+                <option value="synthese">Devoir de synthèse</option>
               </select>
             </div>
             <div class="field">

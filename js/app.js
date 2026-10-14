@@ -411,7 +411,6 @@ function injectLayout() {
     { key: "classe-3si1", href: "classe-3si1.html", label: "3ème SI 1" },
     { key: "classe-4si2", href: "classe-4si2.html", label: "4ème SI 2" },
     { key: "vie", href: "vie-de-classe.html", label: "Vie de classe" },
-    { key: "depot", href: "depot.html", label: "Déposer" },
     { key: "suivi", href: "suivi.html", label: "Mon suivi" },
     { key: "admin", href: "admin.html", label: "Admin" },
     (typeof sbConnecte === "function" && sbConnecte())
@@ -447,7 +446,6 @@ function injectLayout() {
           <a href="devoirs.html">Devoirs</a>
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>
-          <a href="depot.html">Déposer</a>
           <a href="suivi.html">Mon suivi</a>
           <a href="admin.html">Espace enseignant</a>
         </div>
@@ -1384,12 +1382,13 @@ function renderAdmin() {
     id: "${id}",
     titre: ${JSON.stringify(titre)},
     classe: "${$("#admin-devoir-classe").value}",
-    type: "${$("#admin-devoir-type").value}",
+    type: "interro",
     date_ajout: "${$("#admin-devoir-ajout").value}",
     echeance: "${$("#admin-devoir-echeance").value}",
     description: ${JSON.stringify($("#admin-devoir-desc").value.trim())},
     fichiers: [],
-    corrige: false
+    corrige: false,
+    examen: true
   },`;
     afficherBloc("#zone-devoir", bloc);
   });

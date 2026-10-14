@@ -251,8 +251,9 @@ async function renderEspaceEleve() {
     ? notesAff.reduce((s, n) => s + (Number(n.note) / Number(n.sur || 20)) * 20, 0) / notesAff.length
     : null;
   const nbAfaire = devoirsClasse.filter((d) => !d.examen).length;
+  const nbExamens = devoirsClasse.filter((d) => d.examen).length;
   const pctRendus = nbAfaire ? Math.round((rendusIds.size / nbAfaire) * 100) : 0;
-  const pctNotes = nbAfaire ? Math.round((notesAff.length / nbAfaire) * 100) : 0;
+  const pctNotes = nbExamens ? Math.round((notesAff.length / nbExamens) * 100) : 0;
 
   const statutRendu = (d) => {
     const rDB = rendusDB.find((r) => r.devoir_id === d.id);
@@ -269,24 +270,25 @@ async function renderEspaceEleve() {
 
     <div class="grid grid-3 mb-3">
       <div class="card stat-card"><div class="num">${moyenne !== null ? fmtNote(moyenne) + "/20" : "—"}</div><div class="label">Moyenne générale</div></div>
-      <div class="card stat-card"><div class="num">${rendusIds.size}/${nbAfaire}</div><div class="label">Devoirs rendus</div></div>
+      <div class="card stat-card"><div class="num">${nbExamens}</div><div class="label">Épreuves (DC + DS) cette année</div></div>
       <div class="card stat-card"><div class="num">${notesAff.length}</div><div class="label">Notes reçues</div></div>
     </div>
 
     <div class="card mb-3">
       <h2 class="card-title">📈 Ma progression</h2>
+      ${nbAfaire ? `
       <div class="progress-block mt-2">
         <div class="progress-legend"><span>Dépôts effectués</span><strong>${pctRendus}%</strong></div>
         <div class="progress"><div class="progress-fill" style="width:${pctRendus}%"></div></div>
-      </div>
+      </div>` : ""}
       <div class="progress-block mt-2">
-        <div class="progress-legend"><span>Devoirs notés</span><strong>${pctNotes}%</strong></div>
+        <div class="progress-legend"><span>Épreuves notées</span><strong>${pctNotes}%</strong></div>
         <div class="progress"><div class="progress-fill" style="width:${pctNotes}%"></div></div>
       </div>
     </div>
 
     <div class="card mb-3">
-      <h2 class="card-title">📌 Mes devoirs</h2>
+      <h2 class="card-title">📌 Mes devoirs à déposer</h2>
       <div id="liste-devoirs-eleve">
       ${aDeposer.map((d) => {
         const st = statutRendu(d);
@@ -320,7 +322,7 @@ async function renderEspaceEleve() {
             <span class="text-muted" id="msg-depot-${esc(d.id)}"></span>
           </div>
         </div>`;
-      }).join("") || `<div class="empty">${ICONS.inbox}<p>Aucun devoir pour votre classe.</p></div>`}
+      }).join("") || `<div class="empty">${ICONS.inbox}<p>Rien à déposer : les devoirs de contrôle et de synthèse sont des épreuves passées en classe. 📝</p></div>`}
       </div>
     </div>
 

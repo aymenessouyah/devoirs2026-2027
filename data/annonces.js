@@ -15,27 +15,27 @@
    ============================================================ */
 window.ANNONCES = [
   {
-    id: "a1",
-    titre: "Interrogation HTML & CSS — vendredi 16 octobre",
-    date: "2026-10-12",
+    id: "a5",
+    titre: "Devoir de contrôle n°1 — lundi 19 et mardi 20 octobre",
+    date: "2026-10-14",
     texte:
-      "Une interrogation courte aura lieu vendredi 16 octobre sur la fiche HTML & CSS (balises essentielles et sélecteurs). Pensez à apprendre votre fiche de révision !",
+      "Le premier devoir de contrôle du trimestre aura lieu lundi 19 octobre pour la 4ème SI 2 et mardi 20 octobre pour la 3ème SI 1, pendant la séance de STI. Pensez à réviser et à apporter votre matériel habituel.",
     important: true
   },
   {
-    id: "a2",
-    titre: "Les dépôts de devoirs passent par le site",
-    date: "2026-10-10",
+    id: "a6",
+    titre: "Créez votre compte élève sur le site",
+    date: "2026-10-14",
     texte:
-      "Rappel : pour rendre un travail, utilisez la page « Déposer » du site et envoyez le message généré avec votre lien Google Drive. Merci de bien vérifier que votre lien est partagé « avec toute personne ayant le lien ».",
+      "Nouveau : créez votre compte avec votre code élève (page « Connexion ») pour suivre vos notes de devoirs de contrôle et de synthèse dès leur saisie par l'enseignant.",
     important: true
   },
   {
-    id: "a3",
-    titre: "Correction du TP n°1 terminée",
-    date: "2026-10-09",
+    id: "a7",
+    titre: "Devoir de synthèse n°1 — semaine bloquée du 7 au 12 décembre",
+    date: "2026-10-13",
     texte:
-      "Le compte rendu du TP n°1 est corrigé pour les deux classes. Vos notes et appréciations sont disponibles dans « Mon suivi » avec votre code élève.",
+      "Le devoir de synthèse n°1 aura lieu pendant la semaine bloquée : le lundi 7 décembre pour la 4ème SI 2 et le mardi 8 décembre pour la 3ème SI 1. Le programme de révision sera précisé en classe.",
     important: false
   },
   {
@@ -43,7 +43,7 @@ window.ANNONCES = [
     titre: "Bienvenue sur le site de devoirs !",
     date: "2026-09-21",
     texte:
-      "Bienvenue sur le site de la matière STI pour l'année 2026-2027. Vous y trouverez tous les devoirs des classes 3ème SI 1 et 4ème SI 2, un espace de dépôt et un suivi de vos notes. Vos codes personnels vous seront communiqués en cours.",
+      "Bienvenue sur le site de la matière STI pour l'année 2026-2027. Vous y trouverez les dates des devoirs de contrôle et de synthèse des classes 3ème SI 1 et 4ème SI 2, ainsi que le suivi de vos notes. Vos codes personnels vous seront communiqués en cours.",
     important: false
   }
 ];

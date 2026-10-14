@@ -145,3 +145,8 @@ automatiquement enseignant (déclencheur SQL) et gère depuis l'espace
 enseignant : l'**annuaire des élèves** (ajout/correction des codes
 d'inscription), la **promotion des autres enseignants** et les corrections
 de noms, sans repasser par Supabase.
+
+**📌 Règle du site : seuls les devoirs de contrôle et les devoirs de synthèse
+sont acceptés** — 2 DC + 1 DS par trimestre et par classe, passés en classe
+(champ `examen: true` dans `data/devoirs.js`, pas de dépôt en ligne). Les
+anciens devoirs « maison » (exercices, TP, projet…) ont été retirés.

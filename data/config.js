@@ -6,7 +6,7 @@
 window.CONFIG = {
   /* Titre affiché dans l'en-tête et l'onglet du navigateur */
   titre: "3SI1 & 4SI2 — Devoirs",
-  sousTitre: "Tous vos devoirs, dépôts et notes au même endroit",
+  sousTitre: "Devoirs de contrôle, devoirs de synthèse et notes — toute l'année",
 
   /* Matière enseignée sur ce site */
   matiere: "STI",
