@@ -111,7 +111,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2026-10-19",
     description:
-      "Épreuve du 1er trimestre : CSS3 (positionnement) et JavaScript. (1er trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 1er trimestre : CSS3 (positionnement) et JavaScript. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -124,7 +124,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2026-10-20",
     description:
-      "Épreuve écrite/pratique du 1er trimestre sur HTML5, CSS3 et le positionnement. (1er trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve écrite/pratique du 1er trimestre sur HTML5, CSS3 et le positionnement. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -137,7 +137,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2026-11-16",
     description:
-      "Épreuve du 1er trimestre : bases de données (SQL) et introduction au PHP. (1er trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 1er trimestre : bases de données (SQL) et introduction au PHP. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -150,7 +150,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2026-11-17",
     description:
-      "Épreuve du 1er trimestre sur les bases du langage JavaScript et la manipulation du DOM. (1er trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 1er trimestre sur les bases du langage JavaScript et la manipulation du DOM. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -189,7 +189,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-01-28",
     description:
-      "Épreuve du 2e trimestre sur les objets natifs JavaScript (Date, String, Array, Number, Math). (2e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 2e trimestre sur les objets natifs JavaScript (Date, String, Array, Number, Math). Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -202,7 +202,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-01-29",
     description:
-      "Épreuve du 2e trimestre : PHP (insertion, affichage) et notions théoriques de BD. (2e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 2e trimestre : PHP (insertion, affichage) et notions théoriques de BD. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -215,7 +215,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-02-11",
     description:
-      "Épreuve du 2e trimestre : consolidation des objets natifs JavaScript. (2e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 2e trimestre : consolidation des objets natifs JavaScript. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -228,7 +228,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-02-19",
     description:
-      "Épreuve du 2e trimestre : consolidation PHP–SQL et théorie des bases de données. (2e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 2e trimestre : consolidation PHP–SQL et théorie des bases de données. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -267,7 +267,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-04-15",
     description:
-      "Épreuve du 3e trimestre sur le LDD et le LMD (insertion, suppression, mise à jour). (3e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 3e trimestre sur le LDD et le LMD (insertion, suppression, mise à jour). Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -280,7 +280,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-04-16",
     description:
-      "Épreuve du 3e trimestre : LDD, LMD et requêtes de sélection. (3e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 3e trimestre : LDD, LMD et requêtes de sélection. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -293,7 +293,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-04-26",
     description:
-      "Épreuve du 3e trimestre : requêtes SQL complètes (jointures, sous-requêtes, regroupements). (3e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 3e trimestre : requêtes SQL complètes (jointures, sous-requêtes, regroupements). Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
@@ -306,7 +306,7 @@ window.DEVOIRS = [
     date_ajout: "2026-10-14",
     echeance: "2027-04-29",
     description:
-      "Épreuve du 3e trimestre sur les requêtes de sélection et les fonctions d'agrégat. (3e trimestre). Épreuve en classe — aucun dépôt sur le site.",
+      "Épreuve du 3e trimestre sur les requêtes de sélection et les fonctions d'agrégat. Épreuve en classe — aucun dépôt sur le site.",
     fichiers: [],
     corrige: false,
     examen: true
