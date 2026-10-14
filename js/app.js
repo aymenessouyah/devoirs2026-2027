@@ -278,7 +278,14 @@ function evaluerDateChoix(classe, iso, type, devoirIgnoreId, extra) {
   const jourSem = parseDate(iso).getDay();
 
   if (type === "synthese") {
-    const fenetres = ((OFFICIEL.epreuves || {})[classe] || []).filter((e) => e.debut && e.fin);
+    let fenetres = ((OFFICIEL.epreuves || {})[classe] || []).filter((e) => e.debut && e.fin);
+    if (!fenetres.length) {
+      /* Classe créée par l'admin, inconnue de Vie scolaire : on utilise
+         les semaines bloquées générales du calendrier officiel. */
+      fenetres = (OFFICIEL.jalons || [])
+        .filter((j) => j.type === "bloc" && j.from && j.to)
+        .map((j) => ({ nom: j.label, debut: j.from, fin: j.to }));
+    }
     const fen = fenetres.find((e) => iso >= e.debut && iso <= e.fin);
     if (!fen) return { etat: "hors-bloquee", ok: false, raison: "Hors semaine bloquée : les devoirs de synthèse ont lieu pendant les semaines bloquées" };
     if (jourSem === 0) return { etat: "dimanche", ok: false, raison: "Dimanche (pas d'épreuve)" };
@@ -291,7 +298,10 @@ function evaluerDateChoix(classe, iso, type, devoirIgnoreId, extra) {
   if (vac) return { etat: "vacances", ok: false, raison: vac.label };
   if (ferie) return { etat: "ferie", ok: false, raison: `Jour férié (${ferie.label})` };
   if (susp) return { etat: "bloquee", ok: false, raison: "Semaine bloquée (réservée aux devoirs de synthèse)" };
-  const cours = (OFFICIEL.cours || {})[classe] || [];
+  const coursConnus = (OFFICIEL.cours || {})[classe];
+  /* Classe créée par l'admin, inconnue de Vie scolaire : emploi du temps
+     inconnu, on autorise du lundi au samedi (hors vacances/fériés/bloc). */
+  const cours = coursConnus && coursConnus.length ? coursConnus : [1, 2, 3, 4, 5, 6];
   if (!cours.includes(jourSem)) return { etat: "pas-cours", ok: false, raison: "Pas de cours de STI ce jour-là pour cette classe" };
   if (occupe) return { etat: "occupe", ok: false, raison: `Déjà occupé par « ${occupe.titre} »` };
   return { etat: "valide", ok: true, raison: "Jour de cours de la classe — date valide" };
@@ -647,6 +657,9 @@ function injectLayout() {
   const liens = connecte
     ? [
         { key: "espace", href: espaceHref, label: "👤 Mon espace" },
+        ...((typeof sbEstAdminLocal === "function" && sbEstAdminLocal() && cacheP && cacheP.role === "enseignant")
+          ? [{ key: "espace-admin", href: "espace-admin.html", label: "⭐ Admin" }]
+          : []),
         { key: "calendrier", href: "calendrier.html", label: "Calendrier" },
         { key: "vie", href: "vie-de-classe.html", label: "Vie de classe" },
         { key: "deconnexion", href: "#", label: "Se déconnecter", id: "lien-deconnexion" }

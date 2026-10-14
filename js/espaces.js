@@ -44,6 +44,43 @@ function dateHeureFr(isoVal) {
 const MATIERES = (window.CONFIG && window.CONFIG.matieres) || ["STI"];
 const CLASSES_CLES = Object.keys((window.CONFIG && window.CONFIG.classes) || {});
 
+/* ---------- Classes : déterminées par l'admin (table « classes ») ---------- */
+/* La liste réelle vit dans la base (interface ⭐ Administration) ; repli
+   sur data/config.js tant que la table est vide ou injoignable. */
+let CLASSES_DYN = [];
+
+function listeClasses() {
+  if (CLASSES_DYN.length) return CLASSES_DYN;
+  return CLASSES_CLES.map((cle) => ({ cle, nom: (CFG.classes || {})[cle] || cle }));
+}
+
+function nomClasseDyn(cle) {
+  const c = listeClasses().find((x) => x.cle === cle);
+  return c ? c.nom : ((CFG.classes || {})[cle] || cle);
+}
+
+async function chargerClassesDynamiques() {
+  try {
+    const rows = await sbSelect("classes", "select=*&order=nom.asc");
+    if (rows && rows.length) CLASSES_DYN = rows.map((r) => ({ cle: r.id, nom: r.nom }));
+  } catch (e) { /* table absente : repli sur la configuration */ }
+  return listeClasses();
+}
+
+function slugClasse(nom) {
+  return String(nom || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24);
+}
+
+/* Recharge les listes déroulantes de classes une fois la base répondue */
+function rafraichirSelectsClasses(racine) {
+  $$("select.select-classes", racine || document).forEach((sel) => {
+    const v = sel.value;
+    sel.innerHTML = optionsClassesHTML(v);
+  });
+}
+
 /* Statut d'un profil ; les profils créés avant la v4 n'ont pas de
    colonne statut : ils sont considérés comme acceptés. */
 function statutProfil(p) {
@@ -97,7 +134,7 @@ function normaliserDevoirFichier(d) {
 }
 
 function optionsClassesHTML(selection) {
-  return CLASSES_CLES.map((cle) => `<option value="${cle}" ${cle === selection ? "selected" : ""}>${esc(nomClasse(cle))}</option>`).join("");
+  return listeClasses().map((c) => `<option value="${esc(c.cle)}" ${c.cle === selection ? "selected" : ""}>${esc(c.nom)}</option>`).join("");
 }
 
 function optionsMatieresHTML(selection) {
@@ -149,7 +186,7 @@ async function accesEspace(roleAttendu) {
             </div>
             <div class="field" id="profil-zone-classe">
               <label for="profil-classe">Ma classe (élèves)</label>
-              <select id="profil-classe">${optionsClassesHTML(CLASSES_CLES[0])}</select>
+              <select id="profil-classe" class="select-classes">${optionsClassesHTML(CLASSES_CLES[0])}</select>
             </div>
             <div class="field full">
               <label for="profil-matiere">Matière</label>
@@ -168,6 +205,7 @@ async function accesEspace(roleAttendu) {
       };
       $("#profil-role")?.addEventListener("change", majRole);
       majRole();
+      chargerClassesDynamiques().then(() => rafraichirSelectsClasses(contenu));
       $("#btn-deco")?.addEventListener("click", async () => { await sbDeconnexion(); location.href = "index.html"; });
       $("#btn-creer-profil")?.addEventListener("click", async () => {
         const nom = $("#profil-nom").value.trim();
@@ -235,7 +273,7 @@ function ecranAttenteHTML(profil, email, st) {
         <tbody>
           <tr><td><strong>Nom</strong></td><td>${esc(profil.nom)}</td></tr>
           <tr><td><strong>Type de compte</strong></td><td>${profil.role === "enseignant" ? "🧑‍🏫 Enseignant" : "👨‍🎓 Élève"}</td></tr>
-          ${profil.classe ? `<tr><td><strong>Classe</strong></td><td>${esc(nomClasse(profil.classe))}</td></tr>` : ""}
+          ${profil.classe ? `<tr><td><strong>Classe</strong></td><td>${esc(nomClasseDyn(profil.classe))}</td></tr>` : ""}
           ${profil.matiere ? `<tr><td><strong>Matière</strong></td><td>${esc(profil.matiere)}</td></tr>` : ""}
           <tr><td><strong>E-mail</strong></td><td>${esc(email || profil.email || "")}</td></tr>
         </tbody></table></div>
@@ -251,7 +289,7 @@ function enteteEspaceHTML(profil, titre, email) {
       <div>
         <h2>${titre}</h2>
         <p>${profil.role === "enseignant" ? "🧑‍🏫" : "👨‍🎓"} <strong>${esc(profil.nom)}</strong>
-        ${profil.classe ? `· ${esc(nomClasse(profil.classe))}` : ""}${profil.matiere ? ` · 📚 ${esc(profil.matiere)}` : ""}${profil.code ? ` · code ${esc(profil.code)}` : ""}${sbEstAdminEmail(email) ? ` · <span class="badge badge-note">⭐ Admin du site</span>` : ""}</p>
+        ${profil.classe ? `· ${esc(nomClasseDyn(profil.classe))}` : ""}${profil.matiere ? ` · 📚 ${esc(profil.matiere)}` : ""}${profil.code ? ` · code ${esc(profil.code)}` : ""}${sbEstAdminEmail(email) ? ` · <span class="badge badge-note">⭐ Admin du site</span>` : ""}</p>
       </div>
       <button class="btn btn-outline btn-sm" id="btn-deconnexion">Se déconnecter</button>
     </div>`;
@@ -330,7 +368,7 @@ function renderConnexion() {
         </div>
         <div class="field ${roleChoisi === "eleve" ? "" : "hidden"}" id="in-zone-classe">
           <label for="in-classe">Ma classe</label>
-          <select id="in-classe">${optionsClassesHTML(CLASSES_CLES[0])}</select>
+          <select id="in-classe" class="select-classes">${optionsClassesHTML(CLASSES_CLES[0])}</select>
         </div>
         <div class="field">
           <label for="in-matiere">${roleChoisi === "eleve" ? "Matière de mon enseignant" : "Ma matière"}</label>
@@ -434,6 +472,7 @@ function renderConnexion() {
   }
 
   rendre();
+  chargerClassesDynamiques().then(() => rafraichirSelectsClasses(zone));
 }
 
 /* ============================================================
@@ -446,6 +485,7 @@ async function renderEspaceEleve() {
   if (!acces) return;
   const { session, profil } = acces;
   const uid = session.user.id;
+  await chargerClassesDynamiques();
 
   if (!profil.classe) {
     contenu.innerHTML = `
@@ -665,6 +705,7 @@ async function renderEspaceEnseignant() {
   const { session, profil } = acces;
   const uid = session.user.id;
   const estAdmin = sbEstAdminEmail(session.user.email);
+  await chargerClassesDynamiques();
 
   /* Chargements tolérants : un message clair si le schéma v4 n'est pas
      encore exécuté dans Supabase (table devoirs absente). */
@@ -682,8 +723,9 @@ async function renderEspaceEnseignant() {
 
   const mesDevoirs = devoirsTous.filter((d) => d.enseignant_id === uid);
   const visibles = estAdmin ? devoirsTous : mesDevoirs;
-  if (!ENS_ETAT.classeDevoirs) ENS_ETAT.classeDevoirs = CLASSES_CLES[0];
-  if (!ENS_ETAT.classeEleves) ENS_ETAT.classeEleves = CLASSES_CLES[0];
+  const lc0 = listeClasses();
+  if (!lc0.some((c) => c.cle === ENS_ETAT.classeDevoirs)) ENS_ETAT.classeDevoirs = lc0[0] ? lc0[0].cle : null;
+  if (!lc0.some((c) => c.cle === ENS_ETAT.classeEleves)) ENS_ETAT.classeEleves = lc0[0] ? lc0[0].cle : null;
 
   contenu.innerHTML = `
     ${enteteEspaceHTML(profil, "🧑‍🏫 Espace enseignant", session.user.email)}
@@ -697,15 +739,12 @@ async function renderEspaceEnseignant() {
     ${!devoirsOk ? `<div class="callout callout-warning mb-3">${ICONS.alert}<div><strong>La table des devoirs n'existe pas encore.</strong> (Ré)exécutez <code>supabase/schema.sql</code> (version v4) dans Supabase pour activer la gestion des devoirs en ligne. En attendant, les élèves continuent de voir les devoirs du fichier du site.</div></div>` : ""}
 
     ${estAdmin ? `
-    <div class="card mb-3" style="border:2px solid var(--amber)">
-      <h2 class="card-title">⭐ Administration du site — validation des comptes</h2>
-      <p class="text-muted">Chaque nouvel enseignant ou élève inscrit attend votre validation. Acceptez ou refusez les demandes, corrigez les rôles.</p>
-      <h3 class="mt-2">⏳ Demandes en attente (${enAttente.length})</h3>
-      <div id="admin-attente" class="mt-1"></div>
-      <h3 class="mt-3">👥 Tous les comptes (${profilsTous.length})</h3>
-      <div id="admin-comptes" class="mt-1"></div>
-      <div id="admin-msg" class="mt-2"></div>
-    </div>` : ""}
+    <div class="callout callout-info mb-3">${ICONS.star}<div>
+      <strong>⭐ Vous êtes l'administrateur du site.</strong>
+      ${enAttente.length ? `<strong>${enAttente.length} demande(s) de compte</strong> en attente de validation.` : `Aucune demande de compte en attente.`}
+      Votre interface d'administration (validation des comptes, rôles, classes) est séparée de cet espace enseignant, identique à celui de tous les enseignants.<br/>
+      <a class="btn btn-primary btn-sm mt-1" href="espace-admin.html">⭐ Ouvrir l'interface d'administration →</a>
+    </div></div>` : ""}
 
     <div class="card mb-3">
       <h2 class="card-title">📝 Mes devoirs — dates, sujets et corrections</h2>
@@ -755,101 +794,9 @@ async function renderEspaceEnseignant() {
     </div>`;
 
   brancherDeconnexion();
-  if (estAdmin) rendreAdmin();
   rendreDevoirs();
   rendreEleves();
   brancherEleves();
-
-  /* ---------------- ⭐ Administration (admin uniquement) ---------------- */
-  function rendreAdmin() {
-    const zoneAtt = $("#admin-attente");
-    const zoneTous = $("#admin-comptes");
-    const badgeStatut = (p) => {
-      const st = statutProfil(p);
-      return st === "accepte" ? `<span class="badge badge-note">✓ Accepté</span>`
-        : st === "refuse" ? `<span class="badge badge-retard">Refusé</span>`
-        : `<span class="badge badge-afaire">⏳ En attente</span>`;
-    };
-
-    if (zoneAtt) {
-      zoneAtt.innerHTML = enAttente.length ? `
-        <div class="table-wrap"><table class="table">
-          <thead><tr><th>Nom</th><th>Type</th><th>Classe / Matière</th><th>E-mail</th><th>Demandé le</th><th>Décision</th></tr></thead>
-          <tbody>
-          ${enAttente.map((p) => `
-            <tr>
-              <td><strong>${esc(p.nom)}</strong></td>
-              <td>${p.role === "enseignant" ? "🧑‍🏫 Enseignant" : "👨‍🎓 Élève"}</td>
-              <td>${p.classe ? esc(nomClasse(p.classe)) : "—"}${p.matiere ? ` · ${esc(p.matiere)}` : ""}</td>
-              <td>${esc(p.email || "—")}</td>
-              <td>${dateHeureFr(p.created_at)}</td>
-              <td>
-                <button class="btn btn-primary btn-sm adm-accepter" data-id="${esc(p.id)}">✅ Accepter</button>
-                <button class="btn btn-ghost btn-sm adm-refuser" data-id="${esc(p.id)}">Refuser</button>
-              </td>
-            </tr>`).join("")}
-          </tbody></table></div>`
-        : `<p class="text-muted">Aucune demande en attente. 🎉</p>`;
-
-      $$(".adm-accepter", zoneAtt).forEach((b) => b.addEventListener("click", async () => {
-        try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "accepte" }); renderEspaceEnseignant(); }
-        catch (e) { espaceMessage("#admin-msg", "erreur", esc(e.message)); }
-      }));
-      $$(".adm-refuser", zoneAtt).forEach((b) => b.addEventListener("click", async () => {
-        if (!confirm("Refuser ce compte ? La personne ne pourra pas se connecter.")) return;
-        try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "refuse" }); renderEspaceEnseignant(); }
-        catch (e) { espaceMessage("#admin-msg", "erreur", esc(e.message)); }
-      }));
-    }
-
-    if (zoneTous) {
-      zoneTous.innerHTML = profilsTous.length ? `
-        <div class="table-wrap"><table class="table">
-          <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Classe / Matière</th><th>Statut</th><th>Actions</th></tr></thead>
-          <tbody>
-          ${profilsTous.map((p) => `
-            <tr>
-              <td><strong>${esc(p.nom)}</strong>${p.id === uid ? ` <span class="badge badge-note">vous</span>` : ""}</td>
-              <td>${esc(p.email || "—")}</td>
-              <td>
-                <select class="adm-role" data-id="${esc(p.id)}" ${p.id === uid ? "disabled" : ""}>
-                  <option value="eleve" ${p.role === "eleve" ? "selected" : ""}>Élève</option>
-                  <option value="enseignant" ${p.role === "enseignant" ? "selected" : ""}>Enseignant</option>
-                </select>
-              </td>
-              <td>${p.classe ? esc(nomClasse(p.classe)) : "—"}${p.matiere ? ` · ${esc(p.matiere)}` : ""}</td>
-              <td>${badgeStatut(p)}</td>
-              <td>
-                ${statutProfil(p) !== "accepte" ? `<button class="btn btn-primary btn-sm adm-accepter" data-id="${esc(p.id)}">✅ Accepter</button>` : ""}
-                ${statutProfil(p) === "accepte" && p.id !== uid ? `<button class="btn btn-ghost btn-sm adm-refuser" data-id="${esc(p.id)}">Refuser</button>` : ""}
-                ${p.id !== uid ? `<button class="btn btn-ghost btn-sm adm-supprimer" data-id="${esc(p.id)}">🗑️</button>` : ""}
-              </td>
-            </tr>`).join("")}
-          </tbody></table></div>
-        <p class="text-muted mt-1" style="font-size:.85rem">Supprimer un profil empêche la connexion sur ce site (le compte d'authentification Supabase subsiste ; supprimez-le aussi dans Supabase → Authentication si besoin).</p>`
-        : `<p class="text-muted">Aucun compte pour le moment.</p>`;
-
-      $$(".adm-role", zoneTous).forEach((sel) => sel.addEventListener("change", async () => {
-        try { await sbPatch("profils", `id=eq.${sel.dataset.id}`, { role: sel.value }); renderEspaceEnseignant(); }
-        catch (e) { espaceMessage("#admin-msg", "erreur", esc(e.message)); }
-      }));
-      $$(".adm-accepter", zoneTous).forEach((b) => b.addEventListener("click", async () => {
-        try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "accepte" }); renderEspaceEnseignant(); }
-        catch (e) { espaceMessage("#admin-msg", "erreur", esc(e.message)); }
-      }));
-      $$(".adm-refuser", zoneTous).forEach((b) => b.addEventListener("click", async () => {
-        if (!confirm("Refuser ce compte ? La personne ne pourra plus se connecter.")) return;
-        try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "refuse" }); renderEspaceEnseignant(); }
-        catch (e) { espaceMessage("#admin-msg", "erreur", esc(e.message)); }
-      }));
-      $$(".adm-supprimer", zoneTous).forEach((b) => b.addEventListener("click", async () => {
-        const p = profilsTous.find((x) => x.id === b.dataset.id);
-        if (!confirm(`Supprimer définitivement le profil de « ${p ? p.nom : ""} » ?`)) return;
-        try { await sbSupprimer("profils", `id=eq.${b.dataset.id}`); renderEspaceEnseignant(); }
-        catch (e) { espaceMessage("#admin-msg", "erreur", esc(e.message)); }
-      }));
-    }
-  }
 
   /* ---------------- 📝 Mes devoirs ---------------- */
   let formEtat = null; // { id|null, date }
@@ -876,7 +823,7 @@ async function renderEspaceEnseignant() {
           <button class="btn btn-ghost btn-sm dv-supprimer" data-id="${esc(d.id)}">🗑️</button>
         </span>
       </div>`).join("")
-      : `<p class="text-muted">Aucun devoir en ligne pour ${esc(nomClasse(classe))} pour le moment. Cliquez sur « ➕ Nouveau devoir » ou importez les épreuves du fichier.</p>`;
+      : `<p class="text-muted">Aucun devoir en ligne pour ${esc(nomClasseDyn(classe))} pour le moment. Cliquez sur « ➕ Nouveau devoir » ou importez les épreuves du fichier.</p>`;
 
     $$(".dv-modifier", zone).forEach((b) => b.addEventListener("click", () => ouvrirFormulaire(liste.find((d) => d.id === b.dataset.id))));
     $$(".dv-supprimer", zone).forEach((b) => b.addEventListener("click", async () => {
@@ -905,7 +852,7 @@ async function renderEspaceEnseignant() {
 
     zone.innerHTML = `
       <div class="card" style="border:2px dashed var(--violet)">
-        <h3 class="card-title">${estNouveau ? "➕ Nouveau devoir" : "✏️ Modifier le devoir"} — ${esc(nomClasse(classe))}</h3>
+        <h3 class="card-title">${estNouveau ? "➕ Nouveau devoir" : "✏️ Modifier le devoir"} — ${esc(nomClasseDyn(classe))}</h3>
         <div class="form-grid mt-2">
           <div class="field">
             <label for="dvf-type">Type de devoir</label>
@@ -989,7 +936,7 @@ async function renderEspaceEnseignant() {
       try {
         if (formEtat.id) await sbPatch("devoirs", `id=eq.${formEtat.id}`, ligne);
         else await sbInsert("devoirs", ligne);
-        espaceMessage("#dv-msg", "succes", `✅ Devoir « ${esc(titre)} » enregistré pour le ${fmtDate(formEtat.date)} (${esc(nomClasse(classe))}).`);
+        espaceMessage("#dv-msg", "succes", `✅ Devoir « ${esc(titre)} » enregistré pour le ${fmtDate(formEtat.date)} (${esc(nomClasseDyn(classe))}).`);
         zone.innerHTML = "";
         formEtat = null;
         renderEspaceEnseignant();
@@ -1027,7 +974,7 @@ async function renderEspaceEnseignant() {
     }
     try {
       await sbInsert("devoirs", aInserer);
-      espaceMessage("#dv-msg", "succes", `✅ ${aInserer.length} épreuve(s) importée(s) pour ${esc(nomClasse(classe))}. Vous pouvez maintenant modifier leurs dates, sujets et corrections en ligne.`);
+      espaceMessage("#dv-msg", "succes", `✅ ${aInserer.length} épreuve(s) importée(s) pour ${esc(nomClasseDyn(classe))}. Vous pouvez maintenant modifier leurs dates, sujets et corrections en ligne.`);
       renderEspaceEnseignant();
     } catch (e) {
       espaceMessage("#dv-msg", "erreur", esc(e.message));
@@ -1171,10 +1118,310 @@ async function renderEspaceEnseignant() {
   }
 }
 
+
+/* ============================================================
+   INTERFACE ⭐ ADMINISTRATION (admin du site uniquement)
+   Interface séparée de l'espace enseignant : validation des
+   comptes, rôles, et classes du site (déterminées par l'admin).
+   ============================================================ */
+async function renderEspaceAdmin() {
+  const contenu = $("#espace-contenu");
+  if (!contenu) return;
+  const session = await sbSessionValide();
+  if (!session) { location.href = "index.html"; return; }
+
+  if (!sbEstAdminEmail(session.user.email)) {
+    contenu.innerHTML = `
+      <div class="callout callout-warning">${ICONS.lock}<div>
+        <strong>Interface réservée à l'administrateur du site</strong> (${esc(SB_ADMIN_EMAIL)}).<br/>
+        Votre compte n'a pas accès à cette page.
+      </div></div>
+      <div class="form-actions">
+        <a class="btn btn-primary" href="espace-eleve.html">Aller à mon espace</a>
+        <button class="btn btn-outline" id="btn-deconnexion">Se déconnecter</button>
+      </div>`;
+    brancherDeconnexion();
+    return;
+  }
+
+  let profil = null;
+  try { profil = await sbAssurerProfil(); } catch (e) {
+    contenu.innerHTML = `<div class="callout callout-warning">${ICONS.alert}<div><strong>La base n'est pas encore installée (ou pas à jour).</strong><br/>${esc(e.message)}<br/>(Ré)exécutez <code>supabase/schema.sql</code> dans Supabase.</div></div>`;
+    return;
+  }
+  if (!profil || profil.role !== "enseignant" || statutProfil(profil) !== "accepte") {
+    contenu.innerHTML = `
+      <div class="callout callout-warning">${ICONS.alert}<div>
+        <strong>Votre compte admin n'est pas encore prêt.</strong><br/>
+        Connectez-vous avec le compte créé avec l'e-mail <strong>${esc(SB_ADMIN_EMAIL)}</strong>
+        après avoir (ré)exécuté le schéma SQL v4 dans Supabase : il devient enseignant validé automatiquement.
+      </div></div>
+      <div class="form-actions"><button class="btn btn-outline" id="btn-deconnexion">Se déconnecter</button></div>`;
+    brancherDeconnexion();
+    return;
+  }
+  sbStockerProfil(profil);
+  await chargerClassesDynamiques();
+
+  let profilsTous = [], classesRows = null, devoirsCount = 0;
+  try { profilsTous = await sbSelect("profils", "select=*&order=created_at.asc"); } catch (e) { /* vide */ }
+  try { classesRows = await sbSelect("classes", "select=*&order=nom.asc"); } catch (e) { classesRows = null; }
+  try { devoirsCount = (await sbSelect("devoirs", "select=id")).length; } catch (e) { /* table absente */ }
+  const enAttente = profilsTous.filter((x) => statutProfil(x) === "en_attente");
+  const nbEns = profilsTous.filter((x) => x.role === "enseignant" && statutProfil(x) === "accepte").length;
+  const nbEle = profilsTous.filter((x) => x.role === "eleve" && statutProfil(x) === "accepte").length;
+  const uid = session.user.id;
+
+  contenu.innerHTML = `
+    <div class="section-head">
+      <div>
+        <h2>⭐ Administration du site</h2>
+        <p>🧑‍🏫 <strong>${esc(profil.nom)}</strong> · ${esc(session.user.email)} · <span class="badge badge-note">⭐ Admin du site</span></p>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a class="btn btn-outline btn-sm" href="espace-enseignant.html">🧑‍🏫 Mon interface enseignant</a>
+        <button class="btn btn-outline btn-sm" id="btn-deconnexion">Se déconnecter</button>
+      </div>
+    </div>
+
+    <div class="grid grid-3 mb-3">
+      <div class="card stat-card"><div class="num">${enAttente.length}</div><div class="label">⏳ Demandes en attente</div></div>
+      <div class="card stat-card"><div class="num">${nbEns}</div><div class="label">Enseignants validés</div></div>
+      <div class="card stat-card"><div class="num">${nbEle}</div><div class="label">Élèves validés</div></div>
+      <div class="card stat-card"><div class="num">${classesRows ? classesRows.length : listeClasses().length}</div><div class="label">Classes du site</div></div>
+      <div class="card stat-card"><div class="num">${devoirsCount}</div><div class="label">Devoirs en ligne (base)</div></div>
+      <div class="card stat-card"><div class="num">${profilsTous.length}</div><div class="label">Comptes au total</div></div>
+    </div>
+
+    <div class="card mb-3" style="border:2px solid var(--amber)">
+      <h2 class="card-title">⏳ Demandes de comptes en attente (${enAttente.length})</h2>
+      <p class="text-muted">Chaque nouvel enseignant ou élève inscrit attend votre validation avant de pouvoir se connecter.</p>
+      <div id="admin-attente" class="mt-2"></div>
+    </div>
+
+    <div class="card mb-3">
+      <h2 class="card-title">👥 Tous les comptes (${profilsTous.length})</h2>
+      <p class="text-muted">Corrigez le rôle, la classe et la matière de chacun, ré-acceptez un compte refusé ou supprimez un profil.</p>
+      <div id="admin-comptes" class="mt-2"></div>
+    </div>
+
+    <div class="card mb-3">
+      <h2 class="card-title">🏫 Les classes du site</h2>
+      <p class="text-muted">C'est vous qui déterminez les classes proposées à l'inscription et utilisées dans les espaces. Renommer une classe est immédiat ; sa <strong>clé technique</strong> relie les comptes et les devoirs existants (ne la changez pas après coup).</p>
+      <div id="admin-classes" class="mt-2"></div>
+    </div>
+
+    <div id="admin-msg" class="mb-3"></div>
+
+    <div class="card">
+      <h2 class="card-title">🧰 Outils</h2>
+      <p class="text-muted">
+        <a href="espace-enseignant.html">🧑‍🏫 Mon interface enseignant</a> ·
+        <a href="calendrier.html">🗓️ Calendrier officiel</a> ·
+        <a href="https://github.com/aymenessouyah/devoirs2026-2027/blob/main/supabase/schema.sql" target="_blank" rel="noopener">Schéma SQL</a> ·
+        <a href="https://github.com/aymenessouyah/devoirs2026-2027/blob/main/GUIDE-COMPTES.md" target="_blank" rel="noopener">📖 Guide des comptes</a>
+      </p>
+    </div>`;
+
+  brancherDeconnexion();
+  rendreAttente();
+  rendreComptes();
+  rendreClasses();
+
+  const badgeStatut = (x) => {
+    const st = statutProfil(x);
+    return st === "accepte" ? `<span class="badge badge-note">✓ Accepté</span>`
+      : st === "refuse" ? `<span class="badge badge-retard">Refusé</span>`
+      : `<span class="badge badge-afaire">⏳ En attente</span>`;
+  };
+  const erreurAdmin = (e) => espaceMessage("#admin-msg", "erreur", esc(e.message));
+
+  /* ----- Demandes en attente ----- */
+  function rendreAttente() {
+    const zone = $("#admin-attente");
+    if (!zone) return;
+    zone.innerHTML = enAttente.length ? `
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Nom</th><th>Type</th><th>Classe / Matière</th><th>E-mail</th><th>Demandé le</th><th>Décision</th></tr></thead>
+        <tbody>
+        ${enAttente.map((x) => `
+          <tr>
+            <td><strong>${esc(x.nom)}</strong></td>
+            <td>${x.role === "enseignant" ? "🧑‍🏫 Enseignant" : "👨‍🎓 Élève"}</td>
+            <td>${x.classe ? esc(nomClasseDyn(x.classe)) : "—"}${x.matiere ? ` · ${esc(x.matiere)}` : ""}</td>
+            <td>${esc(x.email || "—")}</td>
+            <td>${dateHeureFr(x.created_at)}</td>
+            <td>
+              <button class="btn btn-primary btn-sm adm-accepter" data-id="${esc(x.id)}">✅ Accepter</button>
+              <button class="btn btn-ghost btn-sm adm-refuser" data-id="${esc(x.id)}">Refuser</button>
+            </td>
+          </tr>`).join("")}
+        </tbody></table></div>`
+      : `<p class="text-muted">Aucune demande en attente. 🎉</p>`;
+    $$(".adm-accepter", zone).forEach((b) => b.addEventListener("click", async () => {
+      try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "accepte" }); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+    $$(".adm-refuser", zone).forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Refuser ce compte ? La personne ne pourra pas se connecter.")) return;
+      try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "refuse" }); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+  }
+
+  /* ----- Tous les comptes ----- */
+  function rendreComptes() {
+    const zone = $("#admin-comptes");
+    if (!zone) return;
+    zone.innerHTML = profilsTous.length ? `
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Classe</th><th>Matière</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody>
+        ${profilsTous.map((x) => `
+          <tr>
+            <td><strong>${esc(x.nom)}</strong>${x.id === uid ? ` <span class="badge badge-note">vous</span>` : ""}</td>
+            <td>${esc(x.email || "—")}</td>
+            <td>
+              <select class="adm-role" data-id="${esc(x.id)}" ${x.id === uid ? "disabled" : ""}>
+                <option value="eleve" ${x.role === "eleve" ? "selected" : ""}>Élève</option>
+                <option value="enseignant" ${x.role === "enseignant" ? "selected" : ""}>Enseignant</option>
+              </select>
+            </td>
+            <td>
+              <select class="adm-classe" data-id="${esc(x.id)}">
+                <option value="" ${!x.classe ? "selected" : ""}>—</option>
+                ${optionsClassesHTML(x.classe || "")}
+              </select>
+            </td>
+            <td>
+              <select class="adm-matiere" data-id="${esc(x.id)}">
+                <option value="" ${!x.matiere ? "selected" : ""}>—</option>
+                ${optionsMatieresHTML(x.matiere || "")}
+              </select>
+            </td>
+            <td>${badgeStatut(x)}</td>
+            <td>
+              ${statutProfil(x) !== "accepte" ? `<button class="btn btn-primary btn-sm adm-accepter" data-id="${esc(x.id)}">✅ Accepter</button>` : ""}
+              ${statutProfil(x) === "accepte" && x.id !== uid ? `<button class="btn btn-ghost btn-sm adm-refuser" data-id="${esc(x.id)}">Refuser</button>` : ""}
+              ${x.id !== uid ? `<button class="btn btn-ghost btn-sm adm-supprimer" data-id="${esc(x.id)}">🗑️</button>` : ""}
+            </td>
+          </tr>`).join("")}
+        </tbody></table></div>
+      <p class="text-muted mt-1" style="font-size:.85rem">Supprimer un profil empêche la connexion sur ce site (le compte d'authentification Supabase subsiste ; supprimez-le aussi dans Supabase → Authentication si besoin).</p>`
+      : `<p class="text-muted">Aucun compte pour le moment.</p>`;
+
+    $$(".adm-role", zone).forEach((sel) => sel.addEventListener("change", async () => {
+      try { await sbPatch("profils", `id=eq.${sel.dataset.id}`, { role: sel.value }); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+    $$(".adm-classe", zone).forEach((sel) => sel.addEventListener("change", async () => {
+      try { await sbPatch("profils", `id=eq.${sel.dataset.id}`, { classe: sel.value || null }); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+    $$(".adm-matiere", zone).forEach((sel) => sel.addEventListener("change", async () => {
+      try { await sbPatch("profils", `id=eq.${sel.dataset.id}`, { matiere: sel.value || null }); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+    $$(".adm-accepter", zone).forEach((b) => b.addEventListener("click", async () => {
+      try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "accepte" }); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+    $$(".adm-refuser", zone).forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Refuser ce compte ? La personne ne pourra plus se connecter.")) return;
+      try { await sbPatch("profils", `id=eq.${b.dataset.id}`, { statut: "refuse" }); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+    $$(".adm-supprimer", zone).forEach((b) => b.addEventListener("click", async () => {
+      const x = profilsTous.find((y) => y.id === b.dataset.id);
+      if (!confirm(`Supprimer définitivement le profil de « ${x ? x.nom : ""} » ?`)) return;
+      try { await sbSupprimer("profils", `id=eq.${b.dataset.id}`); renderEspaceAdmin(); }
+      catch (e) { erreurAdmin(e); }
+    }));
+  }
+
+  /* ----- Les classes du site (déterminées par l'admin) ----- */
+  function rendreClasses() {
+    const zone = $("#admin-classes");
+    if (!zone) return;
+    if (!classesRows) {
+      zone.innerHTML = `<div class="callout callout-info">${ICONS.info}<div>La table « classes » n'existe pas encore : (ré)exécutez <code>supabase/schema.sql</code> dans Supabase. En attendant, le site utilise les deux classes de la configuration (${listeClasses().map((c) => esc(c.nom)).join(", ")}).</div></div>`;
+      return;
+    }
+    const nbElevesParClasse = (cle) => profilsTous.filter((x) => x.role === "eleve" && x.classe === cle).length;
+    zone.innerHTML = `
+      <div class="form-grid">
+        <div class="field">
+          <label for="cl-nom">Nom de la nouvelle classe</label>
+          <input type="text" id="cl-nom" placeholder="Ex. : 3ème SI 2" />
+        </div>
+        <div class="field">
+          <label for="cl-cle">Clé technique (générée, modifiable)</label>
+          <input type="text" id="cl-cle" placeholder="ex. 3si2" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" id="cl-ajouter">➕ Ajouter la classe</button>
+        </div>
+      </div>
+      <div id="cl-msg" class="mt-1"></div>
+      ${classesRows.length ? `
+      <div class="table-wrap mt-2"><table class="table">
+        <thead><tr><th>Nom affiché</th><th>Clé technique</th><th>Élèves (comptes)</th><th>Actions</th></tr></thead>
+        <tbody>
+        ${classesRows.map((c) => `
+          <tr>
+            <td><input type="text" class="cl-nom-ligne" data-id="${esc(c.id)}" value="${esc(c.nom)}" /></td>
+            <td><code>${esc(c.id)}</code></td>
+            <td>${nbElevesParClasse(c.id)}</td>
+            <td>
+              <button class="btn btn-outline btn-sm cl-enregistrer" data-id="${esc(c.id)}">💾 Enregistrer le nom</button>
+              <button class="btn btn-ghost btn-sm cl-supprimer" data-id="${esc(c.id)}">🗑️ Supprimer</button>
+            </td>
+          </tr>`).join("")}
+        </tbody></table></div>
+      <p class="text-muted mt-1" style="font-size:.85rem">${classesRows.length} classe(s). Supprimer une classe ne supprime ni les comptes ni les devoirs qui portent sa clé : ils ne seront simplement plus proposés.</p>`
+      : `<p class="text-muted mt-2">Aucune classe pour le moment : ajoutez la première ci-dessus.</p>`}`;
+
+    $("#cl-nom")?.addEventListener("input", (ev) => {
+      const cle = $("#cl-cle");
+      if (cle) cle.value = slugClasse(ev.target.value);
+    });
+    $("#cl-ajouter")?.addEventListener("click", async () => {
+      const nom = $("#cl-nom").value.trim();
+      const cle = $("#cl-cle").value.trim().toLowerCase();
+      if (!nom) { espaceMessage("#cl-msg", "erreur", "Donnez un nom à la classe."); return; }
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(cle)) { espaceMessage("#cl-msg", "erreur", "Clé technique invalide : lettres minuscules, chiffres et tirets (ex. 3si2)."); return; }
+      if (classesRows.some((c) => c.id === cle)) { espaceMessage("#cl-msg", "erreur", "Cette clé technique existe déjà."); return; }
+      try {
+        await sbInsert("classes", { id: cle, nom });
+        renderEspaceAdmin();
+      } catch (e) { espaceMessage("#cl-msg", "erreur", esc(e.message)); }
+    });
+    $$(".cl-enregistrer", zone).forEach((b) => b.addEventListener("click", async () => {
+      const nom = $(`.cl-nom-ligne[data-id="${b.dataset.id}"]`, zone)?.value.trim();
+      if (!nom) { espaceMessage("#cl-msg", "erreur", "Le nom ne peut pas être vide."); return; }
+      try {
+        await sbPatch("classes", `id=eq.${encodeURIComponent(b.dataset.id)}`, { nom });
+        renderEspaceAdmin();
+      } catch (e) { espaceMessage("#cl-msg", "erreur", esc(e.message)); }
+    }));
+    $$(".cl-supprimer", zone).forEach((b) => b.addEventListener("click", async () => {
+      const c = classesRows.find((x) => x.id === b.dataset.id);
+      const nb = nbElevesParClasse(b.dataset.id);
+      if (!confirm(`Supprimer la classe « ${c ? c.nom : ""} » ?${nb ? `\n${nb} compte(s) élève portent encore cette classe.` : ""}`)) return;
+      try {
+        await sbSupprimer("classes", `id=eq.${encodeURIComponent(b.dataset.id)}`);
+        renderEspaceAdmin();
+      } catch (e) { espaceMessage("#cl-msg", "erreur", esc(e.message)); }
+    }));
+  }
+}
+
 /* ---------- Démarrage (pages des espaces) ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   const page = document.body.dataset.page;
   if (page === "connexion") renderConnexion();
   else if (page === "espace-eleve") renderEspaceEleve();
   else if (page === "espace-enseignant") renderEspaceEnseignant();
+  else if (page === "espace-admin") renderEspaceAdmin();
 });

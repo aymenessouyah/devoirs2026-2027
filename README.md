@@ -191,3 +191,23 @@ est réservé aux comptes **validés par l'administrateur du site**
   toujours se connecter avec leur **code** à la place de l'e-mail.
 - Mise en place : (ré)exécuter `supabase/schema.sql` (v4, idempotent)
   puis suivre [`GUIDE-COMPTES.md`](GUIDE-COMPTES.md).
+
+
+## ⭐ v4.1 — Deux interfaces pour l'admin, classes déterminées par l'admin
+
+- **Matières ordonnées** : STI, puis **Algo**, puis **Informatique**,
+  puis le reste (liste dans `data/config.js`).
+- **Classes déterminées par l'admin** : la liste des classes vit dans
+  la table `classes` de la base (pré-remplie avec 3ème SI 1 et
+  4ème SI 2) et se gère depuis l'interface d'administration
+  (ajouter / renommer / supprimer) ; `data/config.js` ne sert plus que
+  de repli. Pour une classe inconnue de Vie scolaire, le calendrier de
+  choix de date applique des règles assouplies (lundi→samedi hors
+  vacances/fériés/bloquées ; synthèse en semaines bloquées officielles).
+- **L'admin a deux interfaces** : son **espace enseignant**, identique
+  à celui de tous les enseignants (avec une bannière ⭐ quand des
+  demandes sont en attente), et **⭐ Administration**
+  (`espace-admin.html`, lien dans la navigation) : validation des
+  comptes, rôles/classes/matières des comptes, et gestion des classes.
+- Mise en place : (ré)exécuter `supabase/schema.sql` (v4.1, idempotent)
+  puis suivre [`GUIDE-COMPTES.md`](GUIDE-COMPTES.md).

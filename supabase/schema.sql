@@ -5,6 +5,9 @@
 --  À exécuter dans : Supabase → SQL Editor → New query → coller → Run.
 --  Le script est SANS DANGER si vous le relancez (mises à jour incluses).
 --
+--  v4.1 — Matières ordonnées (STI, Algo, Informatique…), classes
+--  déterminées par l'admin (table « classes ») et admin à deux
+--  interfaces (enseignant + ⭐ Administration séparée).
 --  v4.0 — Réorganisation complète :
 --    • profils : statut de validation (en_attente / accepte / refuse),
 --      matière, e-mail et observation de l'enseignant ;
@@ -43,6 +46,19 @@ alter table public.profils add column if not exists statut      text not null de
 alter table public.profils add column if not exists matiere     text;
 alter table public.profils add column if not exists email       text;
 alter table public.profils add column if not exists observation text not null default '';
+
+-- Les classes du site, déterminées par l'admin (interface ⭐ Administration).
+create table if not exists public.classes (
+  id         text primary key,        -- clé technique (ex. '3si1')
+  nom        text not null,           -- nom affiché (ex. '3ème SI 1')
+  created_at timestamptz not null default now()
+);
+
+-- Les deux classes historiques, si la table est encore vide.
+insert into public.classes (id, nom) values
+  ('3si1', '3ème SI 1'),
+  ('4si2', '4ème SI 2')
+on conflict (id) do nothing;
 
 -- Annuaire des élèves (ancien système d'inscription par code — conservé
 -- pour compatibilité ; la validation des comptes se fait désormais par
@@ -146,6 +162,7 @@ $$;
 
 -- 3) Sécurité (RLS) ----------------------------------------------------------
 alter table public.profils enable row level security;
+alter table public.classes enable row level security;
 alter table public.eleves  enable row level security;
 alter table public.devoirs enable row level security;
 alter table public.notes   enable row level security;
@@ -180,6 +197,16 @@ create policy "profils modif soi" on public.profils
 -- Seul l'admin du site supprime un profil (depuis son tableau de bord).
 create policy "profils suppression" on public.profils
   for delete using (public.est_admin());
+
+drop policy if exists "classes lecture"  on public.classes;
+drop policy if exists "classes ecriture" on public.classes;
+
+-- Classes lisibles par tous (nécessaire au choix de la classe dès
+-- l'inscription) ; seul l'admin du site les crée / modifie / supprime.
+create policy "classes lecture" on public.classes
+  for select using (true);
+create policy "classes ecriture" on public.classes
+  for all using (public.est_admin()) with check (public.est_admin());
 
 drop policy if exists "eleves lecture"  on public.eleves;
 drop policy if exists "eleves ecriture" on public.eleves;

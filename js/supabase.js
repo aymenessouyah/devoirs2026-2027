@@ -135,6 +135,7 @@ async function sbDeconnexion() {
   const s = sbSession();
   sbSetSession(null);
   sbEffacerProfilCache();
+  try { localStorage.removeItem(SB_ADMIN_FLAG_KEY); } catch (e) { /* ignoré */ }
   if (s && s.access_token) {
     try {
       await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
@@ -167,6 +168,18 @@ function sbEffacerProfilCache() {
   try { localStorage.removeItem(SB_PROFIL_KEY); } catch (e) { /* ignoré */ }
 }
 
+/* Repère local « ce navigateur est connecté en admin » (pour afficher
+   le lien ⭐ Admin dans la navigation). */
+const SB_ADMIN_FLAG_KEY = "sb-admin-devoirs";
+
+function sbMarquerAdmin(email) {
+  try { localStorage.setItem(SB_ADMIN_FLAG_KEY, sbEstAdminEmail(email) ? "1" : "0"); } catch (e) { /* ignoré */ }
+}
+
+function sbEstAdminLocal() {
+  try { return localStorage.getItem(SB_ADMIN_FLAG_KEY) === "1"; } catch (e) { return false; }
+}
+
 /* Connexion par identifiant libre : e-mail, ou ancien code élève
    (ex. 3SI1-01) pour les comptes créés avant la v4. */
 async function sbConnexionIdentifiant(identifiant, password) {
@@ -179,6 +192,8 @@ async function sbConnexionIdentifiant(identifiant, password) {
    interrompue (confirmation e-mail activée dans Supabase) et que les
    informations sont encore en attente dans le navigateur. */
 async function sbAssurerProfil() {
+  const session0 = sbSession();
+  if (session0 && session0.user) sbMarquerAdmin(session0.user.email);
   let profil = await sbMonProfil();
   if (profil) { sbStockerProfil(profil); return profil; }
   try {

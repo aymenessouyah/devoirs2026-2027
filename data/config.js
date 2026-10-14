@@ -15,6 +15,7 @@ window.CONFIG = {
      sienne ; l'élève choisit la matière de l'enseignant qu'il suit) */
   matieres: [
     "STI",
+    "Algo",
     "Informatique",
     "Mathématiques",
     "Physique",
@@ -39,7 +40,11 @@ window.CONFIG = {
   /* E-mail de l'enseignant (utilisé par le bouton « Envoyer » du dépôt) */
   email: "aymenessouyah@gmail.com" /* ← remplacez par votre e-mail */,
 
-  /* Classes gérées par le site : clé technique -> nom affiché */
+  /* Classes du site : clé technique -> nom affiché.
+     ⚠️ Depuis la v4.1, la liste des classes est déterminée par l'admin
+     du site (interface ⭐ Administration, table « classes » de la base).
+     Les deux classes ci-dessous ne servent que de repli tant que la
+     table est vide ou injoignable. */
   classes: {
     "3si1": "3ème SI 1",
     "4si2": "4ème SI 2",

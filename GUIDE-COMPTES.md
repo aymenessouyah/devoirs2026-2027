@@ -13,8 +13,10 @@ puis chacun accède à son espace :
   de l'épreuve (règle **J+1**), ainsi que **ses notes** et les
   **remarques** de l'enseignant.
 - **Admin du site** : `aymenessouyah@gmail.com` (validé automatiquement).
-  Son espace enseignant contient un tableau de bord **⭐ Administration**
-  pour accepter / refuser les comptes et corriger les rôles.
+  Il dispose de **deux interfaces** : l'**espace enseignant**, identique à
+  celui de tous les enseignants, et l'**interface ⭐ Administration**
+  (page séparée) pour valider les comptes, corriger les rôles et
+  **déterminer les classes** du site.
 
 La base est le **même projet Supabase** que l'espace Vie scolaire ; la
 table `espace_pedagogique` n'est pas touchée. Les anciens fichiers
@@ -48,24 +50,39 @@ Supabase → **Authentication** → *Sign In / Providers* → **Email** :
 Sur la page d'accueil du site → **Créer un compte** → **Je suis
 enseignant** → avec **`aymenessouyah@gmail.com`** : le compte est
 **validé automatiquement** (rôle enseignant + admin). Connectez-vous :
-votre espace contient la zone **⭐ Administration du site**.
+le lien **⭐ Admin** apparaît dans la navigation (et une bannière dans
+votre espace enseignant vous y emmène).
 
 ---
 
 ## Au quotidien
 
-### Valider les comptes (admin)
+### Administrer le site (admin — interface ⭐ Administration)
 
-Dans votre espace enseignant, zone **⭐ Administration** :
+Ouvrez-la via le lien **⭐ Admin** de la navigation (ou la bannière de
+votre espace enseignant). Votre espace enseignant, lui, reste identique
+à celui de tous les enseignants.
 
 - **⏳ Demandes en attente** : **✅ Accepter** ou **Refuser** chaque
   inscription (enseignant ou élève — le type, la classe et la matière
   demandés sont affichés).
 - **👥 Tous les comptes** : corriger le **rôle** (élève ↔ enseignant),
-  ré-accepter un compte refusé, refuser ou **supprimer** un profil.
+  la **classe** et la **matière** de chacun, ré-accepter un compte
+  refusé, refuser ou **supprimer** un profil.
+- **🏫 Les classes du site** : c'est vous qui déterminez les classes
+  (ajouter, renommer, supprimer). Elles sont aussitôt proposées à
+  l'inscription et dans les espaces. La **clé technique** (ex. `3si1`)
+  relie comptes et devoirs : choisissez-la à la création et ne la
+  changez plus ensuite (seul le nom affiché peut être corrigé).
 
 Tant qu'un compte n'est pas accepté, la personne voit seulement
 « Compte en attente de validation ».
+
+> Pour une classe créée par l'admin (inconnue de l'espace Vie
+> scolaire), le calendrier de choix de date applique des règles
+> assouplies : devoir de contrôle du lundi au samedi hors vacances,
+> jours fériés et semaines bloquées ; devoir de synthèse uniquement
+> pendant les semaines bloquées officielles.
 
 ### Côté enseignant
 
@@ -95,8 +112,9 @@ Tant qu'un compte n'est pas accepté, la personne voit seulement
 
 ### Côté élève
 
-1. **Créer un compte** (type Élève + sa **classe** + la **matière** de
-   son enseignant) → l'admin l'accepte.
+1. **Créer un compte** (type Élève + sa **classe** — déterminée par
+   l'admin — + la **matière** de son enseignant : STI, Algo,
+   Informatique, puis les autres) → l'admin l'accepte.
 2. Dans son espace :
    - **📅 Mes prochains devoirs** : dates et échéances (le sujet reste
      🔒 jusqu'au lendemain) ;
