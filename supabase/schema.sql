@@ -53,6 +53,7 @@ alter table public.profils add column if not exists classes     text[] not null 
 alter table public.profils add column if not exists matieres_par_classe jsonb not null default '{}'::jsonb; -- matière(s) par classe, ex. {"3si1":["STI"],"4si2":["Algo"]}
 alter table public.profils add column if not exists matiere     text;
 alter table public.profils add column if not exists email       text;
+alter table public.profils add column if not exists emploi      jsonb not null default '{}'::jsonb; -- jours de séance par classe {"3si1":[2,4]}
 alter table public.profils add column if not exists observation text not null default '';
 
 -- Les classes du site, déterminées par l'admin (interface ⭐ Administration).
