@@ -785,7 +785,11 @@ async function renderEspaceEnseignant() {
       <strong>⭐ Vous êtes l'administrateur du site.</strong>
       ${enAttente.length ? `<strong>${enAttente.length} demande(s) de compte</strong> en attente de validation.` : `Aucune demande de compte en attente.`}
       Votre interface d'administration (validation des comptes, rôles, classes) est séparée de cet espace enseignant, identique à celui de tous les enseignants.<br/>
-      <a class="btn btn-primary btn-sm mt-1" href="espace-admin.html">⭐ Ouvrir l'interface d'administration →</a>
+      <span style="display:inline-flex;gap:.5rem;flex-wrap:wrap;margin-top:.35rem">
+        <a class="btn btn-primary btn-sm" href="espace-admin.html">⭐ Ouvrir l'interface d'administration →</a>
+        <a class="btn btn-outline btn-sm" href="espace-admin.html#classes">🏫 Gérer les classes</a>
+        <a class="btn btn-outline btn-sm" href="espace-admin.html#attente">⏳ Valider les comptes</a>
+      </span>
     </div></div>` : ""}
 
     <div class="card mb-3">
@@ -1450,6 +1454,17 @@ async function renderEspaceAdmin() {
   rendreAttente();
   rendreComptes();
   rendreClasses();
+
+  /* Arrivée depuis un raccourci (#attente, #comptes, #classes) :
+     on fait défiler jusqu'à la section demandée. */
+  const ancres = { "#attente": "#admin-attente", "#comptes": "#admin-comptes", "#classes": "#admin-classes" };
+  const cibleAncre = ancres[location.hash];
+  if (cibleAncre) {
+    setTimeout(() => {
+      const el = $(cibleAncre);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }
 
   const badgeStatut = (x) => {
     const st = statutProfil(x);

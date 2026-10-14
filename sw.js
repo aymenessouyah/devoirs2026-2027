@@ -2,7 +2,7 @@
    Service Worker — mise en cache pour usage hors-ligne (PWA)
    ⚠️ Lors d'une mise à jour du site, changez la VERSION ci-dessous.
    ============================================================ */
-const VERSION = "devoirs-v12";
+const VERSION = "devoirs-v13";
 const FICHIERS = [
   "./",
   "./index.html",
