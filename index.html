@@ -142,7 +142,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.4.2</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.4.3</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -178,7 +178,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.4.2</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.4.3</p>
 </main>
 </div>
 </div>
@@ -669,7 +669,7 @@ function rendreClasses() {
           </div>
         </div>
         <div>
-          <p class="text-[11px] font-extrabold text-slate-400 mb-2">✍️ SÉANCES ACTUELLES / SAISIE MANUELLE <span class="normal-case font-semibold">(enregistrement par le bouton « Confirmer » des classes, plus bas)</span></p>
+          <p class="text-[11px] font-extrabold text-slate-400 mb-2">✍️ SÉANCES ACTUELLES / SAISIE MANUELLE <span class="normal-case font-semibold">(bouton « Confirmer l’emploi du temps » ci-dessous)</span></p>
           <div id="seancesZone" class="grid gap-2">${seancesTriees().map((x, i) => seanceRowHTML(x)).join("") || `<p class="text-sm text-slate-400" id="seancesVide">Aucune séance saisie pour le moment — ajoutez vos créneaux (ils définissent aussi vos jours de séance).</p>`}</div>
           <div class="flex flex-wrap gap-2 mt-3">
             <button type="button" onclick="ajouterSeanceDOM()" class="pill !text-xs">＋ Ajouter une séance</button>
@@ -680,11 +680,16 @@ function rendreClasses() {
             <button type="button" onclick="analyserTexteOCR()" class="pill mt-2 !text-xs">Créer le tableau à vérifier</button>
           </details>
           <div id="scanEmploiZone" class="mt-4">${scanEmploiHTML()}</div>
+          <div id="barreEmploi" class="mt-4 p-3 rounded-2xl flex flex-wrap gap-2 items-center hidden" style="border:2px solid #0EA5E9;background:rgba(14,165,233,.08)">
+            <p class="text-xs font-bold flex-1">🗓️ Emploi du temps modifié — ce n'est pas encore enregistré.</p>
+            <button type="button" onclick="annulerModifsEmploi()" class="pill !text-xs">↩️ Annuler</button>
+            <button type="button" onclick="confirmerEmploiManuel(this)" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold">✅ Confirmer l'emploi du temps</button>
+          </div>
         </div>
       </div>
     </div>
     <div id="barreClasses" class="card p-4 mt-5 flex flex-wrap gap-3 items-center hidden" style="border:2px solid #F59E0B">
-      <p class="text-sm font-bold flex-1">⚠️ Vous avez modifié vos classes/matières ou vos séances manuelles — ce n'est pas encore enregistré. (Le tableau issu d’un scan a ses propres boutons.)</p>
+      <p class="text-sm font-bold flex-1">⚠️ Vous avez modifié vos classes/matières — ce n'est pas encore enregistré. (L’emploi du temps a sa propre barre « Confirmer l’emploi du temps », dans sa carte.)</p>
       <button onclick="annulerModifsClasses()" class="pill">↩️ Annuler</button>
       <button onclick="enregistrerMesClasses()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">✅ Confirmer l'enregistrement</button>
     </div>
@@ -1300,10 +1305,113 @@ function etatClassesModifie() {
   const cls = p.classes || [];
   return signatureChoix(actuel.classes, actuel.carte, actuel.emploi) !== signatureChoix(cls, p.matieres_par_classe || {}, emploiEnregistre(p, cls));
 }
+function signatureClassesSeules(classes, carte) {
+  const c = {};
+  Object.keys(carte || {}).sort().forEach(k => { c[k] = (carte[k] || []).slice().sort(); });
+  return JSON.stringify({ classes: (classes || []).slice().sort(), carte: c });
+}
+function etatClassesSeulesModifie() {
+  const p = ETAT.profil; if (!p) return false;
+  const actuel = lireChoixClasses();
+  return signatureClassesSeules(actuel.classes, actuel.carte) !== signatureClassesSeules(p.classes || [], p.matieres_par_classe || {});
+}
+function etatEmploiModifie() {
+  const p = ETAT.profil; if (!p) return false;
+  if (ETAT.photoNouvelle || ETAT.photoSupprimee) return true;
+  const actuel = lireChoixClasses();
+  const saved = emploiEnregistre(p, p.classes || []);
+  if (signatureSeances(actuel.emploi.seances || []) !== signatureSeances(saved.seances || [])) return true;
+  for (const [cle, js] of Object.entries(actuel.emploi.jours || {})) {
+    const a = (js || []).map(Number).slice().sort((x, y) => x - y);
+    const b = (saved.jours[cle] || []).map(Number).slice().sort((x, y) => x - y);
+    if (JSON.stringify(a) !== JSON.stringify(b)) return true;
+  }
+  return false;
+}
 function majBarreClasses() {
-  classesDirty = etatClassesModifie() || !!ETAT.photoNouvelle || ETAT.photoSupprimee;
+  const classesSeules = etatClassesSeulesModifie();
+  const emploiSeul = etatEmploiModifie();
+  classesDirty = classesSeules || emploiSeul;
   const bar = $("#barreClasses");
-  if (bar) bar.classList.toggle("hidden", !classesDirty);
+  if (bar) bar.classList.toggle("hidden", !classesSeules);
+  const barE = $("#barreEmploi");
+  if (barE) barE.classList.toggle("hidden", !emploiSeul);
+}
+function majChipsJoursDepuisProfil() {
+  $$(".mm-row").forEach(row => {
+    const cle = row.dataset && row.dataset.cle ? row.dataset.cle : (row.querySelector(".mm-cb") ? row.querySelector(".mm-cb").value : "");
+    if (!cle) return;
+    const jours = joursSeance(cle);
+    row.querySelectorAll(".mm-jour").forEach(b => b.classList.toggle("active", jours.includes(Number(b.dataset.jour))));
+  });
+}
+async function annulerModifsEmploi() {
+  ETAT.photoNouvelle = null;
+  ETAT.photoSupprimee = false;
+  const saved = normaliserEmploi(ETAT.profil && ETAT.profil.emploi);
+  ETAT.photoEmploiMode = saved.photo || null;
+  if (saved.photo === "local") { try { ETAT.photoEmploi = localStorage.getItem("dl-emploi-photo-" + ETAT.session.user.id); } catch (e) { } }
+  else if (saved.photo === "storage") { ETAT.photoEmploi = await sbLienSigne(cheminPhotoEmploi(), 3600).catch(() => ETAT.photoEmploi); }
+  else ETAT.photoEmploi = null;
+  const zone = $("#seancesZone");
+  if (zone) {
+    zone.innerHTML = seancesTriees().map(x => seanceRowHTML(x)).join("") || `<p class="text-sm text-slate-400" id="seancesVide">Aucune séance saisie pour le moment — ajoutez vos créneaux (ils définissent aussi vos jours de séance).</p>`;
+    lierLignesSeances();
+  }
+  majChipsJoursDepuisProfil();
+  const ap = $("#emploiPhotoApercu"); if (ap) ap.innerHTML = photoEmploiHTML();
+  majBarreClasses();
+  toast("↩️ Modifications de l'emploi du temps annulées : la version enregistrée est inchangée.", "info");
+}
+/* Confirmation DÉDIÉE à l'emploi du temps (séances manuelles, jours, photo) :
+   enregistre uniquement profils.emploi, sans toucher aux classes/matières. */
+async function confirmerEmploiManuel(btn) {
+  if (!ETAT.session || !ETAT.profil) return toast("Session introuvable : reconnectez-vous.", "erreur");
+  const choix = lireChoixClasses();
+  if (choix.erreur) return toast(choix.erreur, "erreur");
+  let liste = [];
+  if ((choix.emploi.seances || []).length) {
+    const v = validerSeancesScan(choix.emploi.seances);
+    if (!v.ok) return toast(v.message, "erreur");
+    liste = v.liste;
+  }
+  const ancien = btn ? btn.textContent : "";
+  const classesSeulesAvant = etatClassesSeulesModifie();
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Enregistrement de l'emploi du temps…"; }
+    await preparerPhotoEmploi();
+    const actuel = normaliserEmploi(ETAT.profil.emploi);
+    const emploi = { jours: Object.assign({}, actuel.jours || {}, choix.emploi.jours || {}), seances: liste, photo: ETAT.photoSupprimee ? null : (ETAT.photoEmploiMode || actuel.photo || null) };
+    await sbPatch("profils", `id=eq.${ETAT.session.user.id}`, { emploi });
+    let relu = null;
+    try { relu = await sbMonProfil(); } catch (e) { }
+    if (relu) {
+      if (signatureSeances(normaliserEmploi(relu.emploi).seances) !== signatureSeances(liste)) {
+        return toast("⚠️ La base n'a pas pris en compte l'emploi du temps. Vos modifications restent affichées : vérifiez la connexion puis cliquez à nouveau sur « Confirmer l'emploi du temps ».", "erreur");
+      }
+      ETAT.profil = relu;
+    } else {
+      ETAT.profil.emploi = emploi;
+    }
+    sbStockerProfil(ETAT.profil);
+    const idx = (ETAT.profils || []).findIndex(p => p.id === ETAT.session.user.id);
+    if (idx >= 0) ETAT.profils[idx] = Object.assign({}, ETAT.profils[idx], { emploi: ETAT.profil.emploi });
+    if (!classesSeulesAvant) {
+      rendreClasses();
+    } else {
+      const zone = $("#seancesZone");
+      if (zone) { zone.innerHTML = liste.map(x => seanceRowHTML(x)).join("") || `<p class="text-sm text-slate-400" id="seancesVide">Aucune séance saisie pour le moment — ajoutez vos créneaux (ils définissent aussi vos jours de séance).</p>`; lierLignesSeances(); }
+      majChipsJoursDepuisProfil();
+      const ap = $("#emploiPhotoApercu"); if (ap) ap.innerHTML = photoEmploiHTML();
+      majBarreClasses();
+    }
+    toast("✅ Emploi du temps confirmé et enregistré (visible dans Vie de classe).", "success");
+  } catch (e) {
+    if (/emploi/i.test(e.message || "")) toast("La base ne peut pas encore enregistrer l'emploi du temps : exécutez la mise à jour de supabase/schema.sql (colonne « emploi »). Vos modifications restent affichées pour réessayer.", "erreur");
+    else toast(e.message, "erreur");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = ancien || "✅ Confirmer l'emploi du temps"; }
+  }
 }
 function annulerModifsClasses() {
   classesDirty = false;
