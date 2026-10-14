@@ -585,7 +585,7 @@ function injectLayout() {
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
-        <div class="muted">Publié avec GitHub Pages · PWA installable 📱</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.2</div>
       </div>
     </footer>`;
 

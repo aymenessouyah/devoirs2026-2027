@@ -2,7 +2,7 @@
    Service Worker — mise en cache pour usage hors-ligne (PWA)
    ⚠️ Lors d'une mise à jour du site, changez la VERSION ci-dessous.
    ============================================================ */
-const VERSION = "devoirs-v13";
+const VERSION = "devoirs-v14";
 const FICHIERS = [
   "./",
   "./index.html",
@@ -53,16 +53,15 @@ self.addEventListener("fetch", (ev) => {
   if (ev.request.method !== "GET") return;
   /* Appels externes (Supabase : comptes, notes, fichiers) : réseau direct, aucun cache */
   if (new URL(ev.request.url).origin !== self.location.origin) return;
+  /* Réseau d'abord pour tout le site : chaque mise à jour publiée est
+     visible immédiatement. Le cache ne sert que hors-ligne. */
   ev.respondWith(
-    caches.match(ev.request).then((cached) => {
-      const reseau = fetch(ev.request)
-        .then((res) => {
-          const copie = res.clone();
-          caches.open(VERSION).then((cache) => cache.put(ev.request, copie));
-          return res;
-        })
-        .catch(() => cached);
-      return cached || reseau;
-    })
+    fetch(ev.request)
+      .then((res) => {
+        const copie = res.clone();
+        caches.open(VERSION).then((cache) => cache.put(ev.request, copie));
+        return res;
+      })
+      .catch(() => caches.match(ev.request))
   );
 });
