@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script>
 tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','Inter','sans-serif']},colors:{primary:'#6D28D9',indigo2:'#6366F1'}}}}
 </script>
@@ -142,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.4.3</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.0</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -178,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.4.3</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.0</p>
 </main>
 </div>
 </div>
@@ -211,7 +212,7 @@ const ETAT = {
   form: null, classeEleves: "", devoirNotes: "", selNotes: { classe: "", devoirId: null },
   repartition: [], sourceRep: "manuel", lienRep: "",
   photoEmploi: null, photoEmploiMode: null, photoNouvelle: null, photoSupprimee: false,
-  scanEmploi: null, scanEdition: false
+  scanEmploi: null, scanEdition: false, rendus: []
 };
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -493,7 +494,8 @@ function nouveauDevoir() { showSection("devoirs"); setTimeout(() => { const z = 
 
 async function chargerDonnees() {
   try { ETAT.devoirs = await sbSelect("devoirs", "select=*&order=date.asc"); } catch (e) { ETAT.devoirs = []; }
-  ETAT.profils = []; ETAT.notes = [];
+  ETAT.profils = []; ETAT.notes = []; ETAT.rendus = [];
+  try { ETAT.rendus = await sbSelect("rendus", "select=*&order=date.desc"); } catch (e) { ETAT.rendus = []; }
   if (ETAT.profil && ETAT.profil.role === "enseignant") {
     try { ETAT.profils = await sbSelect("profils", "select=*&order=created_at.asc"); } catch (e) {}
     try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) {}
@@ -1718,6 +1720,8 @@ function carteDevoirEleve(d) {
   const visible = contenuVisibleLe(d.date);
   const lendemain = fmtDateCourte(isoDe(new Date(parseDate(d.date).getTime() + 86400000)));
   const note = ETAT.notes.find(n => n.eleve_id === ETAT.session.user.id && n.devoir_id === d.id);
+  const rendu = (ETAT.rendus || []).find(r => r.eleve_id === ETAT.session.user.id && String(r.devoir_id) === String(d.id));
+  const statutRendu = !rendu ? "" : (rendu.statut === "valide" ? `<span class="badge bg-emerald-100 text-emerald-700">✅ Corrigée et validée par l'enseignant</span>` : rendu.statut === "corrige" ? `<span class="badge bg-sky-100 text-sky-700">🤖 Corrigée par l'IA — en attente de validation de l'enseignant</span>` : `<span class="badge bg-amber-100 text-amber-700">⏳ Déposée — correction à venir</span>`);
   return `<div class="card p-5 flex flex-col gap-3">
     <div class="flex items-start gap-3">
       <span class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white shrink-0" style="background:${couleurClasse(d.classe)}">${esc(d.type)}</span>
@@ -1730,7 +1734,31 @@ function carteDevoirEleve(d) {
       <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-emerald-700">✅ CORRECTION</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.correction ? esc(d.correction) : "<i class='text-slate-400'>Correction pas encore publiée.</i>"}</p></div>`
     : `<div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-[13px] text-slate-500">🔒 La date est visible, mais le <b>sujet</b> et la <b>correction</b> seront publiés le <b>${lendemain}</b> (lendemain de l'épreuve).</div>`}
     ${note && note.appreciation ? `<p class="text-[13px]">💬 <b>Remarque :</b> ${esc(note.appreciation)}</p>` : ""}
+    <div class="bg-violet-50 border border-violet-100 rounded-2xl p-3">
+      <p class="text-xs font-extrabold text-violet-700">📤 MA SOLUTION</p>
+      ${rendu ? `<p class="text-[13px] mt-1">📎 <b>${esc(rendu.nom_fichier || "Fichier déposé")}</b></p><p class="mt-1.5">${statutRendu}</p>${rendu.fichier && rendu.fichier.startsWith(ETAT.session.user.id + "/") ? `<button type="button" onclick="voirRendu(${rendu.id})" class="pill !text-xs mt-2">👁️ Voir mon fichier</button>` : ""}` : `<p class="text-[13px] mt-1 text-slate-500">Déposez votre fichier solution (PDF, Word, photo de copie ou fichier de code). Il sera corrigé par l'IA, puis <b>validé par votre enseignant</b> avant la publication de la note.</p>`}
+      <label class="pill cursor-pointer !text-xs mt-2 !py-2">${rendu ? "🔁 Remplacer mon fichier" : "📤 Déposer ma solution"}<input type="file" accept=".pdf,.docx,.txt,.py,.pas,.sql,.md,.csv,.png,.jpg,.jpeg,.webp" class="hidden" onchange="deposerSolution(this,'${d.id}')"></label>
+    </div>
   </div>`;
+}
+/* ---------- Dépôt de solution par l'élève ---------- */
+async function deposerSolution(input, devoirId) {
+  const f = input.files && input.files[0]; if (!f) return;
+  if (f.size > 10 * 1024 * 1024) return toast("Fichier trop lourd (10 Mo maximum).", "erreur");
+  try {
+    const chemin = sbCheminFichier(ETAT.session.user.id, devoirId, f.name);
+    await sbEnvoyerFichier(chemin, f);
+    await sbUpsert("rendus", { eleve_id: ETAT.session.user.id, devoir_id: devoirId, fichier: chemin, nom_fichier: f.name, statut: "en_attente", note_ia: null, appreciation_ia: "", details_ia: "" }, "eleve_id,devoir_id");
+    try { ETAT.rendus = await sbSelect("rendus", "select=*&order=date.desc"); } catch (e) { }
+    toast("📤 Solution déposée ! Elle sera corrigée puis validée par votre enseignant.", "success");
+    rendreDevoirs();
+  } catch (e) { toast("Dépôt impossible : " + e.message + " (si le stockage ou la table « rendus » n'est pas actif, l'administrateur doit exécuter supabase/schema.sql).", "erreur"); }
+}
+async function voirRendu(id) {
+  const r = (ETAT.rendus || []).find(x => String(x.id) === String(id));
+  if (!r || !r.fichier) return toast("Aucun fichier attaché à ce dépôt.", "erreur");
+  try { const url = await sbLienSigne(r.fichier, 3600); window.open(url, "_blank"); }
+  catch (e) { toast("Impossible d'ouvrir le fichier (bucket « depots » à activer via supabase/schema.sql ?).", "erreur"); }
 }
 function rendreDevoirsEleve() {
   const zone = $("#section-devoirs");
@@ -1791,9 +1819,198 @@ function rendreElevesEns() {
       <div class="flex flex-wrap gap-2 mt-4 items-center">
         <button onclick="enregistrerNotes()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">💾 Enregistrer les notes</button>
         <span class="text-[12px] text-slate-400">Laissez une note vide pour l'effacer. Les élèves voient leurs notes et remarques immédiatement.</span>
-      </div>` : `<p class="text-slate-400 text-sm mt-4">Créez d'abord un devoir pour cette classe (section « Devoirs »).</p>`}
+      </div>
+      ${correctionIAHTML(devoir, eleves)}` : `<p class="text-slate-400 text-sm mt-4">Créez d'abord un devoir pour cette classe (section « Devoirs »).</p>`}
     </div>`;
 }
+/* ================= CORRECTION IA DES SOLUTIONS =================
+   L'IA (Google Gemini, via la fonction Supabase « corriger-ia ») propose
+   une note + une appréciation pour chaque fichier déposé. Rien n'est
+   publié tant que l'enseignant n'a pas cliqué « Valider et publier ». */
+function correctionIAHTML(devoir, eleves) {
+  const rendusD = (ETAT.rendus || []).filter(r => String(r.devoir_id) === String(devoir.id));
+  const nomEleve = (id) => { const e = (ETAT.profils || []).find(p => p.id === id); return e ? (e.nom || e.email || "Élève") : "Élève"; };
+  const badge = (st) => st === "valide"
+    ? `<span class="badge bg-emerald-100 text-emerald-700">✅ Validée</span>`
+    : st === "corrige" ? `<span class="badge bg-sky-100 text-sky-700">🤖 Corrigée par l'IA — à valider</span>` : `<span class="badge bg-amber-100 text-amber-700">⏳ En attente de correction</span>`;
+  const aCorriger = rendusD.filter(r => r.statut !== "valide").length;
+  return `<div class="card p-4 md:p-5 mt-5" style="border:2px solid #7C3AED">
+    <div class="flex flex-wrap gap-2 items-center justify-between">
+      <h3 class="font-extrabold text-[16px]">🤖 Correction IA des solutions</h3>
+      ${aCorriger ? `<button type="button" onclick="corrigerTousRendus('${devoir.id}', this)" class="pill !text-xs">🤖 Tout corriger (${aCorriger})</button>` : ""}
+    </div>
+    <p class="text-xs text-slate-500 mt-1">Les élèves déposent leur solution depuis « Mes devoirs » (PDF, Word, photo de copie ou fichier de code). L'IA compare chaque fichier au <b>corrigé type</b> du devoir et propose une note sur ${esc(String(devoir.bareme || 20))} + une appréciation. <b>Vous validez (ou corrigez) avant publication</b> : l'élève ne voit rien avant votre validation.</p>
+    <div class="flex flex-wrap gap-2 items-end mt-3">
+      <label class="text-xs font-extrabold">IMPORTER LE FICHIER D'UN ÉLÈVE<br><select id="ia-import-eleve" class="input mt-1 !w-auto">${eleves.map(e => `<option value="${e.id}">${esc(e.nom || e.email || "")}</option>`).join("")}</select></label>
+      <label class="pill cursor-pointer !text-xs !py-2.5">📥 Importer un fichier<input type="file" accept=".pdf,.docx,.txt,.py,.pas,.sql,.md,.csv,.png,.jpg,.jpeg,.webp" class="hidden" onchange="importerSolutionProf(this,'${devoir.id}')"></label>
+    </div>
+    <div class="grid gap-2 mt-3">
+      ${rendusD.map(r => `<div class="border rounded-2xl p-3" style="background:rgba(124,58,237,.04)">
+        <div class="flex flex-wrap gap-2 items-center">
+          <b class="text-sm">${esc(nomEleve(r.eleve_id))}</b>
+          <span class="text-xs text-slate-400">📎 ${esc(r.nom_fichier || "fichier")}</span>
+          ${badge(r.statut)}
+          <span class="flex-1"></span>
+          <button type="button" class="pill !text-xs" onclick="voirRendu(${r.id})">👁️ Voir</button>
+          ${r.statut !== "valide" ? `<button type="button" class="pill !text-xs" onclick="corrigerRenduIA(${r.id}, this)">🤖 ${r.statut === "corrige" ? "Re-corriger" : "Corriger avec l'IA"}</button>` : ""}
+        </div>
+        ${r.statut === "corrige" || r.statut === "valide" ? `
+        <div class="flex flex-wrap gap-2 items-end mt-2">
+          <label class="text-[11px] font-extrabold">NOTE PROPOSÉE /${esc(String(devoir.bareme || 20))}<br><input id="ia-note-${r.id}" inputmode="decimal" class="input !py-2 !w-28" value="${r.note_ia == null ? "" : esc(String(r.note_ia))}"></label>
+          <label class="text-[11px] font-extrabold flex-1 min-w-[220px]">APPRÉCIATION (vue par l'élève après validation)<br><input id="ia-appr-${r.id}" class="input !py-2" value="${esc(r.appreciation_ia || "")}"></label>
+          ${r.statut === "corrige" ? `<button type="button" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold" onclick="validerCorrectionIA(${r.id})">✅ Valider et publier</button>` : `<span class="badge bg-emerald-100 text-emerald-700">Note publiée à l'élève</span>`}
+        </div>
+        ${r.details_ia ? `<details class="mt-2"><summary class="text-xs font-bold cursor-pointer">🧾 Détail de la correction IA</summary><p class="text-[13px] whitespace-pre-line mt-1">${esc(r.details_ia)}</p></details>` : ""}` : ""}
+      </div>`).join("") || `<p class="text-sm text-slate-400">Aucune solution déposée pour ce devoir pour le moment. Les dépôts des élèves apparaîtront ici automatiquement.</p>`}
+    </div>
+    <details class="mt-3"><summary class="text-xs font-bold text-violet-700 cursor-pointer">⚙️ Mise en service de l'IA (une seule fois, par l'administrateur)</summary>
+      <div class="text-xs text-slate-500 mt-2 space-y-1">
+        <p>1) Exécutez <b>supabase/schema.sql</b> dans Supabase (colonnes de correction IA + droits d'import).</p>
+        <p>2) Créez une clé API gratuite sur <b>aistudio.google.com</b> (Google Gemini).</p>
+        <p>3) Déployez la fonction : <code>supabase functions deploy corriger-ia</code> puis <code>supabase secrets set GEMINI_API_KEY=votre_clé</code> (guide complet : <b>GUIDE-CORRECTION-IA.md</b>).</p>
+        <p>La clé reste côté serveur : elle n'apparaît jamais dans le site.</p>
+      </div>
+    </details>
+  </div>`;
+}
+async function importerSolutionProf(input, devoirId) {
+  const f = input.files && input.files[0]; if (!f) return;
+  const sel = $("#ia-import-eleve");
+  const eleveId = sel ? sel.value : "";
+  if (!eleveId) return toast("Choisissez d'abord l'élève à qui appartient ce fichier.", "erreur");
+  if (f.size > 10 * 1024 * 1024) return toast("Fichier trop lourd (10 Mo maximum).", "erreur");
+  try {
+    const chemin = sbCheminFichier(eleveId, devoirId, f.name);
+    await sbEnvoyerFichier(chemin, f);
+    await sbUpsert("rendus", { eleve_id: eleveId, devoir_id: devoirId, fichier: chemin, nom_fichier: f.name, statut: "en_attente", note_ia: null, appreciation_ia: "", details_ia: "" }, "eleve_id,devoir_id");
+    try { ETAT.rendus = await sbSelect("rendus", "select=*&order=date.desc"); } catch (e) { }
+    toast("📥 Fichier importé pour l'élève choisi — vous pouvez lancer la correction IA.", "success");
+    rendreEleves();
+  } catch (e) { toast("Import impossible : " + e.message + " (l'administrateur doit exécuter la mise à jour de supabase/schema.sql pour autoriser l'import par l'enseignant).", "erreur"); }
+}
+/* Extraction du contenu d'un fichier : texte direct, Word via mammoth,
+   PDF/images en base64 pour la lecture multimodale de Gemini. */
+async function extraireContenuFichier(blob, nom) {
+  const ext = (String(nom || "").split(".").pop() || "").toLowerCase();
+  const TEXTES = ["txt", "py", "pas", "sql", "md", "csv", "json", "js", "html", "css", "c", "h", "cpp", "java", "php", "xml", "log", "ini"];
+  if (TEXTES.includes(ext)) {
+    const t = await blob.text();
+    return { texte: t.slice(0, 80000) };
+  }
+  if (ext === "docx") {
+    if (typeof mammoth === "undefined") throw new Error("Le lecteur Word n'est pas chargé — vérifiez votre connexion Internet.");
+    const ab = await blob.arrayBuffer();
+    const r = await mammoth.extractRawText({ arrayBuffer: ab });
+    return { texte: (r.value || "").slice(0, 80000) };
+  }
+  if (["pdf", "png", "jpg", "jpeg", "webp", "gif"].includes(ext)) {
+    if (blob.size > 9 * 1024 * 1024) throw new Error("Fichier trop lourd pour l'IA (9 Mo maximum) : réduisez la photo ou le PDF.");
+    const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+    return { base64: String(dataUrl).split(",")[1] || "", mime: blob.type || (ext === "pdf" ? "application/pdf" : "image/" + (ext === "jpg" ? "jpeg" : ext)) };
+  }
+  if (ext === "doc") throw new Error("Ancien format .doc non pris en charge : convertissez le fichier en PDF ou .docx.");
+  throw new Error(`Format « .${ext} » non pris en charge par la correction IA (PDF, Word, images et fichiers texte/code sont acceptés).`);
+}
+async function appelerIA(payload) {
+  const session = await sbSessionValide();
+  if (!session) throw new Error("Session expirée : reconnectez-vous.");
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/corriger-ia`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const texte = await res.text();
+  let data = null;
+  try { data = JSON.parse(texte); } catch (e) { }
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("La fonction IA « corriger-ia » n'est pas encore déployée dans Supabase — voir « Mise en service de l'IA » ci-dessus.");
+    throw new Error((data && (data.error || data.message)) || texte || `Erreur du service IA (${res.status})`);
+  }
+  return data;
+}
+async function corrigerRenduIA(id, btn) {
+  const r = (ETAT.rendus || []).find(x => String(x.id) === String(id));
+  if (!r) return;
+  const devoir = ETAT.devoirs.find(d => String(d.id) === String(r.devoir_id));
+  if (!devoir) return toast("Devoir introuvable.", "erreur");
+  if (!devoir.correction && !confirm("Ce devoir n'a pas de corrigé type : l'IA corrigera à partir du seul sujet (moins fiable). Continuer ?")) return;
+  const ancien = btn ? btn.textContent : "";
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Correction IA en cours…"; }
+    let blob = null;
+    if (r.fichier) {
+      const url = await sbLienSigne(r.fichier, 600);
+      const rep = await fetch(url);
+      if (!rep.ok) throw new Error("Fichier de l'élève introuvable dans le stockage.");
+      blob = await rep.blob();
+    } else if (r.lien) {
+      const rep = await fetch(r.lien);
+      if (!rep.ok) throw new Error("Fichier de l'élève inaccessible.");
+      blob = await rep.blob();
+    }
+    if (!blob) throw new Error("Aucun fichier attaché à ce dépôt.");
+    const contenu = await extraireContenuFichier(blob, r.nom_fichier || r.fichier || "fichier");
+    const eleve = (ETAT.profils || []).find(p => p.id === r.eleve_id);
+    const data = await appelerIA({
+      devoir: { titre: devoir.titre, matiere: devoir.matiere || "", type: devoir.type, classe: nomClasse(devoir.classe), bareme: Number(devoir.bareme) || 20, sujet: devoir.sujet || "", correction: devoir.correction || "" },
+      eleve: { nom: eleve ? (eleve.nom || "") : "" },
+      fichier: { nom: r.nom_fichier || "fichier", mime: blob.type || "", texte: contenu.texte || "", base64: contenu.base64 || "" }
+    });
+    let note = Number(data && data.note);
+    if (isNaN(note)) throw new Error("Réponse de l'IA incomplète (aucune note) : réessayez.");
+    const bareme = Number(devoir.bareme) || 20;
+    note = Math.max(0, Math.min(bareme, Math.round(note * 4) / 4));
+    const maj = { note_ia: note, appreciation_ia: String((data && data.appreciation) || "").slice(0, 500), details_ia: String((data && data.details) || "").slice(0, 6000), statut: "corrige", corrige_le: new Date().toISOString() };
+    await sbPatch("rendus", `id=eq.${r.id}`, maj);
+    Object.assign(r, maj);
+    toast(`🤖 Correction IA prête${eleve && eleve.nom ? " pour " + eleve.nom : ""} : note proposée ${note}/${bareme} — vérifiez puis « Valider et publier ».`, "success");
+    if (ETAT.section === "eleves") rendreEleves();
+  } catch (e) {
+    if (/note_ia|appreciation_ia|details_ia|statut|corrige_le|column/i.test(e.message || "")) toast("La base n'a pas encore les colonnes de correction IA : l'administrateur doit exécuter la mise à jour de supabase/schema.sql.", "erreur");
+    else toast(e.message, "erreur");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = ancien || "🤖 Corriger avec l'IA"; }
+  }
+}
+async function corrigerTousRendus(devoirId, btn) {
+  const liste = (ETAT.rendus || []).filter(r => String(r.devoir_id) === String(devoirId) && r.statut !== "valide");
+  if (!liste.length) return toast("Aucune copie en attente de correction.", "info");
+  const ancien = btn ? btn.textContent : "";
+  let faites = 0;
+  try {
+    for (const r of liste) {
+      if (btn) btn.textContent = `⏳ Correction IA ${faites + 1}/${liste.length}…`;
+      await corrigerRenduIA(r.id, null);
+      if (r.statut === "corrige") faites++;
+    }
+    toast(`🤖 Correction IA terminée : ${faites}/${liste.length} copie(s) corrigée(s). Vérifiez chaque note puis validez.`, faites ? "success" : "info");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = ancien || "🤖 Tout corriger"; }
+    if (ETAT.section === "eleves") rendreEleves();
+  }
+}
+async function validerCorrectionIA(id) {
+  const r = (ETAT.rendus || []).find(x => String(x.id) === String(id));
+  if (!r) return;
+  const devoir = ETAT.devoirs.find(d => String(d.id) === String(r.devoir_id));
+  if (!devoir) return toast("Devoir introuvable.", "erreur");
+  const bareme = Number(devoir.bareme) || 20;
+  const champNote = $("#ia-note-" + r.id);
+  const champAppr = $("#ia-appr-" + r.id);
+  const noteStr = String(champNote ? champNote.value : (r.note_ia == null ? "" : r.note_ia)).trim().replace(",", ".");
+  const note = Number(noteStr);
+  if (noteStr === "" || isNaN(note) || note < 0 || note > bareme) return toast(`Note proposée invalide : saisissez une note entre 0 et ${bareme}.`, "erreur");
+  const appreciation = String(champAppr ? champAppr.value : (r.appreciation_ia || "")).trim();
+  try {
+    await sbUpsert("notes", { devoir_id: devoir.id, eleve_id: r.eleve_id, note, sur: bareme, appreciation, updated_by: ETAT.session.user.id }, "devoir_id,eleve_id");
+    await sbPatch("rendus", `id=eq.${r.id}`, { statut: "valide", note_ia: note, appreciation_ia: appreciation });
+    r.statut = "valide"; r.note_ia = note; r.appreciation_ia = appreciation;
+    try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) { }
+    toast("✅ Note validée et publiée : l'élève la voit maintenant dans ses notes.", "success");
+    rendreEleves();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+
 async function enregistrerNotes() {
   const devoir = ETAT.devoirs.find(d => d.id === ETAT.selNotes.devoirId);
   if (!devoir) return toast("Choisissez un devoir.", "erreur");

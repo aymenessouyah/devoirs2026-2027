@@ -1,0 +1,40 @@
+# 🤖 Guide — Correction IA des solutions des élèves
+
+L'IA (**Google Gemini**, gratuit) corrige les fichiers déposés par les élèves et **propose** une note + une appréciation. **Rien n'est publié sans la validation de l'enseignant.**
+
+## Comment ça marche
+
+1. L'élève dépose sa solution depuis **Mes devoirs → 📤 Ma solution** (PDF, Word, photo de copie, fichier de code…), ou l'enseignant importe le fichier dans **Élèves & notes → 🤖 Correction IA des solutions**.
+2. L'enseignant clique **« Corriger avec l'IA »** (ou **« Tout corriger »**) : l'IA compare le fichier au **corrigé type** du devoir et propose une note sur le barème + une appréciation + un détail question par question.
+3. L'enseignant vérifie, ajuste si besoin, puis clique **« ✅ Valider et publier »** : la note part dans le tableau des notes et l'élève la voit.
+
+## Mise en service (une seule fois, ~10 minutes)
+
+### 1) Mettre à jour la base
+Dans **Supabase → SQL Editor**, exécutez le fichier **`supabase/schema.sql`** (il ajoute les colonnes de correction IA à la table `rendus` et autorise l'import de fichiers par l'enseignant — sans danger pour les données existantes).
+
+### 2) Créer la clé Gemini gratuite
+- Allez sur **https://aistudio.google.com/apikey** → **Create API key**.
+- Copiez la clé (elle commence par `AIza...`).
+
+### 3) Déployer la fonction serveur
+Avec la [Supabase CLI](https://supabase.com/docs/guides/cli) installée, dans le dossier du projet :
+
+```bash
+supabase login
+supabase link --project-ref oaahxobzbnmaohcmdrbu
+supabase functions deploy corriger-ia
+supabase secrets set GEMINI_API_KEY=collez_votre_cle_ici
+```
+
+La clé reste **côté serveur** : elle n'apparaît jamais dans le site public.
+
+### 4) Tester
+Déposez un fichier de test en tant qu'élève, puis corrigez-le en tant qu'enseignant. Si un message parle de « fonction non déployée » ou de « colonnes manquantes », reprenez l'étape 1 ou 3 correspondante.
+
+## Limites à connaître
+
+- Fichiers acceptés : **PDF, .docx, images (jpg/png/webp), fichiers texte/code** (.txt, .py, .pas, .sql, .md…). Taille max conseillée : 9–10 Mo.
+- L'IA peut se tromper : c'est un **assistant** — relisez toujours la note proposée avant de valider, surtout pour les copies manuscrites.
+- Sans corrigé type dans le devoir, la correction est moins fiable (l'IA le signale et demande confirmation).
+- Le quota gratuit Gemini est largement suffisant pour un usage scolaire normal ; en cas de dépassement, réessayez le lendemain.

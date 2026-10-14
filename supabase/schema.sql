@@ -119,6 +119,16 @@ create table if not exists public.rendus (
   unique (eleve_id, devoir_id)
 );
 
+-- Correction IA des solutions (v5.5) : proposition de l'IA + validation.
+alter table public.rendus add column if not exists nom_fichier     text not null default '';
+alter table public.rendus add column if not exists note_ia         numeric;
+alter table public.rendus add column if not exists appreciation_ia text not null default '';
+alter table public.rendus add column if not exists details_ia      text not null default '';
+alter table public.rendus add column if not exists statut          text not null default 'en_attente';
+alter table public.rendus add column if not exists corrige_le      timestamptz;
+alter table public.rendus drop constraint if exists rendus_statut_check;
+alter table public.rendus add constraint rendus_statut_check check (statut in ('en_attente','corrige','valide'));
+
 -- Petite table technique : mémorise les migrations ponctuelles déjà faites.
 create table if not exists public.devoirs_meta (
   cle    text primary key,
@@ -285,7 +295,7 @@ drop policy if exists "rendus suppression" on public.rendus;
 create policy "rendus lecture" on public.rendus
   for select using (eleve_id = auth.uid() or public.est_enseignant());
 create policy "rendus creation" on public.rendus
-  for insert with check (eleve_id = auth.uid());
+  for insert with check (eleve_id = auth.uid() or public.est_enseignant());
 create policy "rendus modif" on public.rendus
   for update using (eleve_id = auth.uid() or public.est_enseignant())
   with check (eleve_id = auth.uid() or public.est_enseignant());
@@ -306,7 +316,7 @@ drop policy if exists "depots suppression" on storage.objects;
 create policy "depots envoi" on storage.objects
   for insert with check (
     bucket_id = 'depots'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.est_enseignant())
   );
 
 -- Lecture : son dossier, ou tout le bucket pour l'enseignant.
