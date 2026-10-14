@@ -44,7 +44,7 @@
       <li>⏳ Préparation de la réparation…</li>
     </ul>
 
-    <a class="bouton" id="ouvrir" href="espace-enseignant.html?maj=429">Ouvrir mon espace enseignant</a>
+    <a class="bouton" id="ouvrir" href="espace-enseignant.html?maj=430">Ouvrir mon espace enseignant</a>
     <button class="bouton secondaire" id="relancer" type="button">Relancer la réparation</button>
 
     <p class="note">Après la réparation, l’ouverture de la dernière version est automatique. En bas du site, vous devez lire « version du site 4.2.6 ».</p>
@@ -56,7 +56,7 @@
     const boutonOuvrir = document.getElementById("ouvrir");
 
     function cible() {
-      return "espace-enseignant.html?maj=429&t=" + Date.now();
+      return "espace-enseignant.html?maj=430&t=" + Date.now();
     }
 
     function ligne(texte) {
@@ -89,7 +89,7 @@
           ligne("Anciens caches supprimés : " + noms.length + ".");
         }
 
-        ligne("✅ Réparation terminée. Ouverture de la version 4.2.9…");
+        ligne("✅ Réparation terminée. Ouverture de la version 4.2.10…");
         setTimeout(() => location.replace(cible()), 1000);
       } catch (erreur) {
         ligne("⚠️ La réparation automatique a rencontré un problème. Cliquez sur « Ouvrir mon espace enseignant ».");

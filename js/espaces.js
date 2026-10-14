@@ -824,10 +824,13 @@ async function renderEspaceEnseignant() {
           <div class="mm-lignes">
             ${listeClasses().map((c) => {
               const matsC = matieresDeClasse(profil, c.cle);
-              return `<div class="mm-ligne">
-                <label class="mm-classe"><input type="checkbox" class="mm-classe-cb" value="${esc(c.cle)}" ${(profil.classes || []).includes(c.cle) ? "checked" : ""} /> ${esc(c.nom)}</label>
-                <select class="mm-mat1" title="Matière enseignée en ${esc(c.nom)}">${optionsMatieresHTML(matsC[0] || sesMatieres(profil)[0] || MATIERES[0])}</select>
-                <select class="mm-mat2" title="2e matière en ${esc(c.nom)} (optionnel)"><option value="" ${!matsC[1] ? "selected" : ""}>— 2e matière (optionnel) —</option>${optionsMatieresHTML(matsC[1] || "")}</select>
+              const cochee = (profil.classes || []).includes(c.cle);
+              return `<div class="mm-ligne ${cochee ? "actif" : "inactif"}" style="--jc:${couleurClasse(c.cle)}">
+                <label class="mm-classe"><input type="checkbox" class="mm-classe-cb" value="${esc(c.cle)}" ${cochee ? "checked" : ""} /> <span class="point"></span> ${esc(c.nom)}</label>
+                <div class="mm-mats">
+                  <label class="mm-mat-field"><span>Matière enseignée</span><select class="mm-mat1" ${cochee ? "" : "disabled"}>${optionsMatieresHTML(matsC[0] || sesMatieres(profil)[0] || MATIERES[0])}</select></label>
+                  <label class="mm-mat-field"><span>2e matière (optionnel)</span><select class="mm-mat2" ${cochee ? "" : "disabled"}><option value="" ${!matsC[1] ? "selected" : ""}>— Aucune —</option>${optionsMatieresHTML(matsC[1] || "")}</select></label>
+                </div>
               </div>`;
             }).join("") || `<span class="text-muted">Aucune classe définie pour le moment : l'admin les crée dans ⭐ Administration.</span>`}
           </div>
@@ -898,6 +901,17 @@ async function renderEspaceEnseignant() {
 
   /* ---------------- 🎓 Mes classes et mes matières ---------------- */
   function brancherChoixEnseignant() {
+    $$(".mm-ligne").forEach((ligne) => {
+      const cb = ligne.querySelector(".mm-classe-cb");
+      if (!cb) return;
+      const maj = () => {
+        ligne.classList.toggle("actif", cb.checked);
+        ligne.classList.toggle("inactif", !cb.checked);
+        ligne.querySelectorAll("select").forEach((sel) => { sel.disabled = !cb.checked; });
+      };
+      cb.addEventListener("change", maj);
+      maj();
+    });
     $("#mm-enregistrer")?.addEventListener("click", async () => {
       const msg = $("#mm-msg");
       const classes = [];
@@ -959,7 +973,8 @@ async function renderEspaceEnseignant() {
       return (CFG.trimestres || []).map((t) => {
         const qDC = etatQuota(mesDevoirs, CALJ.classe, CALJ.matiere, "DC", t.debut, null);
         const qDS = etatQuota(mesDevoirs, CALJ.classe, CALJ.matiere, "DS", t.debut, null);
-        return `<span class="pill" title="${esc(t.label)} — ${esc(nomClasseDyn(CALJ.classe))}">${esc(t.label)} · DC ${qDC.nb}/${qDC.max} · DS ${qDS.nb}/${qDS.max}</span>`;
+        const plein = qDC.nb >= qDC.max && qDS.nb >= qDS.max;
+        return `<span class="pill quota-p ${plein ? "plein" : ""}" title="${esc(t.label)} — ${esc(nomClasseDyn(CALJ.classe))} · ${esc(CALJ.matiere || "")}">${t.id} · DC ${qDC.nb}/${qDC.max} · DS ${qDS.nb}/${qDS.max}</span>`;
       }).join(" ");
     }
 
@@ -977,16 +992,17 @@ async function renderEspaceEnseignant() {
         const iso = `${CALJ.a}-${String(CALJ.m + 1).padStart(2, "0")}-${String(jour).padStart(2, "0")}`;
         const ev = evaluerDateChoix(CALJ.classe, iso, typeSql, "", { occupees });
         const evts = evenementsOfficiels(iso);
-        const icone = evts.some((e) => e.type === "vacances") ? "🏖️"
-          : evts.some((e) => e.type === "ferie") ? "🚩"
-          : evts.some((e) => e.type === "suspension") ? "🔒" : "";
+        const evtOff = evts.find((e) => e.type === "vacances") || evts.find((e) => e.type === "ferie") || evts.find((e) => e.type === "suspension");
         const tokens = mesDevoirs.filter((d) => d.date === iso)
-          .map((d) => `<button type="button" class="cal-token" style="--jc:${couleurClasse(d.classe)}" data-id="${esc(d.id)}" title="${esc(d.titre)} — ${esc(nomClasseDyn(d.classe))} · ${esc(d.matiere || "")}">${d.type} · ${esc(d.titre)}</button>`).join("");
+          .map((d) => `<button type="button" class="cal-token" style="--jc:${couleurClasse(d.classe)}" data-id="${esc(d.id)}" title="${esc(d.titre)} — ${esc(nomClasseDyn(d.classe))} · ${esc(d.matiere || "")}">${d.type} · ${esc(d.matiere || "")} · ${esc(d.titre)}</button>`).join("");
         const classesCls = ["cal-case", ev.ok ? "valide deposable" : "invalide"];
+        if (evtOff && evtOff.type === "vacances") classesCls.push("cal-vac");
+        if (evtOff && evtOff.type === "ferie") classesCls.push("cal-ferie");
+        if (evtOff && evtOff.type === "suspension") classesCls.push("cal-bloc");
         if (iso === todayISO()) classesCls.push("aujourdhui");
         cases += `<div class="${classesCls.join(" ")}" data-iso="${iso}" title="${esc(ev.raison)}">
           <div class="cal-num">${jour}</div>
-          ${icone ? `<div class="cal-off">${icone}</div>` : ""}
+          ${evtOff ? `<div class="cal-off ${evtOff.type}">${evtOff.type === "vacances" ? "🏖️" : evtOff.type === "ferie" ? "🚩" : "🔒"} ${esc(evtOff.label)}</div>` : ""}
           ${tokens}
         </div>`;
       }
@@ -994,23 +1010,31 @@ async function renderEspaceEnseignant() {
       for (let i = 0; i < reste; i++) cases += `<div class="cal-case vide"></div>`;
 
       zone.innerHTML = `
-        <div class="jetons-bar">
-          <strong>Mes jetons :</strong>
-          ${mesClasses.map((cle) => `<button type="button" class="jeton-classe ${CALJ.classe === cle ? "sel" : ""}" draggable="true" data-cle="${esc(cle)}" style="--jc:${couleurClasse(cle)}" title="Glissez-moi dans le calendrier, ou cliquez puis cliquez un jour"><span class="point"></span>${esc(nomClasseDyn(cle))}</button>`).join("")}
-          <span style="margin-left:.4rem">
-            <button type="button" class="btn ${CALJ.type === "DC" ? "btn-secondary" : "btn-ghost"} btn-sm cj-type" data-type="DC">DC · Contrôle</button>
-            <button type="button" class="btn ${CALJ.type === "DS" ? "btn-secondary" : "btn-ghost"} btn-sm cj-type" data-type="DS">DS · Synthèse</button>
-          </span>
-          ${mats.length > 1
-            ? `<select id="cj-matiere" title="Matière du devoir">${mats.map((m) => `<option ${m === CALJ.matiere ? "selected" : ""}>${esc(m)}</option>`).join("")}</select>`
-            : `<span class="pill">📚 ${esc(CALJ.matiere || "")}</span>`}
+        <div class="cal-outils">
+          <div class="jetons-bar">
+            <strong>🧩 Mes jetons :</strong>
+            ${mesClasses.map((cle) => `<button type="button" class="jeton-classe ${CALJ.classe === cle ? "sel" : ""}" draggable="true" data-cle="${esc(cle)}" style="--jc:${couleurClasse(cle)}" title="Glissez-moi dans le calendrier, ou cliquez puis cliquez un jour"><span class="point"></span><span>${esc(nomClasseDyn(cle))}</span><small class="jeton-mat">${esc(matieresDeClasse(profil, cle).join(" + "))}</small></button>`).join("")}
+            <span class="seg-type" role="group" aria-label="Type de devoir">
+              <button type="button" class="cj-type ${CALJ.type === "DC" ? "actif" : ""}" data-type="DC">DC · Contrôle</button>
+              <button type="button" class="cj-type ${CALJ.type === "DS" ? "actif" : ""}" data-type="DS">DS · Synthèse</button>
+            </span>
+            ${mats.length > 1
+              ? `<label class="cj-mat-wrap">📚 Matière <select id="cj-matiere">${mats.map((m) => `<option ${m === CALJ.matiere ? "selected" : ""}>${esc(m)}</option>`).join("")}</select></label>`
+              : `<span class="pill">📚 ${esc(CALJ.matiere || "")}</span>`}
+          </div>
+          <div class="jetons-bar quotas-bar">${quotaHTML()}</div>
+          <div class="cal-legende">
+            <span><i class="pastille ok"></i> Jour où placer le devoir</span>
+            <span><i class="pastille bloc"></i> Vacances / férié / semaine bloquée</span>
+            <span><i class="pastille auj"></i> Aujourd'hui</span>
+            <span class="legende-aide">🖱️ Glissez un jeton dans une case verte, ou cliquez le jeton puis le jour. Cliquez un devoir déjà placé pour le modifier.</span>
+          </div>
         </div>
-        <p class="text-muted" style="font-size:.88rem">Glissez un jeton dans une case <strong style="color:var(--green)">verte</strong>, ou cliquez le jeton puis le jour. Cliquez un devoir déjà placé pour le modifier (date, sujet, correction).</p>
-        <div class="jetons-bar">${quotaHTML()}</div>
         <div class="cal-nav mb-2">
           <button type="button" class="btn btn-outline btn-sm cj-prev">← Précédent</button>
           <h3>${MOIS_LONG[CALJ.m]} ${CALJ.a}</h3>
           <button type="button" class="btn btn-outline btn-sm cj-next">Suivant →</button>
+          <button type="button" class="btn btn-ghost btn-sm cj-today">📍 Aujourd'hui</button>
           <span class="text-muted" style="margin-left:auto;font-size:.82rem">${sourceOfficielHTML()}</span>
         </div>
         <div class="cal-grid">${cases}</div>`;
@@ -1026,6 +1050,7 @@ async function renderEspaceEnseignant() {
       $("#cj-matiere", zone)?.addEventListener("change", (e) => { CALJ.matiere = e.target.value; dessiner(); });
       $(".cj-prev", zone)?.addEventListener("click", () => { CALJ.m--; if (CALJ.m < 0) { CALJ.m = 11; CALJ.a--; } dessiner(); });
       $(".cj-next", zone)?.addEventListener("click", () => { CALJ.m++; if (CALJ.m > 11) { CALJ.m = 0; CALJ.a++; } dessiner(); });
+      $(".cj-today", zone)?.addEventListener("click", () => { const d = new Date(); CALJ.a = d.getFullYear(); CALJ.m = d.getMonth(); dessiner(); });
       $$(".cal-token", zone).forEach((t) => t.addEventListener("click", (e) => {
         e.stopPropagation();
         const d = mesDevoirs.find((x) => x.id === t.dataset.id);
