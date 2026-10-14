@@ -14,40 +14,40 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','Inter','s
 </script>
 <style>
 *{font-family:'Plus Jakarta Sans',Inter,sans-serif}
-::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:20px}
-.card{ background:#fff;border:1px solid #EEF2F7;border-radius:20px;box-shadow:0 4px 20px rgba(15,23,42,.04)}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#8CA0B8;border-radius:20px}
+.card{ background:#fff;border:1px solid #D5DCE8;border-radius:20px;box-shadow:0 8px 24px rgba(15,23,42,.10)}
 .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;color:#94A3B8;font-weight:600;font-size:14px;cursor:pointer;transition:.2s}
 .nav-item:hover{background:#1E293B;color:#fff}.nav-item.active{background:linear-gradient(90deg,#6D28D9,#6366F1);color:#fff;box-shadow:0 8px 20px rgba(109,40,217,.35)}
-.pill{padding:7px 16px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #E2E8F0;background:#fff}
+.pill{padding:7px 16px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #C3CEDF;background:#EFF2F8}
 .pill.active{background:#111827;color:#fff;border-color:#111827}
 .badge{font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em}
-.input{width:100%;padding:11px 14px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:14px;outline:none;background:#F8FAFC}
+.input{width:100%;padding:11px 14px;border:1.5px solid #BFCBDD;border-radius:12px;font-size:14px;outline:none;background:#E9EDF5}
 .input:focus{border-color:#8B5CF6;background:#fff;box-shadow:0 0 0 4px rgba(139,92,246,.12)}
 .progress-bar{height:8px;background:#EEF2FF;border-radius:999px;overflow:hidden}.progress-fill{height:100%;border-radius:999px;transition:width 1s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}} .fadeUp{animation:fadeUp .45s ease both}
 @keyframes pulseDot{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}} .pulse-dot{animation:pulseDot 1.4s infinite}
 .ai-grad{background:linear-gradient(135deg,#6D28D9 0%,#6366F1 55%,#0EA5E9 100%)}
 .stat-icon{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.table-row:hover{background:#F8FAFC}
+.table-row:hover{background:#E8EDF6}
 select.input{appearance:none}
-.jeton{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:2px solid var(--jc,#888);background:#fff;font-weight:700;font-size:13px;cursor:grab;transition:.15s}
+.jeton{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:2px solid var(--jc,#888);background:#F4F6FB;font-weight:700;font-size:13px;cursor:grab;transition:.15s}
 .jeton.sel{background:var(--jc,#888);color:#fff;box-shadow:0 8px 18px rgba(15,23,42,.18)}
 .jeton small{font-weight:600;opacity:.85;font-size:11px}
-.cal-cell{min-height:96px;border:2px solid #EEF2F7;border-radius:14px;padding:6px;background:#fff;font-size:12px}
+.cal-cell{min-height:96px;border:2px solid #D5DCE8;border-radius:14px;padding:6px;background:#FBFCFE;font-size:12px}
 .cal-cell.valide{background:#ECFDF5;border-color:#6EE7B7;cursor:pointer}
 .cal-cell.valide:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(15,23,42,.08)}
 .cal-cell.invalide{opacity:.55}
 .cal-cell.aujourdhui{border-color:#E11D63;box-shadow:0 0 0 3px #FFE4E9}
 .cal-token{display:block;width:100%;margin-top:3px;padding:2px 6px;border-left:4px solid var(--jc,#888);border-radius:6px;background:rgba(100,116,139,.12);font-size:10.5px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-.mm-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:14px;border:1.5px solid #EEF2F7;border-left:6px solid var(--jc,#888);border-radius:16px;background:#fff}
+.mm-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:14px;border:1.5px solid #D5DCE8;border-left:6px solid var(--jc,#888);border-radius:16px;background:#fff}
 .mm-row.inactif{opacity:.55}
 .seg{display:inline-flex;border:1.5px solid #E2E8F0;border-radius:999px;overflow:hidden}
-.seg button{padding:8px 14px;font-weight:700;font-size:13px;background:#fff;cursor:pointer}
+.seg button{padding:8px 14px;font-weight:700;font-size:13px;background:#EFF2F8;cursor:pointer}
 .seg button.actif{background:#6D28D9;color:#fff}
 @media (max-width:640px){.cal-cell{min-height:74px}}
 </style>
 </head>
-<body class="bg-[#F6F7FB] text-slate-800">
+<body class="bg-[#E6EAF3] text-slate-800">
 
 <!-- ============ AUTH ============ -->
 <div id="authView" class="min-h-screen ai-grad flex items-center justify-center p-4 relative overflow-hidden">
@@ -68,7 +68,7 @@ select.input{appearance:none}
 <div class="flex min-h-screen">
 
 <!-- SIDEBAR -->
-<aside id="sidebar" class="fixed lg:static z-50 inset-y-0 left-0 w-[268px] bg-[#0F172A] text-white flex flex-col p-5 -translate-x-full lg:translate-x-0 transition-transform">
+<aside id="sidebar" class="fixed lg:static z-50 inset-y-0 left-0 w-[268px] bg-[#0A0F1E] text-white flex flex-col p-5 -translate-x-full lg:translate-x-0 transition-transform">
   <div class="flex items-center gap-3 px-1">
     <div class="w-11 h-11 rounded-2xl ai-grad flex items-center justify-center text-[20px] shadow-lg shadow-violet-500/40"><i class="fa-solid fa-graduation-cap"></i></div>
     <div><p class="font-black text-[19px] leading-none tracking-tight">Devoirs <span class="text-violet-400">Lycée</span></p><p class="text-[11px] text-slate-400 font-semibold mt-1" id="sideRole">ESPACE CONNECTÉ</p></div>
@@ -86,7 +86,7 @@ select.input{appearance:none}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.0.2</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.1.0</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -96,7 +96,7 @@ select.input{appearance:none}
 
 <!-- MAIN -->
 <main class="flex-1 min-w-0">
-  <header class="sticky top-0 z-40 bg-[#F6F7FB]/90 backdrop-blur border-b border-slate-200/70 px-4 md:px-7 py-4 flex items-center gap-3">
+  <header class="sticky top-0 z-40 bg-[#E6EAF3]/92 backdrop-blur border-b border-slate-200/70 px-4 md:px-7 py-4 flex items-center gap-3">
     <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-white rounded-xl border flex items-center justify-center"><i class="fa-solid fa-bars"></i></button>
     <div class="flex-1 max-w-xl relative hidden md:block">
       <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
@@ -145,7 +145,8 @@ const ETAT = {
   section: "dashboard", recherche: "",
   cal: { a: null, m: null, classe: null, type: "DC", matiere: "" },
   calOff: { a: null, m: null },
-  form: null, classeEleves: "", devoirNotes: "", selNotes: { classe: "", devoirId: null }
+  form: null, classeEleves: "", devoirNotes: "", selNotes: { classe: "", devoirId: null },
+  repartition: [], sourceRep: "manuel", lienRep: ""
 };
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -551,6 +552,15 @@ function rendreClasses() {
     row.querySelectorAll("select").forEach(sel => { sel.disabled = !cb.checked; });
   }));
 }
+function conflitMatiereUnique(carte, monId, profils) {
+  for (const [cle, mats] of Object.entries(carte || {})) {
+    for (const m of (mats || [])) {
+      const autre = (profils || []).find(p => p.id !== monId && p.role === "enseignant" && statutProfil(p) !== "refuse" && matieresDeClasse(p, cle).includes(m));
+      if (autre) return { classe: cle, matiere: m, nom: autre.nom || autre.email || "un autre enseignant" };
+    }
+  }
+  return null;
+}
 async function enregistrerMesClasses() {
   const classes = [], carte = {};
   let erreur = "";
@@ -563,6 +573,9 @@ async function enregistrerMesClasses() {
     carte[cb.value] = [m1, m2].filter(Boolean);
   });
   if (erreur) return toast(erreur, "erreur");
+  try { const frais = await sbSelect("profils", "select=*"); if (Array.isArray(frais) && frais.length) ETAT.profils = frais; } catch (e) { }
+  const conflit = conflitMatiereUnique(carte, ETAT.session.user.id, ETAT.profils);
+  if (conflit) return toast(`⛔ La matière « ${conflit.matiere} » est déjà enseignée en ${nomClasse(conflit.classe)} par ${conflit.nom}. Une classe ne peut avoir qu'un seul enseignant par matière.`, "erreur");
   const toutes = [...new Set(Object.values(carte).flat())];
   try {
     await sbPatch("profils", `id=eq.${ETAT.session.user.id}`, { classes, matieres_par_classe: carte, matiere: toutes[0] || null, matiere_2: toutes[1] || null });
@@ -589,6 +602,7 @@ function rendreDevoirsEns() {
     <div class="flex flex-wrap justify-between gap-3 items-center"><div><h2 class="text-2xl font-black">Devoirs</h2><p class="text-sm text-slate-500">Glissez le jeton d'une classe dans le calendrier officiel, puis écrivez le titre. Seuls les devoirs de contrôle et de synthèse sont acceptés.</p></div>
     <button onclick="nouveauDevoir()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-400/30">+ Créer un devoir</button></div>
     <div class="card p-4 md:p-5 mt-5"><div id="calZone"></div></div>
+    ${suggestionsRepHTML()}
     <div id="zoneFormDevoir" class="mt-5"></div>
     <div class="flex justify-between items-center mt-7 mb-3"><h3 class="font-extrabold text-[17px]">📋 Mes devoirs</h3><span class="text-xs text-slate-400" id="compteurDevoirs"></span></div>
     <div id="listeDevoirs" class="grid lg:grid-cols-2 gap-4"></div>`;
@@ -623,10 +637,11 @@ function dessinerCalendrier() {
     const evts = evenementsOfficiels(iso);
     const evtOff = evts.find(e => e.type === "vacances") || evts.find(e => e.type === "ferie") || evts.find(e => e.type === "suspension");
     const tokens = mesDevoirs().filter(d => d.date === iso).map(d => `<button class="cal-token" style="--jc:${couleurClasse(d.classe)}" title="${esc(d.titre)} — ${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")}" onclick="event.stopPropagation();modifierDevoir('${d.id}')">${esc(d.type)} · ${esc(d.matiere || "")} · ${esc(d.titre)}</button>`).join("");
+    const reps = ETAT.repartition.map((r, i) => ({ r, i })).filter(x => x.r.date === iso && (!x.r.classe || x.r.classe === ETAT.cal.classe)).map(x => `<button onclick="event.stopPropagation();appliquerRepartition(${x.i})" title="Date proposée par la répartition — cliquez pour préparer ce devoir" class="block w-full text-left mt-0.5 text-[10px] font-bold text-violet-700 bg-violet-100 border border-violet-300 rounded px-1 py-0.5" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📋 Rép. ${esc(x.r.type)}${x.r.matiere ? " · " + esc(x.r.matiere) : ""}</button>`).join("");
     cases += `<div class="cal-cell ${ev.ok ? "valide" : "invalide"} ${iso === todayISO() ? "aujourdhui" : ""}" title="${esc(ev.raison)}" onclick="celluleClic('${iso}')" ondragover="event.preventDefault()" ondrop="deposerJeton(event,'${iso}')">
       <div class="font-extrabold ${iso === todayISO() ? "text-rose-600" : ""}">${jour}</div>
       ${evtOff ? `<div class="text-[10px] font-bold mt-0.5 ${evtOff.type === "vacances" ? "text-emerald-600" : evtOff.type === "ferie" ? "text-orange-600" : "text-violet-600"}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${evtOff.type === "vacances" ? "🏖️" : evtOff.type === "ferie" ? "🚩" : "🔒"} ${esc(evtOff.label)}</div>` : ""}
-      ${tokens}</div>`;
+      ${tokens}${reps}</div>`;
   }
   const reste = (7 - ((debut + nbJours) % 7)) % 7;
   for (let i = 0; i < reste; i++) cases += `<div class="cal-cell" style="opacity:.35;border-style:dashed"></div>`;
@@ -1115,6 +1130,7 @@ function rendreVie() {
   zone.innerHTML = `
     <h2 class="text-2xl font-black">Vie de classe</h2>
     <p class="text-sm text-slate-500">Annonces du cours, emploi du temps, ressources et règles.</p>
+    ${carteRepartitionHTML()}
     <div class="grid lg:grid-cols-2 gap-5 mt-5">
       <div class="card p-5">
         <h3 class="font-extrabold text-[16px] mb-3">📣 Annonces</h3>
@@ -1145,27 +1161,195 @@ function rendreVie() {
     </div>`;
 }
 
+/* ================= RÉPARTITION DES DEVOIRS =================
+   Source au choix : saisie manuelle, lien viescolaire, ou lien Drive.
+   Les dates extraites sont proposées dans le calendrier des devoirs (📋).
+   Stockage : navigateur de l'enseignant (localStorage). */
+function chargerRepartition() {
+  try {
+    ETAT.repartition = JSON.parse(localStorage.getItem("dl-repartition") || "[]");
+    if (!Array.isArray(ETAT.repartition)) ETAT.repartition = [];
+    ETAT.sourceRep = localStorage.getItem("dl-source-rep") || "manuel";
+    ETAT.lienRep = localStorage.getItem("dl-lien-rep") || "";
+  } catch (e) { ETAT.repartition = []; }
+}
+function sauverRepartition() {
+  try {
+    localStorage.setItem("dl-repartition", JSON.stringify(ETAT.repartition));
+    localStorage.setItem("dl-source-rep", ETAT.sourceRep);
+    localStorage.setItem("dl-lien-rep", ETAT.lienRep || "");
+  } catch (e) { }
+}
+function cleRep(r) { return [r.date, r.classe || "", r.matiere || "", r.type || "DC"].join("|"); }
+function fusionnerRepartition(lignes) {
+  const vus = new Set(ETAT.repartition.map(cleRep));
+  let ajout = 0;
+  (lignes || []).forEach(l => { const k = cleRep(l); if (!vus.has(k)) { vus.add(k); ETAT.repartition.push(l); ajout++; } });
+  ETAT.repartition.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  sauverRepartition();
+  return ajout;
+}
+/* Analyse un texte libre / CSV : une date + (DC|DS) + classe/matière si présents. */
+function analyserRepartition(texte) {
+  const lignes = [], vus = new Set();
+  const slug = (x) => slugClasse(x);
+  String(texte || "").split(/\r?\n/).forEach(brute => {
+    const l = String(brute || "").trim(); if (!l) return;
+    let date = null, m = l.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) date = `${m[1]}-${m[2]}-${m[3]}`;
+    else { m = l.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/); if (m) date = `${m[3]}-${pad(Number(m[2]))}-${pad(Number(m[1]))}`; }
+    if (!date) return;
+    const sl = slug(l);
+    let classe = "";
+    for (const c of ETAT.classes) { if (sl.includes(slug(c.cle)) || sl.includes(slug(c.nom))) { classe = c.cle; break; } }
+    let matiere = "";
+    for (const mt of MATIERES) { if (sl.includes(slug(mt))) { matiere = mt; break; } }
+    let type = "DC";
+    if (/(^|[^A-Z])DS(?=\s*n?\u00b0?\s*\d|\s|;|,|$)|synth/i.test(l)) type = "DS"; else if (/(^|[^A-Z])DC(?=\s*n?\u00b0?\s*\d|\s|;|,|$)|contr/i.test(l)) type = "DC"; else return;
+    let titre = "";
+    const mn = l.match(/(?:DC|DS)\s*n?\s*°?\s*(\d+)/i);
+    if (mn) titre = `Devoir de ${type === "DS" ? "synthèse" : "contrôle"} n°${mn[1]}`;
+    const ligne = { date, classe, matiere, type, titre, source: ETAT.sourceRep };
+    const k = cleRep(ligne);
+    if (vus.has(k)) return; vus.add(k); lignes.push(ligne);
+  });
+  return lignes;
+}
+function convertirLienDrive(lien) {
+  const l = String(lien || "").trim();
+  const m = l.match(/(?:\/d\/|id=)([\w-]{20,})/);
+  if (!m) return l;
+  if (l.includes("spreadsheets")) return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv`;
+  return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+}
+function setSourceRep(src) { ETAT.sourceRep = src; sauverRepartition(); rendreVie(); }
+async function extraireRepLien() {
+  const champ = $("#rep-lien"); if (!champ) return;
+  ETAT.lienRep = champ.value.trim(); sauverRepartition();
+  if (!ETAT.lienRep) return toast("Collez d'abord le lien.", "erreur");
+  const url = ETAT.sourceRep === "drive" ? convertirLienDrive(ETAT.lienRep) : ETAT.lienRep;
+  try {
+    toast("⏳ Extraction de la répartition…", "info");
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const texte = await resp.text();
+    const lignes = analyserRepartition(texte);
+    if (!lignes.length) return toast("Aucune date (DC/DS + date) trouvée dans ce lien. Essayez le mode Manuel en collant le contenu du fichier.", "erreur");
+    const ajout = fusionnerRepartition(lignes);
+    toast(`✅ Répartition : ${lignes.length} date(s) trouvée(s), ${ajout} nouvelle(s). Retrouvez-les avec 📋 dans Devoirs.`, "success");
+    rendreVie();
+  } catch (e) {
+    toast(`Extraction impossible depuis ce lien (${e.message}). Astuce : partagez le fichier « toute personne disposant du lien », ou collez son contenu en mode Manuel.`, "erreur");
+  }
+}
+function importerTexteRep() {
+  const z = $("#rep-colle"); if (!z) return;
+  const lignes = analyserRepartition(z.value);
+  if (!lignes.length) return toast("Aucune ligne reconnue. Format par ligne : date (JJ/MM/AAAA), DC ou DS, classe, matière.", "erreur");
+  const ajout = fusionnerRepartition(lignes);
+  toast(`✅ ${ajout} date(s) ajoutée(s) à la répartition.`, "success");
+  rendreVie();
+}
+function ajouterRepManuelle() {
+  const classe = $("#rep-classe").value, matiere = $("#rep-matiere").value, type = $("#rep-type").value, date = $("#rep-date").value, titre = $("#rep-titre").value.trim();
+  if (!date) return toast("Choisissez une date.", "erreur");
+  const ajout = fusionnerRepartition([{ date, classe, matiere, type, titre, source: "manuel" }]);
+  toast(ajout ? "✅ Date ajoutée à la répartition." : "Cette date existe déjà dans la répartition.", ajout ? "success" : "info");
+  rendreVie();
+}
+function supprimerRep(i) { ETAT.repartition.splice(i, 1); sauverRepartition(); rendreVie(); }
+function viderRepartition() { if (!confirm("Effacer toute la répartition enregistrée sur cet appareil ?")) return; ETAT.repartition = []; sauverRepartition(); rendreVie(); }
+function carteRepartitionHTML() {
+  const ens = ETAT.profil && ETAT.profil.role === "enseignant";
+  const lignes = ETAT.repartition.slice().sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  const visibles = ens ? lignes : lignes.filter(r => !r.classe || r.classe === (ETAT.profil && ETAT.profil.classe));
+  if (!ens && !visibles.length) return "";
+  const srcBtn = (id, label) => `<button type="button" onclick="setSourceRep('${id}')" class="pill ${ETAT.sourceRep === id ? "active" : ""}">${label}</button>`;
+  const zoneSource = ens ? `
+    <div class="flex flex-wrap gap-2 mt-3">${srcBtn("manuel", "✍️ Manuel")}${srcBtn("viescolaire", "🔗 Lien viescolaire")}${srcBtn("drive", "📁 Lien Drive")}</div>
+    ${ETAT.sourceRep === "manuel" ? `
+    <div class="grid md:grid-cols-5 gap-2 mt-3">
+      <label class="text-[11px] font-extrabold">CLASSE<select id="rep-classe" class="input mt-1">${optionsClasses(ETAT.cal.classe || (ETAT.classes[0] && ETAT.classes[0].cle))}</select></label>
+      <label class="text-[11px] font-extrabold">MATIÈRE<select id="rep-matiere" class="input mt-1">${optionsMatieres("")}</select></label>
+      <label class="text-[11px] font-extrabold">TYPE<select id="rep-type" class="input mt-1"><option value="DC">DC · Contrôle</option><option value="DS">DS · Synthèse</option></select></label>
+      <label class="text-[11px] font-extrabold">DATE<input id="rep-date" type="date" class="input mt-1"></label>
+      <label class="text-[11px] font-extrabold">TITRE (optionnel)<input id="rep-titre" class="input mt-1" placeholder="Devoir de contrôle n°1"></label>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-3"><button type="button" onclick="ajouterRepManuelle()" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold">＋ Ajouter cette date</button></div>
+    <details class="mt-3"><summary class="text-xs font-bold text-violet-700 cursor-pointer">📥 Ou coller un tableau (CSV / texte)</summary>
+      <textarea id="rep-colle" rows="4" class="input mt-2" placeholder="3ème SI 1 ; STI ; DC ; 20/10/2026&#10;4ème SI 2 ; STI ; DS ; 07/12/2026"></textarea>
+      <button type="button" onclick="importerTexteRep()" class="pill mt-2">Analyser et importer</button>
+    </details>` : `
+    <div class="flex flex-wrap gap-2 mt-3">
+      <input id="rep-lien" class="input !w-auto flex-1 min-w-[240px]" placeholder="${ETAT.sourceRep === "drive" ? "Lien de partage Google Drive du fichier de répartition (CSV)…" : "Lien viescolaire…"}" value="${esc(ETAT.lienRep || (ETAT.sourceRep === "viescolaire" ? "https://aymenessouyah.github.io/viescolaire/" : ""))}">
+      <button type="button" onclick="extraireRepLien()" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold">⚡ Extraire la répartition</button>
+    </div>
+    <p class="text-[11px] text-slate-400 mt-2">${ETAT.sourceRep === "drive" ? "Le fichier doit être partagé « toute personne disposant du lien ». Sont reconnus : une date, DC/DS, la classe et la matière par ligne." : "Les dates de devoirs (DC/DS) publiées sur la page seront extraites automatiquement. Si le site protège ses données, utilisez le mode Manuel."}</p>`}` : "";
+  const liste = visibles.length ? `<div class="grid gap-1.5 mt-4">${visibles.map(r => { const i = ETAT.repartition.indexOf(r); return `<div class="mm-row !py-2.5"><span class="badge ${r.type === "DS" ? "bg-rose-100 text-rose-600" : "bg-violet-100 text-violet-700"}">${esc(r.type)}</span><b class="text-[13px]">${r.date ? fmtDate(r.date) : ""}</b><span class="text-[13px]">${esc(r.classe ? nomClasse(r.classe) : "Classe ?")}${r.matiere ? " · " + esc(r.matiere) : ""}${r.titre ? " · " + esc(r.titre) : ""}</span><span class="badge bg-slate-100 text-slate-500 ml-auto">${esc(r.source || "manuel")}</span>${ens ? `<button type="button" onclick="supprimerRep(${i})" class="text-red-500 font-black" title="Retirer">✕</button>` : ""}</div>`; }).join("")}</div>` : `<p class="text-sm text-slate-400 mt-3">Aucune date de répartition pour le moment.</p>`;
+  return `<div class="card p-5 mt-5" style="border:2px dashed #C4B5FD">
+    <div class="flex flex-wrap justify-between gap-2 items-center"><h3 class="font-extrabold text-[16px]">📋 Répartition des devoirs</h3>${ens && lignes.length ? `<button type="button" onclick="viderRepartition()" class="text-[11px] font-bold text-red-500">Tout effacer</button>` : ""}</div>
+    <p class="text-[13px] text-slate-500">Dates prévues (répartition) : elles sont <b>proposées dans le calendrier Devoirs</b> avec le badge 📋 — un clic prépare le devoir à la même date, dans le respect du calendrier officiel et des quotas.</p>
+    ${zoneSource}
+    ${liste}
+  </div>`;
+}
+function suggestionsRepHTML() {
+  if (!ETAT.profil || ETAT.profil.role !== "enseignant") return "";
+  const miennes = mesClasses();
+  const props = ETAT.repartition.map((r, i) => ({ r, i })).filter(x => x.r.date >= todayISO() && (!x.r.classe || miennes.includes(x.r.classe)));
+  if (!props.length) return "";
+  return `<div class="card p-4 mt-5" style="border:2px dashed #C4B5FD"><p class="text-sm font-extrabold">📋 Dates proposées par la répartition <span class="text-slate-400 font-semibold">(mêmes dates que la répartition — cliquez pour préparer le devoir)</span></p>
+    <div class="flex flex-wrap gap-2 mt-3">${props.map(x => `<button type="button" onclick="appliquerRepartition(${x.i})" class="pill !border-violet-300 !bg-violet-50 text-violet-800">📅 ${fmtDateCourte(x.r.date)} — ${esc(x.r.type)}${x.r.matiere ? " " + esc(x.r.matiere) : ""} · ${esc(x.r.classe ? nomClasse(x.r.classe) : "")}</button>`).join("")}</div></div>`;
+}
+function appliquerRepartition(i) {
+  const r = ETAT.repartition[i]; if (!r) return;
+  const classe = r.classe || ETAT.cal.classe;
+  if (!mesClasses().includes(classe)) return toast("Cette date concerne une classe que vous n'enseignez pas.", "erreur");
+  const mats = matieresDeClasse(ETAT.profil, classe);
+  const matiere = mats.includes(r.matiere) ? r.matiere : (mats[0] || r.matiere || "");
+  const ev = evaluerDateChoix(classe, r.date, r.type === "DS" ? "synthese" : "controle", { occupees: ETAT.devoirs.filter(d => d.classe === classe).map(d => d.date) });
+  if (!ev.ok) return toast(`Date de répartition refusée par le calendrier officiel : ${ev.raison}`, "erreur");
+  const q = etatQuota(mesDevoirs(), classe, matiere, r.type, r.date, null);
+  if (!q.ok) return toast(`Quota atteint pour cette date (${nomClasse(classe)} • ${matiere} • ${r.type}).`, "erreur");
+  ETAT.cal.classe = classe; ETAT.cal.type = r.type; ETAT.cal.matiere = matiere;
+  const dt = parseDate(r.date); ETAT.cal.a = dt.getFullYear(); ETAT.cal.m = dt.getMonth();
+  ETAT.form = { id: null, classe, type: r.type, date: r.date, matiere, titre: r.titre || "" };
+  if (ETAT.section !== "devoirs") showSection("devoirs"); else { dessinerCalendrier(); rendreFormulaire(); }
+  setTimeout(() => { const z = $("#zoneFormDevoir"); if (z) z.scrollIntoView({ behavior: "smooth" }); }, 80);
+  toast(`📋 Date de la répartition appliquée : ${fmtDate(r.date)} — complétez le titre puis enregistrez.`, "success");
+}
+
 /* ---------- Remplissage Supabase (sous la version, barre latérale) ---------- */
 const SB_QUOTA_BASE_MO = 500; /* offre gratuite Supabase : 500 Mo de base */
+let sbRemplissageOK = false;
 async function afficherRemplissageSupabase() {
   const zone = $("#sbRemplissage"), txt = $("#sbRemplissageTxt"), barre = $("#sbRemplissageBarre");
   if (!zone || !txt || !barre) return;
-  try {
-    const octets = await sbReq("rpc/taille_base", { method: "POST", body: {} });
-    const mo = Number(octets) / (1024 * 1024);
-    if (!isFinite(mo)) throw new Error("mesure illisible");
+  const maj = (mo) => {
     const pct = Math.max(0, Math.min(100, (mo / SB_QUOTA_BASE_MO) * 100));
-    txt.textContent = `${pct.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % • ${mo.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo / ${SB_QUOTA_BASE_MO} Mo`;
+    txt.textContent = `${pct.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % \u2022 ${mo.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo / ${SB_QUOTA_BASE_MO} Mo`;
     barre.style.width = Math.max(pct, 1.5) + "%";
     barre.style.background = pct >= 90 ? "#E11D63" : pct >= 75 ? "#F59E0B" : "";
-  } catch (e) {
-    zone.style.display = "none"; /* fonction SQL pas encore créée : on n'affiche rien */
+    zone.style.display = "";
+  };
+  let affiche = false;
+  try { const c = JSON.parse(localStorage.getItem("dl-sb-remp") || "null"); if (c && isFinite(c.mo)) { maj(c.mo); affiche = true; } } catch (e) { }
+  for (let essai = 0; essai < 3 && !sbRemplissageOK; essai++) {
+    try {
+      const octets = await sbReq("rpc/taille_base", { method: "POST", body: {} });
+      const mo = Number(octets) / (1024 * 1024);
+      if (!isFinite(mo)) throw new Error("mesure illisible");
+      maj(mo); affiche = true; sbRemplissageOK = true;
+      try { localStorage.setItem("dl-sb-remp", JSON.stringify({ mo, ts: Date.now() })); } catch (e) { }
+    } catch (e) { await new Promise(r => setTimeout(r, 1600)); }
   }
+  if (!sbRemplissageOK && !affiche) zone.style.display = "none"; /* jamais masqué après un succès */
 }
 
 /* ================= DÉMARRAGE ================= */
 (async function demarrer() {
   try { await chargerClasses(); } catch (e) { }
+  chargerRepartition();
   let session = null;
   try { session = await sbSessionValide(); } catch (e) { }
   if (session) {

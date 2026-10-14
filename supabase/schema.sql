@@ -389,6 +389,46 @@ create trigger trg_proteger_profils
   before update on public.profils
   for each row execute function public.proteger_profils();
 
+-- Règle métier : une classe + une matière ne peuvent être enseignées que
+-- par UN SEUL enseignant. Le site vérifie avant l'enregistrement ; ce
+-- déclencheur garantit la règle même en cas d'accès direct à la base.
+create or replace function public.verifier_matiere_unique()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  rec record;
+  mm text;
+  autre_nom text;
+begin
+  if new.role is distinct from 'enseignant' then return new; end if;
+  if coalesce(new.statut, '') = 'refuse' then return new; end if;
+  if new.matieres_par_classe is null or new.matieres_par_classe = '{}'::jsonb then return new; end if;
+  for rec in select * from jsonb_each(new.matieres_par_classe) loop
+    for mm in select * from jsonb_array_elements_text(coalesce(rec.value, '[]'::jsonb)) loop
+      select p.nom into autre_nom
+        from public.profils p
+       where p.id <> new.id
+         and p.role = 'enseignant'
+         and coalesce(p.statut, '') <> 'refuse'
+         and (coalesce(p.matieres_par_classe, '{}'::jsonb) -> rec.key) ? mm
+       limit 1;
+      if autre_nom is not null then
+        raise exception 'La matière % est déjà enseignée dans la classe % par un autre enseignant (%).', mm, rec.key, autre_nom;
+      end if;
+    end loop;
+  end loop;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_verifier_matiere_unique on public.profils;
+create trigger trg_verifier_matiere_unique
+  before insert or update of matieres_par_classe, role on public.profils
+  for each row execute function public.verifier_matiere_unique();
+
 -- Si le profil admin existe déjà, on le promeut et on le valide tout de suite :
 update public.profils p
 set role = 'enseignant', statut = 'accepte'
