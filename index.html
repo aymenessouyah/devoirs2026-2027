@@ -86,7 +86,7 @@ select.input{appearance:none}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.0</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.0.1</p>
   </div>
 </aside>
 
@@ -111,7 +111,7 @@ select.input{appearance:none}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.0</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.0.1</p>
 </main>
 </div>
 </div>
@@ -406,6 +406,11 @@ async function entrerApp() {
   $("#sideRole").textContent = estAdmin() ? "⭐ ADMIN DU SITE" : (p.role === "enseignant" ? "ESPACE ENSEIGNANT" : "ESPACE ÉLÈVE");
   $("#sideAvatar").textContent = initialesDe(p.nom);
   $("#topAvatar").textContent = initialesDe(p.nom);
+  if (estAdmin()) {
+    const imgAdmin = `<img src="img/profil-admin.jpg?v=500" alt="Photo de l'administrateur" class="w-full h-full object-cover rounded-full">`;
+    $("#sideAvatar").innerHTML = imgAdmin;
+    $("#topAvatar").innerHTML = imgAdmin;
+  }
   $("#btnNouveauDevoir").style.display = p.role === "enseignant" ? "" : "none";
   await chargerDonnees();
   construireNav();

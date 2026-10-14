@@ -3,7 +3,7 @@
    Stratégie réseau d'abord ; le cache ne sert que hors-ligne.
    ⚠️ Lors d'une mise à jour du site, changez la VERSION ci-dessous.
    ============================================================ */
-const VERSION = "devoirs-v25";
+const VERSION = "devoirs-v26";
 const FICHIERS = [
   "./",
   "./index.html",
@@ -21,6 +21,7 @@ const FICHIERS = [
   "./data/annonces.js?v=500",
   "./data/vie.js?v=500",
   "./data/calendrier.js?v=500",
+  "./img/profil-admin.jpg?v=500",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
