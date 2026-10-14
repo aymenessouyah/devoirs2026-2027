@@ -112,3 +112,9 @@ Le site est **synchronisé avec l'espace enseignant**
 toute modification du planning là-bas se répercute ici sans rien toucher.
 📁 Hors-ligne, la copie locale `data/calendrier.js` prend le relais
 (régénérable depuis les fichiers de viescolaire).
+- **Épreuves officielles** : les **2 devoirs de contrôle + 1 devoir de synthèse de chaque
+  trimestre** (dates tirées de la répartition de viescolaire) sont publiés dans
+  `data/devoirs.js` avec le champ `examen: true` : visibles par les élèves dans la liste
+  des devoirs et le calendrier, **sans bouton de dépôt**, et les notes se saisissent
+  comme pour les autres devoirs (espace enseignant). Pour les DS2/DS3, le jour exact
+  est fixé par l'établissement — la date affichée est le début de la semaine bloquée.

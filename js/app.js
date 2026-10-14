@@ -93,15 +93,8 @@ function normaliserOfficiel(ref, plan) {
   Object.entries(ref.CLASSES || {}).forEach(([k, v]) => { cours[k.toLowerCase()] = v.days; });
   const epreuves = plan ? simulerEpreuves(ref, plan) : {};
   const ds1 = {};
-  Object.entries(ref.DS1 || {}).forEach(([k, v]) => {
-    const cle = k.toLowerCase();
-    ds1[cle] = { dates: v.dates, main: v.main };
-    epreuves[cle] = epreuves[cle] || [];
-    if (!epreuves[cle].some((e) => e.date === v.main)) {
-      epreuves[cle].push({ nom: "Devoir de synthèse n°1", date: v.main });
-    }
-    epreuves[cle].sort((a, b) => a.date.localeCompare(b.date));
-  });
+  Object.entries(ref.DS1 || {}).forEach(([k, v]) => { ds1[k.toLowerCase()] = { dates: v.dates, main: v.main }; });
+  ajouterDS(ref, epreuves);
   return {
     source: "viescolaire",
     cours,
@@ -150,6 +143,28 @@ function simulerEpreuves(ref, plan) {
     resultat[cle] = liste;
   });
   return resultat;
+}
+
+function ajouterDS(ref, epreuves) {
+  /* Devoirs de synthèse : un par semaine bloquée (jalons « bloc » de viescolaire).
+     DS1 : jour exact déjà fixé (constante DS1) ; DS suivants : début de la semaine bloquée
+     (le jour exact est arrêté par l'établissement). */
+  const compteurs = {};
+  (ref.JALONS || [])
+    .filter((j) => j.type === "bloc" && j.from)
+    .sort((a, b) => a.from.localeCompare(b.from))
+    .forEach((j) => {
+      const label = stripHTML(j.label);
+      const classes = label.startsWith("3SI1") ? ["3si1"] : label.startsWith("4SI2") ? ["4si2"] : ["3si1", "4si2"];
+      classes.forEach((cle) => {
+        compteurs[cle] = (compteurs[cle] || 0) + 1;
+        const n = compteurs[cle];
+        const exact = n === 1 && ref.DS1 ? (ref.DS1[cle.toUpperCase()] || {}).main : null;
+        epreuves[cle] = epreuves[cle] || [];
+        epreuves[cle].push({ nom: `Devoir de synthèse n°${n}`, date: exact || j.from, debut: j.from, fin: j.to });
+      });
+    });
+  Object.values(epreuves).forEach((l) => l.sort((a, b) => a.date.localeCompare(b.date)));
 }
 
 function chargerScriptDistant(url, timeoutMs) {
@@ -206,7 +221,7 @@ function epreuveLe(classe, isoDate) {
 function conflitsDates() {
   if (!OFFICIEL) return [];
   const conflits = [];
-  DEVOIRS.filter((d) => !d.corrige).forEach((d) => {
+  DEVOIRS.filter((d) => !d.corrige && !d.examen).forEach((d) => {
     const raisons = [];
     const epr = epreuveLe(d.classe, d.echeance);
     if (epr) raisons.push(`jour du ${epr.nom}`);
@@ -466,7 +481,10 @@ function carteDevoirHTML(d, opts = {}) {
       </div>`;
   }
 
-  const actions = d.corrige
+  const actions = d.examen
+    ? `<span class="pill" style="border-color:var(--violet);background:var(--soft-violet);color:var(--violet)">📝 Épreuve en classe — aucun dépôt</span>
+       <a class="btn btn-ghost btn-sm" href="suivi.html">Voir mon suivi</a>`
+    : d.corrige
     ? `<a class="btn btn-ghost btn-sm" href="suivi.html">Voir mon suivi</a>`
     : `<a class="btn btn-primary btn-sm" href="depot.html?devoir=${encodeURIComponent(d.id)}">${ICONS.upload} Déposer ce devoir</a>
        <a class="btn btn-ghost btn-sm" href="suivi.html">Voir mon suivi</a>`;
@@ -484,7 +502,7 @@ function carteDevoirHTML(d, opts = {}) {
       ${bandeauNote}
       <div class="devoir-meta">
         <span class="item">${ICONS.users} ${esc(classeNom)}</span>
-        <span class="item">${ICONS.calendar} Échéance : ${fmtDate(d.echeance)} <em style="font-style:normal;opacity:.75">(${echeanceTexte(d.echeance)})</em></span>
+        <span class="item">${ICONS.calendar} ${d.examen ? "Épreuve" : "Échéance"} : ${fmtDate(d.echeance)} <em style="font-style:normal;opacity:.75">(${echeanceTexte(d.echeance)})</em></span>
         <span class="item">${ICONS.clock} Publié le ${fmtDateCourte(d.date_ajout)}</span>
       </div>
       <div class="devoir-actions">${actions}</div>
@@ -859,6 +877,7 @@ function renderCalendrier() {
         .map((cle) => {
           const ep = epreuveLe(cle, iso);
           if (!ep) return "";
+          if (duJour.some((d) => d.examen && d.classe === cle)) return "";
           const court = ep.nom.replace("Devoir de contrôle", "DC").replace("Devoir de synthèse", "DS");
           return `<div class="cal-off epreuve" title="${esc(ep.nom)} — ${esc(nomClasse(cle))}">📝 ${esc(court)} · ${cle === "3si1" ? "3SI1" : "4SI2"}</div>`;
         })
@@ -991,7 +1010,7 @@ function renderDepot() {
   const devoirId = params.get("devoir");
 
   if (selDevoir) {
-    const ouverts = trierDevoirs(DEVOIRS.filter((d) => !d.corrige));
+    const ouverts = trierDevoirs(DEVOIRS.filter((d) => !d.corrige && !d.examen));
     selDevoir.innerHTML =
       `<option value="">— Choisir un devoir —</option>` +
       ouverts.map((d) => `<option value="${d.id}">${esc(nomClasse(d.classe))} · ${esc(d.titre)} (avant le ${fmtDateCourte(d.echeance)})</option>`).join("");

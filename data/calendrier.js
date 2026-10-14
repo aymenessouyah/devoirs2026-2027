@@ -318,7 +318,9 @@ window.CAL_OFFICIEL = {
       },
       {
         "nom": "Devoir de synthèse n°1",
-        "date": "2026-12-08"
+        "date": "2026-12-08",
+        "debut": "2026-12-07",
+        "fin": "2026-12-12"
       },
       {
         "nom": "Devoir de contrôle n°3",
@@ -329,12 +331,24 @@ window.CAL_OFFICIEL = {
         "date": "2027-02-11"
       },
       {
+        "nom": "Devoir de synthèse n°2",
+        "date": "2027-03-04",
+        "debut": "2027-03-04",
+        "fin": "2027-03-13"
+      },
+      {
         "nom": "Devoir de contrôle n°5",
         "date": "2027-04-15"
       },
       {
         "nom": "Devoir de contrôle n°6",
         "date": "2027-04-29"
+      },
+      {
+        "nom": "Devoir de synthèse n°3",
+        "date": "2027-05-24",
+        "debut": "2027-05-24",
+        "fin": "2027-05-29"
       }
     ],
     "4si2": [
@@ -348,7 +362,9 @@ window.CAL_OFFICIEL = {
       },
       {
         "nom": "Devoir de synthèse n°1",
-        "date": "2026-12-07"
+        "date": "2026-12-07",
+        "debut": "2026-12-07",
+        "fin": "2026-12-12"
       },
       {
         "nom": "Devoir de contrôle n°3",
@@ -359,12 +375,24 @@ window.CAL_OFFICIEL = {
         "date": "2027-02-19"
       },
       {
+        "nom": "Devoir de synthèse n°2",
+        "date": "2027-03-04",
+        "debut": "2027-03-04",
+        "fin": "2027-03-13"
+      },
+      {
         "nom": "Devoir de contrôle n°5",
         "date": "2027-04-16"
       },
       {
         "nom": "Devoir de contrôle n°6",
         "date": "2027-04-26"
+      },
+      {
+        "nom": "Devoir de synthèse n°3",
+        "date": "2027-05-05",
+        "debut": "2027-05-05",
+        "fin": "2027-05-12"
       }
     ]
   }
