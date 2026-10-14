@@ -129,7 +129,7 @@ main .cal-cell[style*="#FFF7ED"]{background:#33200E!important}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.1.1</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.1.2</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -416,6 +416,10 @@ function construireNav() {
     </div>`).join("");
 }
 function showSection(nom) {
+  if (typeof classesDirty !== "undefined" && classesDirty && ETAT.section === "classes" && nom !== "classes") {
+    if (!confirm("⚠️ Vous avez modifié vos classes/matières sans confirmer. Quitter « Mes Classes » sans enregistrer ? (les modifications seront perdues)")) return;
+    classesDirty = false;
+  }
   ETAT.section = nom;
   $$(".section").forEach(s => s.classList.add("hidden"));
   const sec = $("#section-" + nom);
@@ -442,11 +446,8 @@ async function chargerDonnees() {
     try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) {}
   }
 }
-async function entrerApp() {
-  ETAT.session = sbSession();
-  const p = ETAT.profil;
-  $("#authView").classList.add("hidden");
-  $("#appView").classList.remove("hidden");
+function majBarreLaterale() {
+  const p = ETAT.profil; if (!p) return;
   $("#sideNom").textContent = p.nom || "";
   $("#sideDetail").textContent = p.role === "enseignant"
     ? ["Enseignant", ...toutesSesMatieres(p)].join(" • ")
@@ -459,7 +460,14 @@ async function entrerApp() {
     $("#sideAvatar").innerHTML = imgAdmin;
     $("#topAvatar").innerHTML = imgAdmin;
   }
-  $("#btnNouveauDevoir").style.display = p.role === "enseignant" ? "" : "none";
+  const btn = $("#btnNouveauDevoir"); if (btn) btn.style.display = p.role === "enseignant" ? "" : "none";
+}
+async function entrerApp() {
+  ETAT.session = sbSession();
+  const p = ETAT.profil;
+  $("#authView").classList.add("hidden");
+  $("#appView").classList.remove("hidden");
+  majBarreLaterale();
   await chargerDonnees();
   afficherRemplissageSupabase();
   construireNav();
@@ -586,15 +594,55 @@ function rendreClasses() {
         </div>
       </div>`; }).join("") || `<div class="card p-5 text-slate-400 text-sm md:col-span-3">Aucune classe sur le site pour le moment${estAdmin() ? " : créez-en dans ⭐ Administration." : " : l'administrateur doit d'abord les créer."}</div>`}
     </div>
-    <div class="card p-4 mt-5 flex flex-wrap gap-3 items-center">
-      <button onclick="enregistrerMesClasses()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">💾 Enregistrer mes classes et matières</button>
-      <p class="text-xs text-slate-400">Vos classes deviennent les jetons du calendrier des devoirs.</p>
-    </div>`;
+    <div id="barreClasses" class="card p-4 mt-5 flex flex-wrap gap-3 items-center hidden" style="border:2px solid #F59E0B">
+      <p class="text-sm font-bold flex-1">⚠️ Vous avez modifié vos classes/matières — ce n'est pas encore enregistré.</p>
+      <button onclick="annulerModifsClasses()" class="pill">↩️ Annuler</button>
+      <button onclick="enregistrerMesClasses()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">✅ Confirmer l'enregistrement</button>
+    </div>
+    <p class="text-xs text-slate-400 mt-3">Vos classes deviennent les jetons du calendrier des devoirs. Après toute modification, cliquez <b>Confirmer</b> : le changement s'appliquera alors à tout le site (Devoirs, Élèves & notes, Administration…).</p>`;
+  classesDirty = false;
   $$(".mm-cb").forEach(cb => cb.addEventListener("change", () => {
     const row = cb.closest(".mm-row");
     row.classList.toggle("inactif", !cb.checked);
     row.querySelectorAll("select").forEach(sel => { sel.disabled = !cb.checked; });
+    majBarreClasses();
   }));
+  $$(".mm-mat1, .mm-mat2").forEach(sel => sel.addEventListener("change", majBarreClasses));
+}
+let classesDirty = false;
+function lireChoixClasses() {
+  const classes = [], carte = {};
+  let erreur = "";
+  $$(".mm-row").forEach(row => {
+    const cb = row.querySelector(".mm-cb");
+    if (!cb || !cb.checked) return;
+    const m1 = row.querySelector(".mm-mat1") ? row.querySelector(".mm-mat1").value : "";
+    const m2 = row.querySelector(".mm-mat2") ? row.querySelector(".mm-mat2").value : "";
+    if (m2 && m2 === m1) erreur = "Dans une même classe, les deux matières doivent être différentes.";
+    classes.push(cb.value);
+    carte[cb.value] = [m1, m2].filter(Boolean);
+  });
+  return { classes, carte, erreur };
+}
+function signatureChoix(classes, carte) {
+  const c = {};
+  Object.keys(carte || {}).sort().forEach(k => { c[k] = (carte[k] || []).slice().sort(); });
+  return JSON.stringify({ classes: (classes || []).slice().sort(), carte: c });
+}
+function etatClassesModifie() {
+  const p = ETAT.profil; if (!p) return false;
+  const actuel = lireChoixClasses();
+  return signatureChoix(actuel.classes, actuel.carte) !== signatureChoix(p.classes || [], p.matieres_par_classe || {});
+}
+function majBarreClasses() {
+  classesDirty = etatClassesModifie();
+  const bar = $("#barreClasses");
+  if (bar) bar.classList.toggle("hidden", !classesDirty);
+}
+function annulerModifsClasses() {
+  classesDirty = false;
+  rendreClasses();
+  toast("↩️ Modifications annulées : vos classes enregistrées sont inchangées.", "info");
 }
 function conflitMatiereUnique(carte, monId, profils) {
   for (const [cle, mats] of Object.entries(carte || {})) {
@@ -606,31 +654,43 @@ function conflitMatiereUnique(carte, monId, profils) {
   return null;
 }
 async function enregistrerMesClasses() {
-  const classes = [], carte = {};
-  let erreur = "";
-  $$(".mm-row").forEach(row => {
-    const cb = row.querySelector(".mm-cb");
-    if (!cb || !cb.checked) return;
-    const m1 = row.querySelector(".mm-mat1").value, m2 = row.querySelector(".mm-mat2").value;
-    if (m2 && m2 === m1) erreur = "Dans une même classe, les deux matières doivent être différentes.";
-    classes.push(cb.value);
-    carte[cb.value] = [m1, m2].filter(Boolean);
-  });
-  if (erreur) return toast(erreur, "erreur");
+  const choix = lireChoixClasses();
+  if (choix.erreur) return toast(choix.erreur, "erreur");
+  const { classes, carte } = choix;
   try { const frais = await sbSelect("profils", "select=*"); if (Array.isArray(frais) && frais.length) ETAT.profils = frais; } catch (e) { }
   const conflit = conflitMatiereUnique(carte, ETAT.session.user.id, ETAT.profils);
   if (conflit) return toast(`⛔ La matière « ${conflit.matiere} » est déjà enseignée en ${nomClasse(conflit.classe)} par ${conflit.nom}. Une classe ne peut avoir qu'un seul enseignant par matière.`, "erreur");
   const toutes = [...new Set(Object.values(carte).flat())];
   try {
     await sbPatch("profils", `id=eq.${ETAT.session.user.id}`, { classes, matieres_par_classe: carte, matiere: toutes[0] || null, matiere_2: toutes[1] || null });
-    ETAT.profil.classes = classes; ETAT.profil.matieres_par_classe = carte;
-    ETAT.profil.matiere = toutes[0] || null; ETAT.profil.matiere_2 = toutes[1] || null;
+    /* Vérification réelle : relire le profil depuis le serveur (source de vérité) */
+    let relu = null;
+    try { relu = await sbMonProfil(); } catch (e) { }
+    if (relu) {
+      const ok = signatureChoix(relu.classes || [], relu.matieres_par_classe || {}) === signatureChoix(classes, carte);
+      if (!ok) return toast("⚠️ La base n'a pas pris en compte vos classes (règles de sécurité de la base). Reconnectez-vous puis réessayez ; si le problème persiste, signalez-le à l'administrateur.", "erreur");
+      ETAT.profil = relu;
+    } else {
+      ETAT.profil.classes = classes; ETAT.profil.matieres_par_classe = carte;
+      ETAT.profil.matiere = toutes[0] || null; ETAT.profil.matiere_2 = toutes[1] || null;
+    }
     sbStockerProfil(ETAT.profil);
-    toast("✅ Classes et matières enregistrées.", "success");
-    entrerAppRefresh();
+    classesDirty = false;
+    await resynchroniserApresClasses();
+    toast("✅ Classes et matières enregistrées — tout le site est à jour.", "success");
   } catch (e) { toast(e.message, "erreur"); }
 }
-async function entrerAppRefresh() { $("#sideDetail").textContent = ["Enseignant", ...toutesSesMatieres(ETAT.profil)].join(" • "); rendreClasses(); }
+/* Après un changement de classes : tout le site se resynchronise
+   (barre latérale, navigation, données, jetons, listes d'élèves, admin). */
+async function resynchroniserApresClasses() {
+  try { await chargerClasses(); } catch (e) { }
+  await chargerDonnees();
+  if (!mesClasses().includes(ETAT.cal.classe)) { ETAT.cal.classe = mesClasses()[0] || null; ETAT.cal.matiere = ""; ETAT.form = null; }
+  if (!mesClasses().includes(ETAT.selNotes.classe)) { ETAT.selNotes.classe = mesClasses()[0] || ""; ETAT.selNotes.devoirId = null; }
+  majBarreLaterale();
+  construireNav();
+  ({ dashboard: rendreDashboard, classes: rendreClasses, devoirs: rendreDevoirs, eleves: rendreEleves, admin: rendreAdmin, calendrier: rendreCalendrier, vie: rendreVie })[ETAT.section]?.();
+}
 
 /* ================= DEVOIRS ================= */
 function rendreDevoirs() { if (ETAT.profil.role === "enseignant") rendreDevoirsEns(); else rendreDevoirsEleve(); }
