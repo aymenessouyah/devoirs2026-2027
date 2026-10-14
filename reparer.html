@@ -44,7 +44,7 @@
       <li>⏳ Préparation de la réparation…</li>
     </ul>
 
-    <a class="bouton" id="ouvrir" href="espace-enseignant.html?maj=432">Ouvrir mon espace enseignant</a>
+    <a class="bouton" id="ouvrir" href="index.html">Ouvrir mon espace enseignant</a>
     <button class="bouton secondaire" id="relancer" type="button">Relancer la réparation</button>
 
     <p class="note">Après la réparation, l’ouverture de la dernière version est automatique. En bas du site, vous devez lire « version du site 4.2.6 ».</p>
@@ -56,7 +56,7 @@
     const boutonOuvrir = document.getElementById("ouvrir");
 
     function cible() {
-      return "espace-enseignant.html?maj=432&t=" + Date.now();
+      return "index.html&t=" + Date.now();
     }
 
     function ligne(texte) {

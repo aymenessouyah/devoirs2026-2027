@@ -1,35 +1,26 @@
 /* ============================================================
-   Service Worker — mise en cache pour usage hors-ligne (PWA)
+   Service Worker — Devoirs Lycée (application unique : index.html)
+   Stratégie réseau d'abord ; le cache ne sert que hors-ligne.
    ⚠️ Lors d'une mise à jour du site, changez la VERSION ci-dessous.
    ============================================================ */
-const VERSION = "devoirs-v24";
+const VERSION = "devoirs-v25";
 const FICHIERS = [
   "./",
   "./index.html",
-  "./devoirs.html",
-  "./calendrier.html",
-  "./vie-de-classe.html",
-  "./classe-3si1.html",
-  "./classe-4si2.html",
-  "./depot.html",
-  "./suivi.html",
-  "./admin.html",
-  "./connexion.html",
   "./espace-eleve.html",
   "./espace-enseignant.html",
   "./espace-admin.html",
-  "./reparer.html?v=432",
-  "./css/style.css?v=432",
-  "./js/app.js?v=432",
-  "./js/supabase.js?v=432",
-  "./js/espaces.js?v=432",
-  "./data/config.js?v=432",
-  "./data/devoirs.js?v=432",
-  "./data/eleves.js?v=432",
-  "./data/notes.js?v=432",
-  "./data/annonces.js?v=432",
-  "./data/vie.js?v=432",
-  "./data/calendrier.js?v=432",
+  "./calendrier.html",
+  "./vie-de-classe.html",
+  "./reparer.html?v=500",
+  "./js/supabase.js?v=500",
+  "./data/config.js?v=500",
+  "./data/devoirs.js?v=500",
+  "./data/eleves.js?v=500",
+  "./data/notes.js?v=500",
+  "./data/annonces.js?v=500",
+  "./data/vie.js?v=500",
+  "./data/calendrier.js?v=500",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -52,10 +43,9 @@ self.addEventListener("activate", (ev) => {
 
 self.addEventListener("fetch", (ev) => {
   if (ev.request.method !== "GET") return;
-  /* Appels externes (Supabase : comptes, notes, fichiers) : réseau direct, aucun cache */
+  /* Appels externes (Supabase, CDN du design) : réseau direct, aucun cache */
   if (new URL(ev.request.url).origin !== self.location.origin) return;
-  /* Réseau d'abord pour tout le site : chaque mise à jour publiée est
-     visible immédiatement. Le cache ne sert que hors-ligne. */
+  /* Réseau d'abord : chaque mise à jour publiée est visible immédiatement */
   ev.respondWith(
     fetch(ev.request)
       .then((res) => {

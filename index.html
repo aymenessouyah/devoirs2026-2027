@@ -1,74 +1,1156 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Devoirs Lycée · Connexion</title>
-  <meta name="description" content="Devoirs de contrôle et de synthèse 2026-2027 : connectez-vous à votre espace élève ou enseignant." />
-  <meta property="og:title" content="Devoirs Lycée" />
-  <meta property="og:description" content="Dates des devoirs, sujets et corrections (le lendemain de l'épreuve), notes et remarques — après connexion." />
-  <meta property="og:type" content="website" />
-  <link rel="icon" type="image/png" href="favicon-32.png" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#f43f5e" />
-  <script>(function(){var t=localStorage.getItem('theme');if(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t)document.documentElement.dataset.theme=t;})()</script>
-  <link rel="stylesheet" href="css/style.css?v=432" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Devoirs Lycée — Devoirs de contrôle & de synthèse</title>
+<meta name="description" content="Devoirs de contrôle et de synthèse 2026-2027 : dates, sujets et corrections (à J+1), notes et remarques — après connexion.">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','Inter','sans-serif']},colors:{primary:'#6D28D9',indigo2:'#6366F1'}}}}
+</script>
+<style>
+*{font-family:'Plus Jakarta Sans',Inter,sans-serif}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:20px}
+.card{ background:#fff;border:1px solid #EEF2F7;border-radius:20px;box-shadow:0 4px 20px rgba(15,23,42,.04)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;color:#94A3B8;font-weight:600;font-size:14px;cursor:pointer;transition:.2s}
+.nav-item:hover{background:#1E293B;color:#fff}.nav-item.active{background:linear-gradient(90deg,#6D28D9,#6366F1);color:#fff;box-shadow:0 8px 20px rgba(109,40,217,.35)}
+.pill{padding:7px 16px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #E2E8F0;background:#fff}
+.pill.active{background:#111827;color:#fff;border-color:#111827}
+.badge{font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em}
+.input{width:100%;padding:11px 14px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:14px;outline:none;background:#F8FAFC}
+.input:focus{border-color:#8B5CF6;background:#fff;box-shadow:0 0 0 4px rgba(139,92,246,.12)}
+.progress-bar{height:8px;background:#EEF2FF;border-radius:999px;overflow:hidden}.progress-fill{height:100%;border-radius:999px;transition:width 1s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}} .fadeUp{animation:fadeUp .45s ease both}
+@keyframes pulseDot{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}} .pulse-dot{animation:pulseDot 1.4s infinite}
+.ai-grad{background:linear-gradient(135deg,#6D28D9 0%,#6366F1 55%,#0EA5E9 100%)}
+.stat-icon{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.table-row:hover{background:#F8FAFC}
+select.input{appearance:none}
+.jeton{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:2px solid var(--jc,#888);background:#fff;font-weight:700;font-size:13px;cursor:grab;transition:.15s}
+.jeton.sel{background:var(--jc,#888);color:#fff;box-shadow:0 8px 18px rgba(15,23,42,.18)}
+.jeton small{font-weight:600;opacity:.85;font-size:11px}
+.cal-cell{min-height:96px;border:2px solid #EEF2F7;border-radius:14px;padding:6px;background:#fff;font-size:12px}
+.cal-cell.valide{background:#ECFDF5;border-color:#6EE7B7;cursor:pointer}
+.cal-cell.valide:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(15,23,42,.08)}
+.cal-cell.invalide{opacity:.55}
+.cal-cell.aujourdhui{border-color:#E11D63;box-shadow:0 0 0 3px #FFE4E9}
+.cal-token{display:block;width:100%;margin-top:3px;padding:2px 6px;border-left:4px solid var(--jc,#888);border-radius:6px;background:rgba(100,116,139,.12);font-size:10.5px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.mm-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:14px;border:1.5px solid #EEF2F7;border-left:6px solid var(--jc,#888);border-radius:16px;background:#fff}
+.mm-row.inactif{opacity:.55}
+.seg{display:inline-flex;border:1.5px solid #E2E8F0;border-radius:999px;overflow:hidden}
+.seg button{padding:8px 14px;font-weight:700;font-size:13px;background:#fff;cursor:pointer}
+.seg button.actif{background:#6D28D9;color:#fff}
+@media (max-width:640px){.cal-cell{min-height:74px}}
+</style>
 </head>
-<body data-page="connexion">
+<body class="bg-[#F6F7FB] text-slate-800">
 
-  <section class="hero">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-    <div class="container hero-inner">
-      <p class="hero-kicker">📚 Année scolaire 2026-2027 · Devoirs de contrôle &amp; de synthèse</p>
-      <h1>Devoirs <span>Lycée</span></h1>
-      <p class="hero-sub">Connectez-vous pour voir les dates de vos devoirs, le sujet et la correction (dès le lendemain de l'épreuve), vos notes et les remarques de votre enseignant.</p>
+<!-- ============ AUTH ============ -->
+<div id="authView" class="min-h-screen ai-grad flex items-center justify-center p-4 relative overflow-hidden">
+  <div class="absolute -right-16 -top-24 w-96 h-96 bg-white/10 rounded-full blur-2xl"></div>
+  <div class="absolute -left-20 -bottom-32 w-96 h-96 bg-black/10 rounded-full blur-2xl"></div>
+  <div class="relative w-full max-w-[520px]">
+    <div class="flex items-center gap-3 justify-center text-white mb-5">
+      <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-[22px] border border-white/30"><i class="fa-solid fa-graduation-cap"></i></div>
+      <div><p class="font-black text-[22px] leading-none tracking-tight">Devoirs <span class="text-amber-300">Lycée</span></p><p class="text-[11px] text-white/70 font-semibold mt-1">DEVOIRS DE CONTRÔLE & DE SYNTHÈSE • 2026-2027</p></div>
     </div>
-  </section>
+    <div class="bg-white rounded-[24px] shadow-2xl p-6 md:p-7 fadeUp" id="authCard"></div>
+    <p class="text-center text-white/70 text-xs mt-4">Validation de chaque compte par l'administrateur du site • Sujets et corrections visibles le lendemain de l'épreuve</p>
+  </div>
+</div>
 
-  <main>
-    <section class="section-tight">
-      <div class="container" style="max-width:640px">
-        <div id="etat-base" class="mb-2"></div>
-        <div id="auth-zone">
-          <div class="card" style="max-width:560px;margin:0 auto;text-align:center">
-            <p class="text-muted">⏳ Chargement…</p>
+<!-- ============ APPLICATION ============ -->
+<div id="appView" class="hidden">
+<div class="flex min-h-screen">
+
+<!-- SIDEBAR -->
+<aside id="sidebar" class="fixed lg:static z-50 inset-y-0 left-0 w-[268px] bg-[#0F172A] text-white flex flex-col p-5 -translate-x-full lg:translate-x-0 transition-transform">
+  <div class="flex items-center gap-3 px-1">
+    <div class="w-11 h-11 rounded-2xl ai-grad flex items-center justify-center text-[20px] shadow-lg shadow-violet-500/40"><i class="fa-solid fa-graduation-cap"></i></div>
+    <div><p class="font-black text-[19px] leading-none tracking-tight">Devoirs <span class="text-violet-400">Lycée</span></p><p class="text-[11px] text-slate-400 font-semibold mt-1" id="sideRole">ESPACE CONNECTÉ</p></div>
+    <button onclick="toggleSidebar()" class="lg:hidden ml-auto text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
+  </div>
+
+  <div class="mt-7 bg-white/5 border border-white/10 rounded-2xl p-3 flex items-center gap-3">
+    <div id="sideAvatar" class="w-11 h-11 rounded-full ai-grad flex items-center justify-center font-black border-2 border-violet-400 shrink-0">?</div>
+    <div class="flex-1 min-w-0"><p class="font-bold text-[13px] truncate" id="sideNom">…</p><p class="text-[11px] text-slate-400 truncate" id="sideDetail">…</p></div><span class="w-2.5 h-2.5 bg-emerald-400 rounded-full pulse-dot shrink-0"></span>
+  </div>
+
+  <p class="text-[10px] tracking-[0.15em] text-slate-500 font-bold mt-7 mb-2 px-2">MENU PRINCIPAL</p>
+  <nav class="space-y-1" id="mainNav"></nav>
+
+  <div class="mt-auto pt-5">
+    <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
+    <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.0</p>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="flex-1 min-w-0">
+  <header class="sticky top-0 z-40 bg-[#F6F7FB]/90 backdrop-blur border-b border-slate-200/70 px-4 md:px-7 py-4 flex items-center gap-3">
+    <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-white rounded-xl border flex items-center justify-center"><i class="fa-solid fa-bars"></i></button>
+    <div class="flex-1 max-w-xl relative hidden md:block">
+      <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+      <input id="globalSearch" oninput="rechercheGlobale(this.value)" placeholder="Rechercher un élève, un devoir..." class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-full text-sm outline-none focus:ring-4 ring-violet-100 focus:border-violet-400 shadow-sm">
+    </div>
+    <button id="btnNouveauDevoir" onclick="nouveauDevoir()" class="hidden sm:flex ai-grad text-white px-4 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-500/30 items-center gap-2 hover:opacity-90 ml-auto"><i class="fa-solid fa-plus"></i> Nouveau devoir</button>
+    <div id="topAvatar" class="w-11 h-11 rounded-full ai-grad text-white flex items-center justify-center font-black border-2 border-white shadow shrink-0">?</div>
+  </header>
+
+  <div class="p-4 md:p-7 max-w-[1420px] mx-auto">
+    <section id="section-dashboard" class="section fadeUp"></section>
+    <section id="section-classes" class="section hidden fadeUp"></section>
+    <section id="section-devoirs" class="section hidden fadeUp"></section>
+    <section id="section-eleves" class="section hidden fadeUp"></section>
+    <section id="section-admin" class="section hidden fadeUp"></section>
+    <section id="section-calendrier" class="section hidden fadeUp"></section>
+    <section id="section-vie" class="section hidden fadeUp"></section>
+  </div>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.0</p>
+</main>
+</div>
+</div>
+
+<div id="toasts" class="fixed top-5 right-5 z-[200] space-y-2 w-[330px] max-w-[calc(100vw-40px)]"></div>
+
+<script src="data/config.js?v=500"></script>
+<script src="data/devoirs.js?v=500"></script>
+<script src="data/eleves.js?v=500"></script>
+<script src="data/notes.js?v=500"></script>
+<script src="data/annonces.js?v=500"></script>
+<script src="data/vie.js?v=500"></script>
+<script src="data/calendrier.js?v=500"></script>
+<script src="js/supabase.js?v=500"></script>
+<script>
+/* ================= Devoirs Lycée v5 — moteur ================= */
+const CFG = window.CONFIG || {};
+const MATIERES = CFG.matieres || ["STI"];
+const OFFICIEL = window.CAL_OFFICIEL || null;
+const DEVOIRS_FICHIER = window.DEVOIRS || [];
+const MOIS_LONG = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const COULEURS = ["#6D28D9","#0EA5E9","#F59E0B","#10B981","#E11D63","#6366F1","#F97316","#14B8A6"];
+
+const ETAT = {
+  get classesAll() { return this.classes; },
+  session: null, profil: null, classes: [], devoirs: [], profils: [], notes: [],
+  section: "dashboard", recherche: "",
+  cal: { a: null, m: null, classe: null, type: "DC", matiere: "" },
+  calOff: { a: null, m: null },
+  form: null, classeEleves: "", devoirNotes: "", selNotes: { classe: "", devoirId: null }
+};
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = (s) => String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+const pad = (n) => String(n).padStart(2, "0");
+const isoDe = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayISO = () => isoDe(new Date());
+const parseDate = (iso) => { const [a,m,j] = String(iso).split("-").map(Number); return new Date(a, (m||1)-1, j||1); };
+const fmtDate = (iso) => { try { return parseDate(iso).toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long", year:"numeric" }); } catch(e){ return iso; } };
+const fmtDateCourte = (iso) => { try { return parseDate(iso).toLocaleDateString("fr-FR", { day:"numeric", month:"short" }); } catch(e){ return iso; } };
+const dansPlage = (iso, from, to) => iso >= from && iso <= to;
+const contenuVisibleLe = (iso) => todayISO() > iso; /* règle J+1 */
+const statutProfil = (p) => (p && p.statut) || "accepte";
+const initialesDe = (nom) => String(nom || "?").trim().split(/\s+/).slice(0,2).map(m => m[0] || "").join("").toUpperCase() || "?";
+
+function toast(msg, type) {
+  const couleurs = { success: "border-emerald-200 bg-emerald-50 text-emerald-800", erreur: "border-red-200 bg-red-50 text-red-700", info: "border-violet-200 bg-violet-50 text-violet-800" };
+  const el = document.createElement("div");
+  el.className = `card !rounded-2xl px-4 py-3 text-sm font-bold border ${couleurs[type] || couleurs.info} fadeUp shadow-xl`;
+  el.textContent = msg;
+  $("#toasts").appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+function toggleSidebar() { $("#sidebar").classList.toggle("-translate-x-full"); }
+
+/* ---------- Classes & matières ---------- */
+async function chargerClasses() {
+  try {
+    const rows = await sbSelect("classes", "select=*&order=nom.asc");
+    if (rows && rows.length) { ETAT.classes = rows.map(r => ({ cle: r.id, nom: r.nom })); return; }
+  } catch (e) { /* repli config */ }
+  ETAT.classes = Object.keys(CFG.classes || {}).map(cle => ({ cle, nom: CFG.classes[cle] }));
+}
+const nomClasse = (cle) => { const c = ETAT.classes.find(x => x.cle === cle); return c ? c.nom : ((CFG.classes || {})[cle] || cle); };
+const couleurClasse = (cle) => { const i = ETAT.classes.findIndex(c => c.cle === cle); return COULEURS[(i < 0 ? 0 : i) % COULEURS.length]; };
+const optionsClasses = (sel) => ETAT.classes.map(c => `<option value="${esc(c.cle)}" ${c.cle === sel ? "selected" : ""}>${esc(c.nom)}</option>`).join("");
+const optionsMatieres = (sel) => MATIERES.map(m => `<option value="${esc(m)}" ${m === sel ? "selected" : ""}>${esc(m)}</option>`).join("");
+function slugClasse(nom) { return String(nom || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24); }
+function sesMatieres(p) { return [p && p.matiere, p && p.matiere_2].filter(m => m && String(m).trim()).filter((m,i,a) => a.indexOf(m) === i); }
+function matieresDeClasse(p, classe) {
+  const carte = (p && p.matieres_par_classe) || {};
+  const liste = Array.isArray(carte[classe]) ? carte[classe].filter(m => m && String(m).trim()) : [];
+  const propres = [...new Set(liste)];
+  if (propres.length) return propres;
+  if (Object.keys(carte).length) return [];
+  return sesMatieres(p);
+}
+function toutesSesMatieres(p) {
+  const toutes = [];
+  ((p && p.classes) || []).forEach(cle => matieresDeClasse(p, cle).forEach(m => { if (!toutes.includes(m)) toutes.push(m); }));
+  return toutes.length ? toutes : sesMatieres(p);
+}
+const estAdmin = () => !!(ETAT.session && sbEstAdminEmail(ETAT.session.user.email));
+const mesClasses = () => (ETAT.profil.classes || []).filter(cle => ETAT.classes.some(c => c.cle === cle));
+const mesDevoirs = () => ETAT.devoirs.filter(d => d.enseignant_id === (ETAT.session && ETAT.session.user.id));
+
+/* ---------- Calendrier officiel & règles de dates ---------- */
+function evenementsOfficiels(isoDate) {
+  if (!OFFICIEL) return [];
+  const evts = [];
+  (OFFICIEL.feries || []).forEach(f => { if (f.date === isoDate) evts.push({ type: "ferie", label: f.label }); });
+  (OFFICIEL.vacances || []).forEach(v => { if (dansPlage(isoDate, v.from, v.to)) evts.push({ type: "vacances", label: v.label }); });
+  (OFFICIEL.suspensions || []).forEach(su => { if (dansPlage(isoDate, su.from, su.to)) evts.push({ type: "suspension", label: su.label }); });
+  (OFFICIEL.jalons || []).forEach(j => { const ok = j.date ? j.date === isoDate : dansPlage(isoDate, j.from, j.to); if (ok && j.type !== "vac" && j.type !== "hol") evts.push({ type: "jalon", label: j.label }); });
+  return evts;
+}
+function evaluerDateChoix(classe, iso, type, extra) {
+  if (!OFFICIEL) return { ok: false, raison: "Calendrier officiel indisponible" };
+  const occupees = (extra && extra.occupees) || [];
+  const ignorees = (extra && extra.ignorees) || [];
+  if (ignorees.includes(iso)) return { ok: true, raison: "Date actuelle du devoir (conservée)" };
+  if (iso < todayISO()) return { ok: false, raison: "Date déjà passée" };
+  const occupe = occupees.includes(iso);
+  const evts = evenementsOfficiels(iso);
+  const ferie = evts.find(e => e.type === "ferie");
+  const vac = evts.find(e => e.type === "vacances");
+  const susp = evts.find(e => e.type === "suspension");
+  const jourSem = parseDate(iso).getDay();
+  if (type === "synthese") {
+    let fenetres = ((OFFICIEL.epreuves || {})[classe] || []).filter(e => e.debut && e.fin);
+    if (!fenetres.length) fenetres = (OFFICIEL.jalons || []).filter(j => j.type === "bloc" && j.from && j.to).map(j => ({ nom: j.label, debut: j.from, fin: j.to }));
+    const fen = fenetres.find(e => iso >= e.debut && iso <= e.fin);
+    if (!fen) return { ok: false, raison: "Hors semaine bloquée (réservée aux synthèses)" };
+    if (jourSem === 0) return { ok: false, raison: "Dimanche (pas d'épreuve)" };
+    if (ferie) return { ok: false, raison: `Jour férié (${ferie.label})` };
+    if (occupe) return { ok: false, raison: "Déjà occupé par un devoir" };
+    return { ok: true, raison: "Semaine bloquée — date valide" };
+  }
+  if (vac) return { ok: false, raison: vac.label };
+  if (ferie) return { ok: false, raison: `Jour férié (${ferie.label})` };
+  if (susp) return { ok: false, raison: "Semaine bloquée (réservée aux synthèses)" };
+  const coursConnus = (OFFICIEL.cours || {})[classe];
+  const cours = coursConnus && coursConnus.length ? coursConnus : [1,2,3,4,5,6];
+  if (!cours.includes(jourSem)) return { ok: false, raison: "Pas de cours ce jour-là pour cette classe" };
+  if (occupe) return { ok: false, raison: "Déjà occupé par un devoir" };
+  return { ok: true, raison: "Jour de cours — date valide" };
+}
+function trimestreDe(iso) { return ((CFG && CFG.trimestres) || []).find(t => iso >= t.debut && iso <= t.fin) || null; }
+function etatQuota(liste, classe, matiere, type, dateISO, ignoreId) {
+  const max = type === "DS" ? 1 : 2;
+  const tr = trimestreDe(dateISO);
+  if (!tr) return { trimestre: null, nb: 0, max, ok: true };
+  const nb = (liste || []).filter(d => d.id !== ignoreId && d.classe === classe && d.type === type && (!matiere || !d.matiere || d.matiere === matiere) && (trimestreDe(d.date) || {}).id === tr.id).length;
+  return { trimestre: tr, nb, max, ok: nb < max };
+}
+
+/* ================= AUTH ================= */
+let authMode = "connexion", authRole = "eleve";
+function afficherAuth(mode) {
+  authMode = mode || authMode;
+  const zone = $("#authCard");
+  const onglet = (m, label) => `<button type="button" onclick="afficherAuth('${m}')" class="flex-1 py-2.5 rounded-full text-sm font-extrabold ${authMode === m ? "bg-slate-900 text-white" : "text-slate-500"}">${label}</button>`;
+  if (authMode === "inscription") {
+    zone.innerHTML = `
+      <div class="flex bg-slate-100 rounded-full p-1 mb-5">${onglet("connexion","Se connecter")}${onglet("inscription","Créer un compte")}</div>
+      <h2 class="font-black text-xl">✨ Créer un compte</h2>
+      <div class="flex bg-slate-100 rounded-full p-1 mt-4">
+        <button type="button" onclick="authRole='eleve';afficherAuth('inscription')" class="flex-1 py-2.5 rounded-full text-sm font-extrabold ${authRole === "eleve" ? "ai-grad text-white" : "text-slate-500"}">🎓 Je suis élève</button>
+        <button type="button" onclick="authRole='enseignant';afficherAuth('inscription')" class="flex-1 py-2.5 rounded-full text-sm font-extrabold ${authRole === "enseignant" ? "ai-grad text-white" : "text-slate-500"}">🧑‍🏫 Je suis enseignant</button>
+      </div>
+      <form onsubmit="doSignup(event)" class="mt-5 space-y-4">
+        <div><label class="text-xs font-extrabold">NOM COMPLET *</label><input id="in-nom" required class="input mt-1" placeholder="Ex. : Prénom NOM" autocomplete="name"></div>
+        <div><label class="text-xs font-extrabold">E-MAIL *</label><input id="in-email" type="email" required class="input mt-1" placeholder="vous@exemple.com" autocomplete="email"></div>
+        ${authRole === "eleve" ? `<div><label class="text-xs font-extrabold">MA CLASSE *</label><select id="in-classe" class="input mt-1">${optionsClasses(ETAT.classes[0] && ETAT.classes[0].cle)}</select></div>` : ""}
+        <p class="text-[11px] text-slate-500">📚 ${authRole === "eleve" ? "Vous verrez les devoirs de votre classe après validation du compte." : "Vous choisirez vos classes et vos matières (2 maximum par classe) après la validation du compte."}</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-xs font-extrabold">MOT DE PASSE *</label><input id="in-mdp" type="password" required class="input mt-1" autocomplete="new-password" placeholder="6 caractères min."></div>
+          <div><label class="text-xs font-extrabold">RÉPÉTER *</label><input id="in-mdp2" type="password" required class="input mt-1" autocomplete="new-password"></div>
+        </div>
+        <button class="w-full ai-grad text-white py-3.5 rounded-xl font-extrabold text-sm shadow-lg shadow-violet-300">Envoyer ma demande d'inscription →</button>
+      </form>
+      <p class="text-xs text-slate-500 mt-4">⏳ Votre compte attendra la <b>validation de l'administrateur</b> du site. Vous pourrez vous connecter dès qu'il l'aura acceptée.</p>
+      <div id="auth-msg" class="mt-3"></div>`;
+  } else {
+    zone.innerHTML = `
+      <div class="flex bg-slate-100 rounded-full p-1 mb-5">${onglet("connexion","Se connecter")}${onglet("inscription","Créer un compte")}</div>
+      <h2 class="font-black text-xl">👋 Bon retour !</h2>
+      <p class="text-sm text-slate-500 mt-1">Connectez-vous à votre espace ${" "}Devoirs Lycée.</p>
+      <form onsubmit="doLogin(event)" class="mt-5 space-y-4">
+        <div><label class="text-xs font-extrabold">E-MAIL</label><input id="co-id" required class="input mt-1" placeholder="vous@exemple.com" autocomplete="username"></div>
+        <div><label class="text-xs font-extrabold">MOT DE PASSE</label><input id="co-mdp" type="password" required class="input mt-1" autocomplete="current-password"></div>
+        <button class="w-full ai-grad text-white py-3.5 rounded-xl font-extrabold text-sm shadow-lg shadow-violet-300">Se connecter →</button>
+      </form>
+      <p class="text-xs text-slate-500 mt-4">🎓 Anciens élèves : votre <b>code élève</b> (ex. 3SI1-01) est aussi accepté à la place de l'e-mail.</p>
+      <div id="auth-msg" class="mt-3"></div>`;
+  }
+}
+function authErreur(msg) { const z = $("#auth-msg"); if (z) z.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm font-bold">⚠️ ${esc(msg)}</div>`; }
+async function doLogin(ev) {
+  ev.preventDefault();
+  try {
+    await sbConnexionIdentifiant($("#co-id").value.trim(), $("#co-mdp").value);
+    const profil = await sbAssurerProfil();
+    apresAuth(profil);
+  } catch (e) { authErreur(e.message); }
+}
+async function doSignup(ev) {
+  ev.preventDefault();
+  const nom = $("#in-nom").value.trim(), email = $("#in-email").value.trim();
+  const mdp = $("#in-mdp").value, mdp2 = $("#in-mdp2").value;
+  const classe = authRole === "eleve" ? $("#in-classe").value : null;
+  const matiere = "";
+  if (mdp.length < 6) return authErreur("Mot de passe trop court (6 caractères minimum).");
+  if (mdp !== mdp2) return authErreur("Les deux mots de passe ne correspondent pas.");
+  try { localStorage.setItem("sb-inscription", JSON.stringify({ email, role: authRole, nom, classe, matiere })); } catch (e) {}
+  try {
+    const session = await sbInscription(email, mdp);
+    const rows = await sbCreerProfil({ id: session.user.id, role: authRole, nom, classe, matiere, code: null, email, statut: "en_attente" });
+    try { localStorage.removeItem("sb-inscription"); } catch (e) {}
+    const cree = Array.isArray(rows) ? rows[0] : rows;
+    if (cree) sbStockerProfil(cree);
+    apresAuth(cree || { nom, role: authRole, classe, matiere, email, statut: "en_attente" });
+  } catch (e) { authErreur(e.message); }
+}
+function apresAuth(profil) {
+  if (!profil) { afficherAuth("connexion"); setTimeout(() => authErreur("Profil introuvable : l'administrateur doit vérifier la base (schéma SQL)."), 50); return; }
+  const st = statutProfil(profil);
+  if (st === "suspendu") { afficherAuth("connexion"); setTimeout(() => authErreur("⏸️ Ce compte est suspendu par l'administrateur du site."), 50); return; }
+  if (st !== "accepte") { afficherAttente(profil, st); return; }
+  ETAT.profil = profil;
+  entrerApp();
+}
+function afficherAttente(profil, st) {
+  $("#authCard").innerHTML = `
+    <div class="text-center py-4">
+      <div class="w-20 h-20 ${st === "refuse" ? "bg-red-50" : "bg-amber-50"} rounded-full flex items-center justify-center text-4xl mx-auto">${st === "refuse" ? "🚫" : "⏳"}</div>
+      <h2 class="font-black text-xl mt-4">${st === "refuse" ? "Compte refusé" : "Compte en attente de validation"}</h2>
+      <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto">${st === "refuse"
+        ? "L'administrateur du site a refusé cette inscription. Contactez-le si vous pensez qu'il s'agit d'une erreur."
+        : `Bonjour <b>${esc(profil.nom || "")}</b> ! L'administrateur du site (${esc(SB_ADMIN_EMAIL)}) doit d'abord accepter votre compte. Réessayez de vous connecter un peu plus tard.`}</p>
+      <button onclick="deconnexion()" class="mt-5 bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-extrabold">Se déconnecter</button>
+    </div>`;
+}
+async function deconnexion() { try { await sbDeconnexion(); } catch (e) {} location.reload(); }
+
+/* ================= APPLICATION ================= */
+function navItems() {
+  const p = ETAT.profil;
+  if (!p) return [];
+  if (p.role === "enseignant") {
+    const items = [
+      { id: "dashboard", icon: "fa-gauge", label: "Tableau de bord" },
+      { id: "classes", icon: "fa-users", label: "Mes Classes" },
+      { id: "devoirs", icon: "fa-book-open", label: "Devoirs" },
+      { id: "eleves", icon: "fa-user-graduate", label: "Élèves & Notes" }
+    ];
+    if (estAdmin()) items.push({ id: "admin", icon: "fa-star", label: "Administration", badge: ETAT.profils.filter(x => statutProfil(x) === "en_attente").length || "" });
+    items.push({ id: "calendrier", icon: "fa-calendar-days", label: "Calendrier officiel" });
+    items.push({ id: "vie", icon: "fa-school", label: "Vie de classe" });
+    return items;
+  }
+  return [
+    { id: "dashboard", icon: "fa-gauge", label: "Tableau de bord" },
+    { id: "devoirs", icon: "fa-book-open", label: "Mes devoirs" },
+    { id: "calendrier", icon: "fa-calendar-days", label: "Calendrier officiel" },
+    { id: "vie", icon: "fa-school", label: "Vie de classe" }
+  ];
+}
+function construireNav() {
+  $("#mainNav").innerHTML = navItems().map(n => `
+    <div class="nav-item ${ETAT.section === n.id ? "active" : ""}" data-section="${n.id}" onclick="showSection('${n.id}')">
+      <i class="fa-solid ${n.icon} w-5"></i> ${n.label}
+      ${n.badge ? `<span class="ml-auto bg-amber-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full">${n.badge}</span>` : ""}
+    </div>`).join("");
+}
+function showSection(nom) {
+  ETAT.section = nom;
+  $$(".section").forEach(s => s.classList.add("hidden"));
+  const sec = $("#section-" + nom);
+  if (sec) sec.classList.remove("hidden");
+  construireNav();
+  $("#sidebar").classList.add("-translate-x-full");
+  ({ dashboard: rendreDashboard, classes: rendreClasses, devoirs: rendreDevoirs, eleves: rendreEleves, admin: rendreAdmin, calendrier: rendreCalendrier, vie: rendreVie })[nom]?.();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function rechercheGlobale(val) {
+  ETAT.recherche = String(val || "").toLowerCase();
+  if (ETAT.profil && ETAT.profil.role === "enseignant") { if (ETAT.section === "devoirs") rendreDevoirs(); else if (ETAT.section === "eleves") rendreEleves(); }
+  else if (ETAT.section === "devoirs") rendreDevoirs();
+}
+function nouveauDevoir() { showSection("devoirs"); setTimeout(() => { const z = $("#zoneFormDevoir"); if (z) z.scrollIntoView({ behavior: "smooth" }); }, 80); }
+
+async function chargerDonnees() {
+  try { ETAT.devoirs = await sbSelect("devoirs", "select=*&order=date.asc"); } catch (e) { ETAT.devoirs = []; }
+  ETAT.profils = []; ETAT.notes = [];
+  if (ETAT.profil && ETAT.profil.role === "enseignant") {
+    try { ETAT.profils = await sbSelect("profils", "select=*&order=created_at.asc"); } catch (e) {}
+    try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) {}
+  } else if (ETAT.profil) {
+    try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) {}
+  }
+}
+async function entrerApp() {
+  ETAT.session = sbSession();
+  const p = ETAT.profil;
+  $("#authView").classList.add("hidden");
+  $("#appView").classList.remove("hidden");
+  $("#sideNom").textContent = p.nom || "";
+  $("#sideDetail").textContent = p.role === "enseignant"
+    ? ["Enseignant", ...toutesSesMatieres(p)].join(" • ")
+    : `Élève • ${nomClasse(p.classe)}`;
+  $("#sideRole").textContent = estAdmin() ? "⭐ ADMIN DU SITE" : (p.role === "enseignant" ? "ESPACE ENSEIGNANT" : "ESPACE ÉLÈVE");
+  $("#sideAvatar").textContent = initialesDe(p.nom);
+  $("#topAvatar").textContent = initialesDe(p.nom);
+  $("#btnNouveauDevoir").style.display = p.role === "enseignant" ? "" : "none";
+  await chargerDonnees();
+  construireNav();
+  showSection("dashboard");
+}
+
+/* ================= TABLEAU DE BORD ================= */
+function carteStat(icon, bg, txt, valeur, label, sous) {
+  return `<div class="card p-5 flex gap-4 items-center"><div class="stat-icon ${bg} ${txt}"><i class="fa-solid ${icon}"></i></div><div><p class="text-[26px] font-black leading-none">${valeur}</p><p class="text-xs text-slate-500 font-semibold mt-1">${label}</p><p class="text-[11px] font-bold ${txt}">${sous}</p></div></div>`;
+}
+function rendreDashboard() {
+  const zone = $("#section-dashboard");
+  const p = ETAT.profil;
+  if (p.role === "enseignant") {
+    const eleves = ETAT.profils.filter(x => x.role === "eleve" && statutProfil(x) === "accepte");
+    const mesEleves = eleves.filter(x => mesClasses().includes(x.classe));
+    const enAttente = ETAT.profils.filter(x => statutProfil(x) === "en_attente");
+    const aVenir = mesDevoirs().filter(d => d.date >= todayISO()).sort((a,b) => a.date.localeCompare(b.date));
+    zone.innerHTML = `
+      <div class="ai-grad rounded-[24px] p-6 md:p-7 text-white relative overflow-hidden flex flex-col md:flex-row gap-6 items-center shadow-xl shadow-violet-500/20">
+        <div class="flex-1 relative z-10">
+          <span class="bg-white/20 backdrop-blur text-[11px] font-extrabold tracking-wider px-3 py-1.5 rounded-full">${estAdmin() ? "⭐ ADMINISTRATEUR DU SITE" : "ESPACE ENSEIGNANT"}${enAttente.length && estAdmin() ? ` • ${enAttente.length} DEMANDE(S) EN ATTENTE` : ""}</span>
+          <h1 class="text-[28px] md:text-[34px] font-black leading-[1.05] mt-4">Bonjour, ${esc(p.nom)} 👋</h1>
+          <p class="text-white/80 text-sm mt-2 max-w-lg">Placez vos devoirs de contrôle et de synthèse au calendrier officiel avec les jetons de vos classes. Limite : 2 DC + 1 DS par trimestre, par classe et par matière.</p>
+          <div class="flex flex-wrap gap-3 mt-5">
+            <button onclick="nouveauDevoir()" class="bg-white text-slate-900 px-5 py-3 rounded-full text-sm font-extrabold shadow">+ Nouveau devoir</button>
+            ${estAdmin() ? `<button onclick="showSection('admin')" class="bg-black/25 backdrop-blur border border-white/30 px-5 py-3 rounded-full text-sm font-extrabold">⭐ Administration ${enAttente.length ? `<span class="bg-amber-300 text-black text-[10px] px-2 py-0.5 rounded-full ml-1">${enAttente.length}</span>` : ""}</button>` : ""}
           </div>
         </div>
+        <div class="relative z-10 w-full md:w-[320px] bg-white rounded-3xl p-4 text-slate-800 shadow-2xl shrink-0">
+          <div class="flex justify-between items-center"><p class="font-extrabold text-sm">Prochains devoirs</p><span class="badge bg-violet-100 text-violet-700">${aVenir.length}</span></div>
+          <div class="mt-3 space-y-2.5 text-[13px]">${aVenir.slice(0,3).map(d => `<div class="flex items-center gap-3"><span class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white shrink-0" style="background:${couleurClasse(d.classe)}">${esc(d.type)}</span><div class="min-w-0"><p class="font-bold truncate">${esc(d.titre)}</p><p class="text-[11px] text-slate-400">${esc(nomClasse(d.classe))} • ${fmtDateCourte(d.date)} • ${esc(d.matiere || "")}</p></div></div>`).join("") || `<p class="text-slate-400">Aucun devoir à venir. Placez un jeton dans le calendrier !</p>`}</div>
+          <button onclick="showSection('devoirs')" class="w-full mt-3 bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold">Ouvrir le calendrier →</button>
+        </div>
+        <div class="absolute -right-10 -top-16 w-72 h-72 bg-white/10 rounded-full blur-2xl"></div>
       </div>
-    </section>
 
-    <section class="section-tight">
-      <div class="container">
-        <div class="grid grid-3">
-          <div class="card reveal">
-            <h3 class="card-title">1️⃣ Créez votre compte</h3>
-            <p class="text-muted">Élève ou enseignant : e-mail, mot de passe, classe et matière pour les élèves, matière enseignée pour les enseignants.</p>
-          </div>
-          <div class="card reveal">
-            <h3 class="card-title">2️⃣ Validation par l'admin</h3>
-            <p class="text-muted">Chaque inscription est acceptée ou refusée par l'administrateur du site. Rien n'est accessible avant cette validation.</p>
-          </div>
-          <div class="card reveal">
-            <h3 class="card-title">3️⃣ Votre espace</h3>
-            <p class="text-muted">Élèves : dates des devoirs, sujet + correction à partir du lendemain, notes et remarques. Enseignants : dates au calendrier officiel, corrections, notes et observations.</p>
-          </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+        ${carteStat("fa-users", "bg-violet-100", "text-violet-600", mesEleves.length, "Élèves de mes classes", mesClasses().length + " classe(s) enseignée(s)")}
+        ${carteStat("fa-book", "bg-indigo-100", "text-indigo-600", mesDevoirs().length, "Mes devoirs créés", aVenir.length + " à venir")}
+        ${carteStat("fa-school", "bg-cyan-100", "text-cyan-600", ETAT.classes.length, "Classes du site", "déterminées par l'admin")}
+        ${estAdmin() ? carteStat("fa-hourglass-half", "bg-amber-100", "text-amber-600", enAttente.length, "Demandes en attente", "à valider dans Administration") : carteStat("fa-clipboard-check", "bg-emerald-100", "text-emerald-600", ETAT.notes.length, "Notes saisies", "toutes classes confondues")}
+      </div>
+
+      <div class="grid lg:grid-cols-5 gap-5 mt-5">
+        <div class="card p-5 lg:col-span-3">
+          <h3 class="font-extrabold">📊 Mes devoirs par trimestre</h3>
+          <p class="text-xs text-slate-400">Devoirs de contrôle (DC) et de synthèse (DS) — limite 2 DC + 1 DS par classe et par matière</p>
+          <div class="h-[220px] mt-3"><canvas id="chartTrimestres"></canvas></div>
+        </div>
+        <div class="card p-5 lg:col-span-2">
+          <h3 class="font-extrabold">🎯 Quotas par classe et matière</h3>
+          <div class="mt-3 space-y-3 text-sm">${mesClasses().map(cle => `
+            <div><p class="font-extrabold flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background:${couleurClasse(cle)}"></span>${esc(nomClasse(cle))} <span class="text-slate-400 font-semibold">• ${esc(matieresDeClasse(p, cle).join(" + ") || "matière à choisir")}</span></p>
+            <div class="flex flex-wrap gap-1.5 mt-1.5">${(CFG.trimestres || []).map(t => { const mats = matieresDeClasse(p, cle); const resume = mats.map(m => { const qdc = etatQuota(mesDevoirs(), cle, m, "DC", t.debut, null), qds = etatQuota(mesDevoirs(), cle, m, "DS", t.debut, null); return `${m} : DC ${qdc.nb}/2 · DS ${qds.nb}/1`; }).join(" | "); return `<span class="badge bg-slate-100 text-slate-600" title="${esc(resume)}">${t.id} · ${esc(resume)}</span>`; }).join("")}</div></div>`).join("") || `<p class="text-slate-400">Choisissez vos classes dans « Mes Classes ».</p>`}</div>
         </div>
       </div>
-    </section>
-  </main>
 
-  <script src="data/config.js?v=432"></script>
-  <script src="data/devoirs.js?v=432"></script>
-  <script src="data/eleves.js?v=432"></script>
-  <script src="data/notes.js?v=432"></script>
-  <script src="data/annonces.js?v=432"></script>
-  <script src="data/vie.js?v=432"></script>
-  <script src="data/calendrier.js?v=432"></script>
-  <script src="js/app.js?v=432"></script>
-  <script src="js/supabase.js?v=432"></script>
-  <script src="js/espaces.js?v=432"></script>
+      <div class="mt-5">
+        <div class="flex justify-between items-center mb-3"><h3 class="font-extrabold text-[17px]">Devoirs récents</h3><button onclick="showSection('devoirs')" class="text-violet-600 text-xs font-extrabold">Tout voir →</button></div>
+        <div class="grid lg:grid-cols-2 gap-4">${mesDevoirs().slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0,4).map(d => carteDevoirResume(d)).join("") || `<div class="card p-5 text-slate-400 text-sm">Aucun devoir pour le moment.</div>`}</div>
+      </div>`;
+    dessinerGraphique();
+  } else {
+    const devoirs = ETAT.devoirs.slice().sort((a,b) => a.date.localeCompare(b.date));
+    const aVenir = devoirs.filter(d => d.date >= todayISO());
+    const mesNotes = ETAT.notes.filter(n => n.eleve_id === p.id);
+    const moy = mesNotes.length ? (mesNotes.reduce((s,n) => s + (Number(n.note) / (Number(n.sur) || 20)) * 20, 0) / mesNotes.length) : null;
+    zone.innerHTML = `
+      <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-[24px] p-6 text-white flex flex-wrap gap-4 items-center justify-between shadow-lg shadow-emerald-500/20">
+        <div><span class="bg-white/20 text-[11px] font-extrabold px-3 py-1 rounded-full">ESPACE ÉLÈVE • ${esc((p.nom || "").toUpperCase())} • ${esc(nomClasse(p.classe).toUpperCase())}</span><h2 class="text-2xl font-black mt-3">Mes devoirs 🎓</h2><p class="text-white/85 text-sm">Les dates sont visibles tout de suite ; le sujet et la correction arrivent le lendemain de l'épreuve.</p></div>
+        <div class="bg-white text-slate-800 rounded-2xl px-5 py-4 text-center shadow"><p class="text-[11px] font-bold text-slate-400">MOYENNE GÉNÉRALE</p><p class="font-black text-3xl">${moy === null ? "—" : moy.toFixed(1)}<span class="text-base text-slate-400">/20</span></p><p class="text-emerald-600 text-xs font-bold">${mesNotes.length} note(s)</p></div>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+        ${carteStat("fa-book", "bg-violet-100", "text-violet-600", devoirs.length, "Devoirs de ma classe", aVenir.length + " à venir")}
+        ${carteStat("fa-calendar-check", "bg-cyan-100", "text-cyan-600", aVenir.length ? fmtDateCourte(aVenir[0].date) : "—", "Prochain devoir", aVenir.length ? esc(aVenir[0].titre) : "rien de prévu")}
+        ${carteStat("fa-star", "bg-amber-100", "text-amber-600", mesNotes.length, "Notes reçues", "remarques incluses")}
+        ${carteStat("fa-school", "bg-emerald-100", "text-emerald-600", esc(nomClasse(p.classe)), "Ma classe", esc(p.matiere || ""))}
+      </div>
+      <div class="flex justify-between items-center mt-6 mb-3"><h3 class="font-extrabold text-[17px]">Prochains devoirs</h3><button onclick="showSection('devoirs')" class="text-violet-600 text-xs font-extrabold">Tous mes devoirs →</button></div>
+      <div class="grid md:grid-cols-3 gap-4">${aVenir.slice(0,3).map(d => carteDevoirEleve(d)).join("") || `<div class="card p-5 text-slate-400 text-sm md:col-span-3">Aucun devoir à venir pour votre classe.</div>`}</div>
+      <div class="card p-5 mt-5"><h3 class="font-extrabold">📬 Mes dernières notes</h3><div class="divide-y mt-2">${mesNotes.slice().sort((a,b) => String(b.created_at || "").localeCompare(String(a.created_at || ""))).slice(0,6).map(n => { const d = ETAT.devoirs.find(x => x.id === n.devoir_id); return `<div class="py-3 flex items-center gap-3"><span class="w-9 h-9 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center text-sm shrink-0">📝</span><div class="flex-1 min-w-0"><p class="font-bold text-sm truncate">${esc(d ? d.titre : "Devoir")}</p><p class="text-xs text-slate-400">${d ? fmtDateCourte(d.date) + " • " + esc(d.matiere || "") : ""}${n.appreciation ? " • 💬 " + esc(n.appreciation) : ""}</p></div><span class="font-black">${esc(String(n.note))}<span class="text-slate-400 text-xs">/${esc(String(n.sur || 20))}</span></span></div>`; }).join("") || `<p class="text-slate-400 text-sm py-3">Aucune note pour le moment.</p>`}</div></div>`;
+  }
+}
+function carteDevoirResume(d) {
+  return `<div class="card p-4 flex gap-4 items-center table-row cursor-pointer" onclick="modifierDevoir('${d.id}')">
+    <span class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white shrink-0" style="background:${couleurClasse(d.classe)}">${esc(d.type)}</span>
+    <div class="flex-1 min-w-0"><p class="font-extrabold truncate">${esc(d.titre)}</p><p class="text-xs text-slate-400">${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")} • ${fmtDate(d.date)}</p></div>
+    <span class="badge ${d.sujet ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}">${d.sujet ? "Sujet prêt" : "Sujet à écrire"}</span>
+    <span class="badge ${d.correction ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}">${d.correction ? "Correction prête" : "Correction à écrire"}</span>
+  </div>`;
+}
+function dessinerGraphique() {
+  try {
+    if (typeof Chart === "undefined") return;
+    const ctx = $("#chartTrimestres"); if (!ctx) return;
+    const labels = (CFG.trimestres || []).map(t => t.label);
+    const dc = (CFG.trimestres || []).map(t => mesDevoirs().filter(d => d.type === "DC" && (trimestreDe(d.date) || {}).id === t.id).length);
+    const ds = (CFG.trimestres || []).map(t => mesDevoirs().filter(d => d.type === "DS" && (trimestreDe(d.date) || {}).id === t.id).length);
+    new Chart(ctx, { type: "bar", data: { labels, datasets: [ { label: "Devoirs de contrôle", data: dc, backgroundColor: "#6D28D9", borderRadius: 8 }, { label: "Devoirs de synthèse", data: ds, backgroundColor: "#0EA5E9", borderRadius: 8 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { font: { family: "Plus Jakarta Sans", weight: "700" } } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+  } catch (e) { /* graphique optionnel */ }
+}
+
+/* ================= MES CLASSES (enseignant) ================= */
+function rendreClasses() {
+  const zone = $("#section-classes");
+  const p = ETAT.profil;
+  const nbEleves = (cle) => ETAT.profils.filter(x => x.role === "eleve" && statutProfil(x) === "accepte" && x.classe === cle).length;
+  zone.innerHTML = `
+    <div class="flex flex-wrap gap-3 justify-between items-center"><div><h2 class="text-2xl font-black">Mes Classes</h2><p class="text-sm text-slate-500">Cochez vos classes et choisissez la matière enseignée dans chacune (jusqu'à 2 par classe) — ex. STI en 3ème SI, Algo en 4ème SI.</p></div>
+    ${estAdmin() ? `<button onclick="showSection('admin')" class="bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-extrabold shadow">⭐ Gérer les classes du site</button>` : ""}</div>
+    <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-5 mt-5">
+      ${ETAT.classes.map(c => { const mats = matieresDeClasse(p, c.cle); const cochee = (p.classes || []).includes(c.cle); return `
+      <div class="mm-row ${cochee ? "" : "inactif"} !block" style="--jc:${couleurClasse(c.cle)}" data-cle="${esc(c.cle)}">
+        <div class="flex items-center gap-3">
+          <span class="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black shrink-0" style="background:${couleurClasse(c.cle)}"><i class="fa-solid fa-users"></i></span>
+          <div class="flex-1 min-w-0"><p class="font-black truncate">${esc(c.nom)}</p><p class="text-[11px] text-slate-400 font-semibold">${nbEleves(c.cle)} élève(s) • ${mesDevoirs().filter(d => d.classe === c.cle).length} devoir(s)</p></div>
+          <label class="relative inline-flex cursor-pointer"><input type="checkbox" class="mm-cb sr-only peer" value="${esc(c.cle)}" ${cochee ? "checked" : ""}><span class="w-12 h-7 bg-slate-300 rounded-full peer-checked:bg-violet-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:w-5 after:h-5 after:rounded-full peer-checked:after:translate-x-5 after:transition"></span></label>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div><label class="text-[11px] font-extrabold text-slate-400">MATIÈRE ENSEIGNÉE</label><select class="input mt-1 mm-mat1" ${cochee ? "" : "disabled"}>${optionsMatieres(mats[0] || sesMatieres(p)[0] || MATIERES[0])}</select></div>
+          <div><label class="text-[11px] font-extrabold text-slate-400">2E MATIÈRE (OPTION)</label><select class="input mt-1 mm-mat2" ${cochee ? "" : "disabled"}><option value="" ${!mats[1] ? "selected" : ""}>— Aucune —</option>${optionsMatieres(mats[1] || "")}</select></div>
+        </div>
+      </div>`; }).join("") || `<div class="card p-5 text-slate-400 text-sm md:col-span-3">Aucune classe sur le site pour le moment${estAdmin() ? " : créez-en dans ⭐ Administration." : " : l'administrateur doit d'abord les créer."}</div>`}
+    </div>
+    <div class="card p-4 mt-5 flex flex-wrap gap-3 items-center">
+      <button onclick="enregistrerMesClasses()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">💾 Enregistrer mes classes et matières</button>
+      <p class="text-xs text-slate-400">Vos classes deviennent les jetons du calendrier des devoirs.</p>
+    </div>`;
+  $$(".mm-cb").forEach(cb => cb.addEventListener("change", () => {
+    const row = cb.closest(".mm-row");
+    row.classList.toggle("inactif", !cb.checked);
+    row.querySelectorAll("select").forEach(sel => { sel.disabled = !cb.checked; });
+  }));
+}
+async function enregistrerMesClasses() {
+  const classes = [], carte = {};
+  let erreur = "";
+  $$(".mm-row").forEach(row => {
+    const cb = row.querySelector(".mm-cb");
+    if (!cb || !cb.checked) return;
+    const m1 = row.querySelector(".mm-mat1").value, m2 = row.querySelector(".mm-mat2").value;
+    if (m2 && m2 === m1) erreur = "Dans une même classe, les deux matières doivent être différentes.";
+    classes.push(cb.value);
+    carte[cb.value] = [m1, m2].filter(Boolean);
+  });
+  if (erreur) return toast(erreur, "erreur");
+  const toutes = [...new Set(Object.values(carte).flat())];
+  try {
+    await sbPatch("profils", `id=eq.${ETAT.session.user.id}`, { classes, matieres_par_classe: carte, matiere: toutes[0] || null, matiere_2: toutes[1] || null });
+    ETAT.profil.classes = classes; ETAT.profil.matieres_par_classe = carte;
+    ETAT.profil.matiere = toutes[0] || null; ETAT.profil.matiere_2 = toutes[1] || null;
+    sbStockerProfil(ETAT.profil);
+    toast("✅ Classes et matières enregistrées.", "success");
+    entrerAppRefresh();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+async function entrerAppRefresh() { $("#sideDetail").textContent = ["Enseignant", ...toutesSesMatieres(ETAT.profil)].join(" • "); rendreClasses(); }
+
+/* ================= DEVOIRS ================= */
+function rendreDevoirs() { if (ETAT.profil.role === "enseignant") rendreDevoirsEns(); else rendreDevoirsEleve(); }
+
+function rendreDevoirsEns() {
+  const zone = $("#section-devoirs");
+  if (!mesClasses().length && !ETAT.form) {
+    zone.innerHTML = `<div class="card p-6 text-center"><div class="text-4xl">🎓</div><h2 class="font-black text-xl mt-3">Choisissez d'abord vos classes</h2><p class="text-sm text-slate-500 mt-1">Vos classes deviennent des jetons à placer dans le calendrier.</p><button onclick="showSection('classes')" class="mt-4 ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold">Aller à « Mes Classes » →</button></div>`;
+    return;
+  }
+  if (!ETAT.cal.classe || !mesClasses().includes(ETAT.cal.classe)) ETAT.cal.classe = mesClasses()[0];
+  zone.innerHTML = `
+    <div class="flex flex-wrap justify-between gap-3 items-center"><div><h2 class="text-2xl font-black">Devoirs</h2><p class="text-sm text-slate-500">Glissez le jeton d'une classe dans le calendrier officiel, puis écrivez le titre. Seuls les devoirs de contrôle et de synthèse sont acceptés.</p></div>
+    <button onclick="nouveauDevoir()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-400/30">+ Créer un devoir</button></div>
+    <div class="card p-4 md:p-5 mt-5"><div id="calZone"></div></div>
+    <div id="zoneFormDevoir" class="mt-5"></div>
+    <div class="flex justify-between items-center mt-7 mb-3"><h3 class="font-extrabold text-[17px]">📋 Mes devoirs</h3><span class="text-xs text-slate-400" id="compteurDevoirs"></span></div>
+    <div id="listeDevoirs" class="grid lg:grid-cols-2 gap-4"></div>`;
+  dessinerCalendrier();
+  rendreFormulaire();
+  rendreListeDevoirs();
+}
+function quotasHTML() {
+  return (CFG.trimestres || []).map(t => {
+    const qdc = etatQuota(mesDevoirs(), ETAT.cal.classe, ETAT.cal.matiere, "DC", t.debut, null);
+    const qds = etatQuota(mesDevoirs(), ETAT.cal.classe, ETAT.cal.matiere, "DS", t.debut, null);
+    const plein = qdc.nb >= qdc.max && qds.nb >= qds.max;
+    return `<span class="badge ${plein ? "bg-red-50 text-red-600 border border-red-200" : "bg-slate-100 text-slate-600"}" title="${esc(t.label)} — ${esc(nomClasse(ETAT.cal.classe))} • ${esc(ETAT.cal.matiere || "")}">${t.id} · DC ${qdc.nb}/${qdc.max} · DS ${qds.nb}/${qds.max}</span>`;
+  }).join(" ");
+}
+function dessinerCalendrier() {
+  const zone = $("#calZone"); if (!zone) return;
+  const mats = matieresDeClasse(ETAT.profil, ETAT.cal.classe);
+  if (!mats.includes(ETAT.cal.matiere)) ETAT.cal.matiere = mats[0] || "";
+  const auj = new Date();
+  if (ETAT.cal.a === null) { ETAT.cal.a = auj.getFullYear(); ETAT.cal.m = auj.getMonth(); }
+  const typeSql = ETAT.cal.type === "DS" ? "synthese" : "controle";
+  const premier = new Date(ETAT.cal.a, ETAT.cal.m, 1);
+  const debut = (premier.getDay() + 6) % 7;
+  const nbJours = new Date(ETAT.cal.a, ETAT.cal.m + 1, 0).getDate();
+  const occupees = ETAT.devoirs.filter(d => d.classe === ETAT.cal.classe).map(d => d.date);
+  let cases = ["lun","mar","mer","jeu","ven","sam","dim"].map(j => `<div class="text-center text-[11px] font-extrabold uppercase tracking-wider text-slate-400 py-1">${j}</div>`).join("");
+  for (let i = 0; i < debut; i++) cases += `<div class="cal-cell" style="opacity:.35;border-style:dashed"></div>`;
+  for (let jour = 1; jour <= nbJours; jour++) {
+    const iso = `${ETAT.cal.a}-${pad(ETAT.cal.m + 1)}-${pad(jour)}`;
+    const ev = evaluerDateChoix(ETAT.cal.classe, iso, typeSql, { occupees });
+    const evts = evenementsOfficiels(iso);
+    const evtOff = evts.find(e => e.type === "vacances") || evts.find(e => e.type === "ferie") || evts.find(e => e.type === "suspension");
+    const tokens = mesDevoirs().filter(d => d.date === iso).map(d => `<button class="cal-token" style="--jc:${couleurClasse(d.classe)}" title="${esc(d.titre)} — ${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")}" onclick="event.stopPropagation();modifierDevoir('${d.id}')">${esc(d.type)} · ${esc(d.matiere || "")} · ${esc(d.titre)}</button>`).join("");
+    cases += `<div class="cal-cell ${ev.ok ? "valide" : "invalide"} ${iso === todayISO() ? "aujourdhui" : ""}" title="${esc(ev.raison)}" onclick="celluleClic('${iso}')" ondragover="event.preventDefault()" ondrop="deposerJeton(event,'${iso}')">
+      <div class="font-extrabold ${iso === todayISO() ? "text-rose-600" : ""}">${jour}</div>
+      ${evtOff ? `<div class="text-[10px] font-bold mt-0.5 ${evtOff.type === "vacances" ? "text-emerald-600" : evtOff.type === "ferie" ? "text-orange-600" : "text-violet-600"}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${evtOff.type === "vacances" ? "🏖️" : evtOff.type === "ferie" ? "🚩" : "🔒"} ${esc(evtOff.label)}</div>` : ""}
+      ${tokens}</div>`;
+  }
+  const reste = (7 - ((debut + nbJours) % 7)) % 7;
+  for (let i = 0; i < reste; i++) cases += `<div class="cal-cell" style="opacity:.35;border-style:dashed"></div>`;
+  zone.innerHTML = `
+    <div class="flex flex-wrap gap-2 items-center">
+      <strong class="text-sm">🧩 Mes jetons :</strong>
+      ${mesClasses().map(cle => `<button class="jeton ${ETAT.cal.classe === cle ? "sel" : ""}" draggable="true" ondragstart="ETAT.cal.classe='${cle}'" onclick="selectionnerJeton('${cle}')" style="--jc:${couleurClasse(cle)}" title="Glissez-moi dans le calendrier, ou cliquez puis cliquez un jour"><span class="w-2.5 h-2.5 rounded-full" style="background:${couleurClasse(cle)}"></span>${esc(nomClasse(cle))} <small>${esc(matieresDeClasse(ETAT.profil, cle).join(" + "))}</small></button>`).join("")}
+      <span class="seg" role="group" aria-label="Type de devoir">
+        <button class="${ETAT.cal.type === "DC" ? "actif" : ""}" onclick="choisirType('DC')">DC · Contrôle</button>
+        <button class="${ETAT.cal.type === "DS" ? "actif" : ""}" onclick="choisirType('DS')">DS · Synthèse</button>
+      </span>
+      ${mats.length > 1 ? `<label class="text-sm font-bold flex items-center gap-2">📚 Matière <select class="input !w-auto !py-2" onchange="ETAT.cal.matiere=this.value;dessinerCalendrier()">${mats.map(m => `<option ${m === ETAT.cal.matiere ? "selected" : ""}>${esc(m)}</option>`).join("")}</select></label>` : `<span class="badge bg-violet-100 text-violet-700">📚 ${esc(ETAT.cal.matiere || "")}</span>`}
+    </div>
+    <div class="flex flex-wrap gap-1.5 mt-3">${quotasHTML()}</div>
+    <div class="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-500 mt-3">
+      <span><i class="inline-block w-3 h-3 rounded bg-emerald-100 border border-emerald-400 align-[-2px]"></i> Jour où placer le devoir</span>
+      <span><i class="inline-block w-3 h-3 rounded bg-orange-100 border border-orange-400 align-[-2px]"></i> Vacances / férié / semaine bloquée</span>
+      <span><i class="inline-block w-3 h-3 rounded-full border-2 border-rose-500 align-[-2px]"></i> Aujourd'hui</span>
+      <span>🖱️ Glissez un jeton dans une case verte, ou cliquez le jeton puis le jour. Cliquez un devoir déjà placé pour le modifier.</span>
+    </div>
+    <div class="flex items-center gap-3 mt-4 mb-3">
+      <button class="pill" onclick="moisPrecedent()">← Précédent</button>
+      <h3 class="font-black text-lg capitalize flex-1 text-center">${MOIS_LONG[ETAT.cal.m]} ${ETAT.cal.a}</h3>
+      <button class="pill" onclick="moisSuivant()">Suivant →</button>
+      <button class="pill" onclick="moisAujourdhui()">📍 Aujourd'hui</button>
+    </div>
+    <div class="grid grid-cols-7 gap-1.5 md:gap-2">${cases}</div>`;
+}
+function selectionnerJeton(cle) { ETAT.cal.classe = cle; ETAT.cal.matiere = matieresDeClasse(ETAT.profil, cle)[0] || ""; dessinerCalendrier(); }
+function choisirType(t) { ETAT.cal.type = t; dessinerCalendrier(); }
+function moisPrecedent() { ETAT.cal.m--; if (ETAT.cal.m < 0) { ETAT.cal.m = 11; ETAT.cal.a--; } dessinerCalendrier(); }
+function moisSuivant() { ETAT.cal.m++; if (ETAT.cal.m > 11) { ETAT.cal.m = 0; ETAT.cal.a++; } dessinerCalendrier(); }
+function moisAujourdhui() { const d = new Date(); ETAT.cal.a = d.getFullYear(); ETAT.cal.m = d.getMonth(); dessinerCalendrier(); }
+function deposerJeton(ev, iso) { ev.preventDefault(); celluleClic(iso); }
+function celluleClic(iso) {
+  if (ETAT.form) {
+    const f = ETAT.form;
+    const ev = evaluerDateChoix(f.classe, iso, f.type === "DS" ? "synthese" : "controle", {
+      occupees: ETAT.devoirs.filter(d => d.classe === f.classe && d.id !== f.id).map(d => d.date),
+      ignorees: f.id && f.date === iso ? [iso] : []
+    });
+    if (!ev.ok) return toast(`Date impossible : ${ev.raison}`, "erreur");
+    f.date = iso;
+    const txt = $("#dvf-date-txt"); if (txt) txt.textContent = fmtDate(iso);
+    toast(`📅 Date choisie : ${fmtDate(iso)}`, "info");
+    return;
+  }
+  const classe = ETAT.cal.classe, type = ETAT.cal.type, matiere = ETAT.cal.matiere;
+  const ev = evaluerDateChoix(classe, iso, type === "DS" ? "synthese" : "controle", { occupees: ETAT.devoirs.filter(d => d.classe === classe).map(d => d.date) });
+  if (!ev.ok) return toast(`Date impossible : ${ev.raison}`, "erreur");
+  const q = etatQuota(mesDevoirs(), classe, matiere, type, iso, null);
+  if (!q.ok) return toast(`Limite atteinte (${q.trimestre ? q.trimestre.label : ""}) : ${q.max} ${type === "DS" ? "devoir de synthèse" : "devoirs de contrôle"} par trimestre (${nomClasse(classe)} • ${matiere}).`, "erreur");
+  ETAT.form = { id: null, classe, type, date: iso, matiere };
+  rendreFormulaire();
+  $("#zoneFormDevoir").scrollIntoView({ behavior: "smooth" });
+}
+function nouveauDevoir() {
+  if (!ETAT.profil || ETAT.profil.role !== "enseignant") return;
+  const cl = mesClasses().includes(ETAT.cal.classe) ? ETAT.cal.classe : mesClasses()[0];
+  if (!cl) { showSection("classes"); return; }
+  ETAT.cal.classe = cl;
+  ETAT.form = { id: null, classe: cl, type: ETAT.cal.type || "DC", date: null, matiere: matieresDeClasse(ETAT.profil, cl)[0] || "" };
+  showSection("devoirs");
+  setTimeout(() => { const z = $("#zoneFormDevoir"); if (z) z.scrollIntoView({ behavior: "smooth" }); }, 80);
+}
+function modifierDevoir(id) {
+  const d = ETAT.devoirs.find(x => x.id === id);
+  if (!d) return;
+  ETAT.cal.classe = d.classe; ETAT.cal.type = d.type; ETAT.cal.matiere = d.matiere || "";
+  const dt = parseDate(d.date); ETAT.cal.a = dt.getFullYear(); ETAT.cal.m = dt.getMonth();
+  ETAT.form = { id: d.id, classe: d.classe, type: d.type, date: d.date, matiere: d.matiere || "", titre: d.titre, bareme: d.bareme || 20, sujet: d.sujet || "", correction: d.correction || "" };
+  if (ETAT.section !== "devoirs") showSection("devoirs"); else { dessinerCalendrier(); rendreFormulaire(); }
+  setTimeout(() => { const z = $("#zoneFormDevoir"); if (z) z.scrollIntoView({ behavior: "smooth" }); }, 80);
+}
+function rendreFormulaire() {
+  const zone = $("#zoneFormDevoir"); if (!zone) return;
+  const f = ETAT.form;
+  if (!f) { zone.innerHTML = ""; return; }
+  const mats = [...new Set([...(matieresDeClasse(ETAT.profil, f.classe).length ? matieresDeClasse(ETAT.profil, f.classe) : MATIERES), f.matiere].filter(Boolean))];
+  zone.innerHTML = `
+  <div class="card p-5 md:p-6" style="border:2px dashed #C4B5FD">
+    <div class="flex flex-wrap justify-between gap-2 items-center"><h3 class="font-black text-lg">${f.id ? "✏️ Modifier le devoir" : "➕ Nouveau devoir"} — ${esc(nomClasse(f.classe))}</h3><span class="badge bg-violet-100 text-violet-700">${f.id ? "En ligne" : "Brouillon"}</span></div>
+    <form onsubmit="enregistrerDevoir(event)" class="grid md:grid-cols-2 gap-4 mt-4">
+      <div><label class="text-xs font-extrabold">TYPE DE DEVOIR</label>
+        <select id="dvf-type" class="input mt-1" onchange="ETAT.form.type=this.value">
+          <option value="DC" ${f.type === "DC" ? "selected" : ""}>Devoir de contrôle</option>
+          <option value="DS" ${f.type === "DS" ? "selected" : ""}>Devoir de synthèse</option>
+        </select></div>
+      <div><label class="text-xs font-extrabold">MATIÈRE</label><select id="dvf-matiere" class="input mt-1">${mats.map(m => `<option value="${esc(m)}" ${m === f.matiere ? "selected" : ""}>${esc(m)}</option>`).join("")}</select></div>
+      <div class="md:col-span-2"><label class="text-xs font-extrabold">TITRE</label><input id="dvf-titre" class="input mt-1" value="${esc(f.titre || "")}" placeholder="Ex. : Devoir de contrôle n°1"></div>
+      <div><label class="text-xs font-extrabold">BARÈME</label><input id="dvf-bareme" type="number" min="1" max="100" step="0.5" class="input mt-1" value="${esc(String(f.bareme || 20))}"></div>
+      <div><label class="text-xs font-extrabold">DATE (cliquez un jour vert du calendrier)</label><div class="input mt-1 bg-violet-50 font-bold" id="dvf-date-txt">${f.date ? fmtDate(f.date) : "— aucune —"}</div></div>
+      <div class="md:col-span-2"><label class="text-xs font-extrabold">📄 SUJET (visible par les élèves le lendemain de l'épreuve)</label><textarea id="dvf-sujet" rows="4" class="input mt-1" placeholder="Chapitres, durée, matériel autorisé…">${esc(f.sujet || "")}</textarea></div>
+      <div class="md:col-span-2"><label class="text-xs font-extrabold">✅ CORRECTION (visible le lendemain)</label><textarea id="dvf-correction" rows="4" class="input mt-1" placeholder="Corrigé détaillé…">${esc(f.correction || "")}</textarea></div>
+      <div class="md:col-span-2 flex flex-wrap gap-2">
+        <button class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">💾 Enregistrer le devoir</button>
+        ${f.id ? `<button type="button" onclick="supprimerDevoir('${f.id}')" class="px-5 py-3 rounded-full text-sm font-extrabold bg-red-50 text-red-600 border border-red-200">🗑️ Supprimer</button>` : ""}
+        <button type="button" onclick="ETAT.form=null;rendreFormulaire()" class="px-5 py-3 rounded-full text-sm font-extrabold bg-white border">Annuler</button>
+      </div>
+    </form>
+  </div>`;
+}
+async function enregistrerDevoir(ev) {
+  ev.preventDefault();
+  const f = ETAT.form; if (!f) return;
+  const titre = $("#dvf-titre").value.trim();
+  const matiere = $("#dvf-matiere").value;
+  const bareme = Number($("#dvf-bareme").value) || 20;
+  const sujet = $("#dvf-sujet").value, correction = $("#dvf-correction").value;
+  if (!titre) return toast("Donnez un titre au devoir.", "erreur");
+  if (!f.date) return toast("Choisissez d'abord une date (jour vert du calendrier).", "erreur");
+  const evd = evaluerDateChoix(f.classe, f.date, f.type === "DS" ? "synthese" : "controle", {
+    occupees: ETAT.devoirs.filter(d => d.classe === f.classe && d.id !== f.id).map(d => d.date),
+    ignorees: f.id ? [ETAT.devoirs.find(d => d.id === f.id)?.date].filter(Boolean) : []
+  });
+  if (!evd.ok) return toast(`Date refusée : ${evd.raison}`, "erreur");
+  const q = etatQuota(mesDevoirs(), f.classe, matiere, f.type, f.date, f.id);
+  if (!q.ok) return toast(`Limite atteinte (${q.trimestre.label}) : maximum ${q.max} par trimestre, par classe et par matière.`, "erreur");
+  const ligne = { enseignant_id: ETAT.session.user.id, enseignant_nom: ETAT.profil.nom, classe: f.classe, matiere, type: f.type, titre, date: f.date, sujet, correction, bareme };
+  try {
+    if (f.id) await sbPatch("devoirs", `id=eq.${f.id}`, ligne); else await sbInsert("devoirs", ligne);
+    toast(`✅ Devoir « ${titre} » enregistré pour le ${fmtDate(f.date)} (${nomClasse(f.classe)}).`, "success");
+    ETAT.form = null;
+    await chargerDonnees();
+    dessinerCalendrier(); rendreFormulaire(); rendreListeDevoirs();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+async function supprimerDevoir(id) {
+  const d = ETAT.devoirs.find(x => x.id === id);
+  if (!d || !confirm(`Supprimer le devoir « ${d.titre} » du ${fmtDate(d.date)} ?`)) return;
+  try {
+    await sbSupprimer("devoirs", `id=eq.${id}`);
+    ETAT.form = null;
+    await chargerDonnees();
+    toast("Devoir supprimé.", "info");
+    if (ETAT.section === "devoirs") rendreDevoirs(); else rendreDashboard();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+function rendreListeDevoirs() {
+  const zone = $("#listeDevoirs"); if (!zone) return;
+  const rech = ETAT.recherche;
+  const liste = mesDevoirs().filter(d => !rech || `${d.titre} ${d.matiere} ${nomClasse(d.classe)}`.toLowerCase().includes(rech)).slice().sort((a,b) => b.date.localeCompare(a.date));
+  const c = $("#compteurDevoirs"); if (c) c.textContent = `${liste.length} devoir(s)`;
+  zone.innerHTML = liste.map(d => `
+    <div class="card p-4 flex gap-4 items-center table-row">
+      <span class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white shrink-0" style="background:${couleurClasse(d.classe)}">${esc(d.type)}</span>
+      <div class="flex-1 min-w-0"><p class="font-extrabold truncate">${esc(d.titre)}</p><p class="text-xs text-slate-400">${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")} • ${fmtDate(d.date)} • /${esc(String(d.bareme || 20))}</p>
+      <div class="flex gap-1.5 mt-1.5"><span class="badge ${d.sujet ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}">${d.sujet ? "Sujet prêt" : "Sujet à écrire"}</span><span class="badge ${d.correction ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}">${d.correction ? "Correction prête" : "Correction à écrire"}</span></div></div>
+      <div class="flex flex-col gap-1.5 shrink-0">
+        <button onclick="modifierDevoir('${d.id}')" class="pill !py-1.5 text-xs">✏️ Modifier</button>
+        <button onclick="supprimerDevoir('${d.id}')" class="pill !py-1.5 text-xs !text-red-500">🗑️</button>
+      </div>
+    </div>`).join("") || `<div class="card p-5 text-slate-400 text-sm lg:col-span-2">Aucun devoir. Placez un jeton dans le calendrier ci-dessus !</div>`;
+}
+
+/* ---------- Devoirs côté élève ---------- */
+function carteDevoirEleve(d) {
+  const visible = contenuVisibleLe(d.date);
+  const lendemain = fmtDateCourte(isoDe(new Date(parseDate(d.date).getTime() + 86400000)));
+  const note = ETAT.notes.find(n => n.eleve_id === ETAT.session.user.id && n.devoir_id === d.id);
+  return `<div class="card p-5 flex flex-col gap-3">
+    <div class="flex items-start gap-3">
+      <span class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white shrink-0" style="background:${couleurClasse(d.classe)}">${esc(d.type)}</span>
+      <div class="flex-1 min-w-0"><p class="font-extrabold leading-snug">${esc(d.titre)}</p><p class="text-xs text-slate-400">${esc(d.matiere || "")}${d.enseignant_nom ? " • " + esc(d.enseignant_nom) : ""}</p></div>
+      ${note ? `<span class="badge bg-emerald-100 text-emerald-700">Note : ${esc(String(note.note))}/${esc(String(note.sur || 20))}</span>` : ""}
+    </div>
+    <p class="text-sm"><i class="fa-regular fa-calendar text-violet-500"></i> <b>${fmtDate(d.date)}</b> <span class="badge ${d.date >= todayISO() ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}">${d.type === "DS" ? "Devoir de synthèse" : "Devoir de contrôle"}</span></p>
+    ${visible ? `
+      <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-amber-700">📄 SUJET</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.sujet ? esc(d.sujet) : "<i class='text-slate-400'>Sujet non encore publié par l'enseignant.</i>"}</p></div>
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-emerald-700">✅ CORRECTION</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.correction ? esc(d.correction) : "<i class='text-slate-400'>Correction pas encore publiée.</i>"}</p></div>`
+    : `<div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-[13px] text-slate-500">🔒 La date est visible, mais le <b>sujet</b> et la <b>correction</b> seront publiés le <b>${lendemain}</b> (lendemain de l'épreuve).</div>`}
+    ${note && note.appreciation ? `<p class="text-[13px]">💬 <b>Remarque :</b> ${esc(note.appreciation)}</p>` : ""}
+  </div>`;
+}
+function rendreDevoirsEleve() {
+  const zone = $("#section-devoirs");
+  const rech = ETAT.recherche;
+  const liste = ETAT.devoirs.filter(d => !rech || `${d.titre} ${d.matiere}`.toLowerCase().includes(rech)).slice().sort((a,b) => a.date.localeCompare(b.date));
+  const aVenir = liste.filter(d => d.date >= todayISO()), passes = liste.filter(d => d.date < todayISO()).reverse();
+  zone.innerHTML = `
+    <h2 class="text-2xl font-black">Mes devoirs</h2>
+    <p class="text-sm text-slate-500">Classe ${esc(nomClasse(ETAT.profil.classe))} • Les sujets et corrections sont publiés le lendemain de chaque épreuve.</p>
+    <h3 class="font-extrabold text-[17px] mt-6 mb-3">⏳ À venir</h3>
+    <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">${aVenir.map(d => carteDevoirEleve(d)).join("") || `<div class="card p-5 text-slate-400 text-sm md:col-span-3">Aucun devoir à venir.</div>`}</div>
+    <h3 class="font-extrabold text-[17px] mt-7 mb-3">✅ Passés</h3>
+    <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">${passes.map(d => carteDevoirEleve(d)).join("") || `<div class="card p-5 text-slate-400 text-sm md:col-span-3">Aucun devoir passé.</div>`}</div>`;
+}
+
+/* ================= ÉLÈVES & NOTES ================= */
+function rendreEleves() { if (ETAT.profil.role === "enseignant") rendreElevesEns(); else rendreNotesEleve(); }
+
+function rendreElevesEns() {
+  const zone = $("#section-eleves");
+  if (!mesClasses().length) {
+    zone.innerHTML = `<div class="card p-6 text-center"><div class="text-4xl">🎓</div><h2 class="font-black text-xl mt-3">Aucune classe choisie</h2><p class="text-sm text-slate-500 mt-1">Choisissez vos classes dans « Mes Classes » pour saisir les notes.</p><button onclick="showSection('classes')" class="mt-4 ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold">Choisir mes classes →</button></div>`;
+    return;
+  }
+  if (!mesClasses().includes(ETAT.selNotes.classe)) ETAT.selNotes.classe = mesClasses()[0];
+  const devoirsClasse = ETAT.devoirs.filter(d => d.classe === ETAT.selNotes.classe && d.enseignant_id === ETAT.session.user.id).slice().sort((a,b) => a.date.localeCompare(b.date));
+  if (!devoirsClasse.some(d => d.id === ETAT.selNotes.devoirId)) ETAT.selNotes.devoirId = devoirsClasse.length ? devoirsClasse[devoirsClasse.length - 1].id : null;
+  const devoir = devoirsClasse.find(d => d.id === ETAT.selNotes.devoirId) || null;
+  const eleves = ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && p.classe === ETAT.selNotes.classe).slice().sort((a,b) => (a.nom||"").localeCompare(b.nom||"", "fr"));
+  const notesD = ETAT.notes.filter(n => devoir && n.devoir_id === devoir.id);
+  const moy = notesD.length ? notesD.reduce((s,n) => s + (Number(n.note)/ (Number(n.sur)||20) * 20), 0) / notesD.length : null;
+  zone.innerHTML = `
+    <h2 class="text-2xl font-black">Élèves et notes</h2>
+    <p class="text-sm text-slate-500">Choisissez la classe, puis le devoir : saisissez les notes et les remarques (vues par l'élève), ainsi qu'une observation générale par élève.</p>
+    <div class="card p-4 md:p-5 mt-5">
+      <div class="flex flex-wrap gap-3 items-end">
+        <label class="text-xs font-extrabold">CLASSE<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.classe=this.value;ETAT.selNotes.devoirId=null;rendreEleves()">${mesClasses().map(c => `<option value="${esc(c)}" ${c === ETAT.selNotes.classe ? "selected" : ""}>${esc(nomClasse(c))}</option>`).join("")}</select></label>
+        <label class="text-xs font-extrabold">DEVOIR<br><select class="input mt-1 !w-auto" onchange="ETAT.selNotes.devoirId=this.value;rendreEleves()">${devoirsClasse.map(d => `<option value="${d.id}" ${devoir && d.id === devoir.id ? "selected" : ""}>${esc(d.type)} · ${esc(fmtDateCourte(d.date))} · ${esc(d.matiere||"")} · ${esc(d.titre)}</option>`).join("") || `<option value="">Aucun devoir dans cette classe</option>`}</select></label>
+        <span class="badge bg-violet-100 text-violet-700">${eleves.length} élève(s)</span>
+        ${moy !== null ? `<span class="badge bg-emerald-100 text-emerald-700">Moyenne de la classe : ${moy.toFixed(2)}/20</span>` : ""}
+      </div>
+      ${devoir ? `
+      <div class="overflow-auto mt-4">
+      <table class="w-full text-sm min-w-[760px]">
+        <thead><tr class="text-left text-[11px] text-slate-400 uppercase tracking-wider"><th class="py-2">Élève</th><th class="w-[160px]">Note / ${esc(String(devoir.bareme || 20))}</th><th>💬 Remarque (vue par l'élève)</th><th>📌 Observation générale</th></tr></thead>
+        <tbody>
+        ${eleves.map(e => { const n = ETAT.notes.find(x => x.devoir_id === devoir.id && x.eleve_id === e.id); return `
+          <tr class="border-t" data-eleve="${e.id}">
+            <td class="py-2 pr-3"><p class="font-bold">${esc(e.nom || "")}</p><p class="text-[11px] text-slate-400">${esc(e.email || e.code || "")}</p></td>
+            <td class="pr-3"><input id="nt-${e.id}" inputmode="decimal" class="input !py-2" value="${n ? esc(String(n.note)) : ""}" placeholder="—"></td>
+            <td class="pr-3"><input id="ap-${e.id}" class="input !py-2" value="${n ? esc(n.appreciation || "") : ""}" placeholder="Ex. : Bon travail"></td>
+            <td><input id="ob-${e.id}" class="input !py-2" value="${esc(e.observation || "")}" placeholder="Visible par l'élève"></td>
+          </tr>`; }).join("") || `<tr><td colspan="4" class="py-4 text-slate-400">Aucun élève actif dans cette classe. Les élèves apparaissent ici après validation de leur compte par l'administrateur.</td></tr>`}
+        </tbody>
+      </table>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4 items-center">
+        <button onclick="enregistrerNotes()" class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">💾 Enregistrer les notes</button>
+        <span class="text-[12px] text-slate-400">Laissez une note vide pour l'effacer. Les élèves voient leurs notes et remarques immédiatement.</span>
+      </div>` : `<p class="text-slate-400 text-sm mt-4">Créez d'abord un devoir pour cette classe (section « Devoirs »).</p>`}
+    </div>`;
+}
+async function enregistrerNotes() {
+  const devoir = ETAT.devoirs.find(d => d.id === ETAT.selNotes.devoirId);
+  if (!devoir) return toast("Choisissez un devoir.", "erreur");
+  const lignes = [];
+  const obsMaj = [];
+  for (const tr of $$("#section-eleves tr[data-eleve]")) {
+    const eleveId = tr.getAttribute("data-eleve");
+    const noteStr = ($("#nt-" + eleveId)?.value || "").trim().replace(",", ".");
+    const ap = ($("#ap-" + eleveId)?.value || "").trim();
+    const existante = ETAT.notes.find(x => x.devoir_id === devoir.id && x.eleve_id === eleveId);
+    if (noteStr !== "") {
+      const note = Number(noteStr);
+      if (isNaN(note) || note < 0 || note > (Number(devoir.bareme) || 20)) return toast(`Note invalide pour l'un des élèves (barème ${devoir.bareme || 20}).`, "erreur");
+      lignes.push({ devoir_id: devoir.id, eleve_id: eleveId, note, sur: Number(devoir.bareme) || 20, appreciation: ap, updated_by: ETAT.session.user.id });
+    } else if (existante && ap === "") {
+      try { await sbSupprimer("notes", `devoir_id=eq.${devoir.id}&eleve_id=eq.${eleveId}`); } catch (e) { }
+    } else if (existante && ap !== "") {
+      lignes.push({ devoir_id: devoir.id, eleve_id: eleveId, note: existante.note, sur: existante.sur || 20, appreciation: ap, updated_by: ETAT.session.user.id });
+    }
+    const ob = ($("#ob-" + eleveId)?.value || "").trim();
+    const profil = ETAT.profils.find(p => p.id === eleveId);
+    if (profil && (profil.observation || "") !== ob) obsMaj.push({ id: eleveId, observation: ob });
+  }
+  try {
+    if (lignes.length) await sbUpsert("notes", lignes, "devoir_id,eleve_id");
+    for (const o of obsMaj) await sbPatch("profils", `id=eq.${o.id}`, { observation: o.observation });
+    await chargerDonnees();
+    toast("✅ Notes enregistrées : les élèves les voient tout de suite.", "success");
+    rendreEleves();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+function rendreNotesEleve() {
+  const zone = $("#section-eleves");
+  const mesNotes = ETAT.notes.filter(n => n.eleve_id === ETAT.session.user.id);
+  const liste = mesNotes.map(n => {
+    const d = ETAT.devoirs.find(x => x.id === n.devoir_id);
+    if (!d) return null;
+    return { ...n, devoir: d, sur20: (Number(n.note) / (Number(n.sur) || 20)) * 20 };
+  }).filter(Boolean).sort((a,b) => b.devoir.date.localeCompare(a.devoir.date));
+  const moy = liste.length ? liste.reduce((s,n) => s + n.sur20, 0) / liste.length : null;
+  zone.innerHTML = `
+    <h2 class="text-2xl font-black">Mes notes</h2>
+    <p class="text-sm text-slate-500">Classe ${esc(nomClasse(ETAT.profil.classe))} • Uniquement vos notes.</p>
+    <div class="grid md:grid-cols-3 gap-4 mt-5">
+      ${carteStat("fa-star", "#0EA5E9", moy !== null ? moy.toFixed(2) + "/20" : "—", "Moyenne générale")}
+      ${carteStat("fa-pen", "#6D28D9", String(liste.length), "Notes reçues")}
+      ${carteStat("fa-crown", "#F59E0B", liste.length ? Math.max(...liste.map(n => n.sur20)).toFixed(2) + "/20" : "—", "Meilleure note")}
+    </div>
+    ${ETAT.profil.observation ? `<div class="card p-4 mt-4" style="background:#FFF7ED;border-color:#FDE68A"><p class="text-xs font-extrabold text-amber-700">📌 OBSERVATION GÉNÉRALE DE VOTRE ENSEIGNANT</p><p class="text-sm mt-1">${esc(ETAT.profil.observation)}</p></div>` : ""}
+    <div class="card mt-5 overflow-auto">
+      <table class="w-full text-sm min-w-[640px]">
+        <thead><tr class="text-left text-[11px] text-slate-400 uppercase tracking-wider border-b"><th class="p-4">Devoir</th><th>Note</th><th>Note /20</th><th>Remarque</th></tr></thead>
+        <tbody>
+        ${liste.map(n => `<tr class="border-b table-row"><td class="p-4"><span class="badge ${n.devoir.type === "DS" ? "bg-rose-100 text-rose-600" : "bg-violet-100 text-violet-700"}">${esc(n.devoir.type)}</span> <b>${esc(n.devoir.titre)}</b><br><span class="text-xs text-slate-400">${esc(n.devoir.matiere || "")} • ${fmtDate(n.devoir.date)}</span></td><td class="font-black text-violet-700">${esc(String(n.note))}/${esc(String(n.sur || 20))}</td><td>${n.sur20.toFixed(2)}</td><td class="text-slate-500">${esc(n.appreciation || "—")}</td></tr>`).join("") || `<tr><td colspan="4" class="p-5 text-slate-400">Aucune note pour le moment.</td></tr>`}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ================= ADMINISTRATION ================= */
+function chipsClasses(p) {
+  if (p.role === "eleve") return `<span class="badge bg-slate-100 text-slate-600">${esc(nomClasse(p.classe))}</span>`;
+  const mpc = p.matieres_par_classe || {};
+  const classes = Array.isArray(p.classes) ? p.classes : [];
+  if (!classes.length) return `<span class="text-slate-400 text-xs">Aucune classe choisie</span>`;
+  return classes.map(cle => { const ms = mpc[cle] && mpc[cle].length ? mpc[cle].join(" + ") : (matieresDeClasse(p, cle).join(" + ") || "matière ?"); return `<span class="badge bg-violet-100 text-violet-700 mr-1 mb-1">${esc(nomClasse(cle))} · ${esc(ms)}</span>`; }).join("");
+}
+function detailsCompte(p) {
+  const cree = p.created_at ? fmtDateCourte(String(p.created_at).slice(0, 10)) : "—";
+  if (p.role === "eleve") return `Classe : <b>${esc(nomClasse(p.classe))}</b>${p.code ? ` • Code : <b>${esc(p.code)}</b>` : ""}${p.observation ? ` • 💬 ${esc(p.observation)}` : ""} • inscrit le ${cree}`;
+  return `${chipsClasses(p)}<br><span class="text-slate-400">Inscrit le ${cree} • ${Array.isArray(p.classes) ? p.classes.length : 0} classe(s)</span>`;
+}
+function rendreAdmin() {
+  const zone = $("#section-admin");
+  if (!estAdmin()) { zone.innerHTML = `<div class="card p-6">Réservé à l'administrateur.</div>`; return; }
+  const attente = ETAT.profils.filter(p => statutProfil(p) === "en_attente");
+  const refus = ETAT.profils.filter(p => statutProfil(p) === "refuse");
+  const rech = ETAT.recherche;
+  const comptes = ETAT.profils.filter(p => ["accepte", "suspendu"].includes(statutProfil(p)))
+    .filter(p => !rech || `${p.nom||""} ${p.email||""} ${p.code||""}`.toLowerCase().includes(rech))
+    .slice().sort((a,b) => (a.role||"").localeCompare(b.role||"") || (a.nom||"").localeCompare(b.nom||"", "fr"));
+  zone.innerHTML = `
+    <h2 class="text-2xl font-black">Administration</h2>
+    <p class="text-sm text-slate-500">Validation des comptes, détails des enseignants et élèves, et gestion des classes du site.</p>
+
+    <div class="card p-5 mt-5" style="background:#FFFBEB;border-color:#FDE68A">
+      <h3 class="font-extrabold text-[16px]">🔔 Demandes en attente (${attente.length})</h3>
+      <div class="grid gap-3 mt-3">
+      ${attente.map(p => `
+        <div class="bg-white border border-amber-200 rounded-2xl p-4 flex flex-wrap gap-3 items-center">
+          <span class="w-11 h-11 rounded-full text-white font-black flex items-center justify-center" style="background:${p.role === "enseignant" ? "#6D28D9" : "#0EA5E9"}">${esc(initialesDe(p.nom || "?"))}</span>
+          <div class="flex-1 min-w-[200px]"><p class="font-extrabold">${esc(p.nom || "")}</p><p class="text-xs text-slate-400">${esc(p.email || p.code || "")} • demande : ${esc(statutProfil(p))}</p><p class="text-[12px] mt-1">${detailsCompte(p)}</p></div>
+          <label class="text-[11px] font-extrabold">RÔLE<br><select id="acc-role-${p.id}" class="input !w-auto !py-2 mt-0.5" onchange="document.getElementById('acc-cl-${p.id}').style.display = this.value === 'eleve' ? '' : 'none'"><option value="enseignant" ${p.role === "enseignant" ? "selected" : ""}>Enseignant</option><option value="eleve" ${p.role === "eleve" ? "selected" : ""}>Élève</option></select></label>
+          <label class="text-[11px] font-extrabold" id="acc-cl-${p.id}" style="display:${p.role === "eleve" ? "" : "none"}">CLASSE (élève)<br><select class="input !w-auto !py-2 mt-0.5" id="acc-classe-${p.id}">${optionsClasses(p.classe || "")}</select></label>
+          <div class="flex gap-2">
+            <button onclick="accepterCompte('${p.id}')" class="px-4 py-2.5 rounded-full text-xs font-extrabold text-white bg-emerald-500">✅ Accepter</button>
+            <button onclick="refuserCompte('${p.id}')" class="px-4 py-2.5 rounded-full text-xs font-extrabold bg-red-50 text-red-600 border border-red-200">❌ Refuser</button>
+          </div>
+        </div>`).join("") || `<p class="text-sm text-slate-500">Aucune demande en attente. 🎉</p>`}
+      </div>
+      ${refus.length ? `<p class="text-[12px] text-slate-400 mt-3">${refus.length} compte(s) refusé(s) : ${refus.map(p => esc(p.nom || p.email || "")).join(", ")}</p>` : ""}
+    </div>
+
+    <div class="card p-5 mt-5">
+      <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Les enseignants choisissent ensuite leurs classes et matières (2 max par classe) dans leur espace.</span></div>
+      <div class="overflow-auto mt-3">
+      <table class="w-full text-sm min-w-[820px]">
+        <thead><tr class="text-left text-[11px] text-slate-400 uppercase tracking-wider border-b"><th class="py-2">Compte</th><th>Rôle</th><th>Détails (classes · matières)</th><th>Statut</th><th class="text-right">Actions</th></tr></thead>
+        <tbody>
+        ${comptes.map(p => `<tr class="border-b table-row">
+          <td class="py-3 pr-3"><p class="font-bold">${esc(p.nom || "")} ${p.email === SB_ADMIN_EMAIL ? `<span class="badge bg-amber-100 text-amber-700">ADMIN</span>` : ""}</p><p class="text-[11px] text-slate-400">${esc(p.email || p.code || "")}</p></td>
+          <td><span class="badge ${p.role === "enseignant" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}">${p.role === "enseignant" ? "Enseignant" : "Élève"}</span></td>
+          <td class="text-[13px]">${detailsCompte(p)}</td>
+          <td><span class="badge ${statutProfil(p) === "suspendu" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}">${statutProfil(p) === "suspendu" ? "Suspendu" : "Actif"}</span></td>
+          <td class="text-right whitespace-nowrap">
+            ${p.email !== SB_ADMIN_EMAIL ? `<button class="pill !py-1.5 text-xs" onclick="modifierCompte('${p.id}')">✏️ Modifier</button>
+            <button class="pill !py-1.5 text-xs" onclick="basculerStatut('${p.id}')">${statutProfil(p) === "suspendu" ? "▶️ Réactiver" : "⏸️ Suspendre"}</button>
+            <button class="pill !py-1.5 text-xs !text-red-500" onclick="supprimerCompte('${p.id}')">🗑️</button>` : `<span class="text-slate-300 text-xs">—</span>`}
+          </td></tr>`).join("") || `<tr><td colspan="5" class="py-4 text-slate-400">Aucun compte.</td></tr>`}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="card p-5 mt-5">
+      <h3 class="font-extrabold text-[16px]">🏫 Classes du site (${ETAT.classesAll.length})</h3>
+      <p class="text-[13px] text-slate-500">Ces classes apparaissent dans les inscriptions des élèves et dans les jetons des enseignants. Les enseignants choisissent ensuite la (les) matière(s) qu'ils y enseignent.</p>
+      <div class="flex flex-wrap gap-2 mt-3">
+        ${ETAT.classesAll.map(c => `<span class="badge !text-[13px] !py-2 !px-3" style="background:${couleurClasse(c.cle)}22;color:${couleurClasse(c.cle)};border:1px solid ${couleurClasse(c.cle)}55">🎓 ${esc(c.nom)} <button onclick="renommerClasse('${c.cle}')" title="Renommer" class="ml-1">✏️</button> <button onclick="supprimerClasse('${c.cle}')" title="Supprimer" class="text-red-500">🗑️</button></span>`).join("")}
+      </div>
+      <form onsubmit="ajouterClasse(event)" class="flex flex-wrap gap-2 mt-4">
+        <input id="nv-classe-nom" class="input !w-auto flex-1 min-w-[220px]" placeholder="Nom de la nouvelle classe (ex. : 3ème SI 3)" required>
+        <button class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold">＋ Ajouter la classe</button>
+      </form>
+    </div>`;
+}
+async function actualiserAdmin() { await chargerDonnees(); rendreAdmin(); }
+async function accepterCompte(id) {
+  const role = $("#acc-role-" + id).value;
+  const classe = role === "eleve" ? $("#acc-classe-" + id).value : null;
+  try {
+    await sbPatch("profils", `id=eq.${id}`, { statut: "accepte", role, classe });
+    toast("✅ Compte accepté.", "success");
+    await actualiserAdmin();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+async function refuserCompte(id) {
+  if (!confirm("Refuser ce compte ? La personne verra un message « compte refusé ».")) return;
+  try { await sbPatch("profils", `id=eq.${id}`, { statut: "refuse" }); toast("Compte refusé.", "info"); await actualiserAdmin(); } catch (e) { toast(e.message, "erreur"); }
+}
+async function modifierCompte(id) {
+  const p = ETAT.profils.find(x => x.id === id);
+  if (!p) return;
+  const role = (prompt("Rôle du compte (enseignant ou eleve) :", p.role || "enseignant") || "").trim();
+  if (role !== "enseignant" && role !== "eleve") return toast("Rôle invalide.", "erreur");
+  try {
+    if (role === "eleve") {
+      const classe = (prompt("Classe de l'élève (code, ex. : " + (ETAT.classesAll[0]?.cle || "") + ") :", p.classe || "") || "").trim();
+      if (!ETAT.classes.some(c => c.cle === classe)) return toast("Classe inconnue. Créez-la d'abord dans la liste des classes.", "erreur");
+      const observation = prompt("Observation générale (visible par l'élève) :", p.observation || "");
+      await sbPatch("profils", `id=eq.${id}`, { role, classe, observation: observation ?? p.observation ?? "", classes: [] });
+    } else {
+      const saisie = prompt("Classes enseignées (codes séparés par des virgules, ex. : " + (ETAT.classesAll.map(c => c.cle).join(", ")) + ") :\nL'enseignant choisit ensuite ses matières (2 max par classe) dans son espace.", (p.classes || []).join(", "));
+      if (saisie === null) return;
+      const classes = saisie.split(",").map(s => s.trim()).filter(c => ETAT.classes.some(x => x.cle === c));
+      await sbPatch("profils", `id=eq.${id}`, { role, classes, classe: null });
+    }
+    toast("✅ Compte mis à jour.", "success");
+    await actualiserAdmin();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+async function basculerStatut(id) {
+  const p = ETAT.profils.find(x => x.id === id);
+  if (!p) return;
+  try { await sbPatch("profils", `id=eq.${id}`, { statut: statutProfil(p) === "suspendu" ? "accepte" : "suspendu" }); toast("Statut mis à jour.", "info"); await actualiserAdmin(); } catch (e) { toast(e.message, "erreur"); }
+}
+async function supprimerCompte(id) {
+  const p = ETAT.profils.find(x => x.id === id);
+  if (!p || !confirm(`Supprimer définitivement le profil de « ${p.nom} » ? (Le compte de connexion existera toujours ; un nouveau profil « en attente » sera créé à sa prochaine connexion.)`)) return;
+  try { await sbSupprimer("profils", `id=eq.${id}`); toast("Profil supprimé.", "info"); await actualiserAdmin(); } catch (e) { toast(e.message, "erreur"); }
+}
+async function ajouterClasse(ev) {
+  ev.preventDefault();
+  const nom = $("#nv-classe-nom").value.trim();
+  if (!nom) return;
+  const cle = slugClasse(nom);
+  if (ETAT.classes.some(c => c.cle === cle)) return toast("Une classe avec ce nom existe déjà (code " + cle + ").", "erreur");
+  try {
+    await sbInsert("classes", { id: cle, nom });
+    await chargerClasses();
+    toast(`✅ Classe « ${nom} » ajoutée.`, "success");
+    rendreAdmin();
+  } catch (e) { toast(e.message, "erreur"); }
+}
+async function renommerClasse(cle) {
+  const c = ETAT.classesAll.find(x => x.cle === cle);
+  const nom = prompt("Nouveau nom de la classe :", c ? c.nom : "");
+  if (!nom || !nom.trim()) return;
+  try { await sbPatch("classes", `id=eq.${cle}`, { nom: nom.trim() }); await chargerClasses(); toast("Classe renommée.", "success"); rendreAdmin(); } catch (e) { toast(e.message, "erreur"); }
+}
+async function supprimerClasse(cle) {
+  if (!confirm(`Supprimer la classe « ${nomClasse(cle)} » ? Les devoirs et élèves qui l'utilisent ne seront plus affichés correctement.`)) return;
+  try { await sbSupprimer("classes", `id=eq.${cle}`); await chargerClasses(); toast("Classe supprimée.", "info"); rendreAdmin(); } catch (e) { toast(e.message, "erreur"); }
+}
+
+/* ================= CALENDRIER OFFICIEL ================= */
+function rendreCalendrier() {
+  const zone = $("#section-calendrier");
+  if (ETAT.calOff.a === null) { const d = new Date(); ETAT.calOff.a = d.getFullYear(); ETAT.calOff.m = d.getMonth(); }
+  const premier = new Date(ETAT.calOff.a, ETAT.calOff.m, 1);
+  const debut = (premier.getDay() + 6) % 7;
+  const nbJours = new Date(ETAT.calOff.a, ETAT.calOff.m + 1, 0).getDate();
+  let cases = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"].map(j => `<div class="text-center text-[11px] font-extrabold uppercase tracking-wider text-slate-400 py-1">${j}</div>`).join("");
+  for (let i = 0; i < debut; i++) cases += `<div></div>`;
+  for (let jour = 1; jour <= nbJours; jour++) {
+    const iso = `${ETAT.calOff.a}-${pad(ETAT.calOff.m + 1)}-${pad(jour)}`;
+    const evts = evenementsOfficiels(iso);
+    const estVac = evts.some(e => e.type === "vacances"), estFerie = evts.some(e => e.type === "ferie"), estSusp = evts.some(e => e.type === "suspension");
+    const devoirs = ETAT.devoirs.filter(d => d.date === iso);
+    cases += `<div class="cal-cell ${iso === todayISO() ? "aujourdhui" : ""}" style="min-height:96px;cursor:default;${estVac ? "background:#ECFDF5;border-color:#6EE7B7" : estSusp ? "background:#F5F3FF;border-color:#C4B5FD" : estFerie ? "background:#FFF7ED;border-color:#FDBA74" : ""}">
+      <div class="font-extrabold ${iso === todayISO() ? "text-rose-600" : ""}">${jour}</div>
+      ${evts.map(e => `<div class="text-[10px] font-bold mt-0.5" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(e.label)}">${e.type === "vacances" ? "🏖️" : e.type === "ferie" ? "🚩" : "🔒"} ${esc(e.label)}</div>`).join("")}
+      ${devoirs.map(d => `<div class="text-[10px] font-bold mt-0.5 text-white rounded px-1 py-0.5" style="background:${couleurClasse(d.classe)};white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(d.titre)}">${esc(d.type)} · ${esc(d.titre)}</div>`).join("")}
+    </div>`;
+  }
+  zone.innerHTML = `
+    <h2 class="text-2xl font-black">Calendrier officiel 2026-2027</h2>
+    <p class="text-sm text-slate-500">Année scolaire tunisienne : vacances, jours fériés, semaines bloquées et vos devoirs.</p>
+    <div class="card p-4 md:p-5 mt-5">
+      <div class="flex items-center gap-3 mb-4">
+        <button class="pill" onclick="ETAT.calOff.m--;if(ETAT.calOff.m<0){ETAT.calOff.m=11;ETAT.calOff.a--}rendreCalendrier()">← Précédent</button>
+        <h3 class="font-black text-lg capitalize flex-1 text-center">${MOIS_LONG[ETAT.calOff.m]} ${ETAT.calOff.a}</h3>
+        <button class="pill" onclick="ETAT.calOff.m++;if(ETAT.calOff.m>11){ETAT.calOff.m=0;ETAT.calOff.a++}rendreCalendrier()">Suivant →</button>
+        <button class="pill" onclick="ETAT.calOff.a=null;rendreCalendrier()">📍 Aujourd'hui</button>
+      </div>
+      <div class="grid grid-cols-7 gap-1.5 md:gap-2">${cases}</div>
+      <div class="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-500 mt-4">
+        <span>🏖️ <b>Vacances</b> (vert)</span><span>🚩 <b>Jour férié</b> (orange)</span><span>🔒 <b>Semaine bloquée</b> — devoirs de synthèse (violet)</span>
+      </div>
+    </div>`;
+}
+
+/* ================= VIE DE CLASSE ================= */
+function rendreVie() {
+  const zone = $("#section-vie");
+  const annonces = (window.ANNONCES || []).slice().sort((a,b) => (b.date||"").localeCompare(a.date||""));
+  const classeVie = ETAT.profil.role === "eleve" ? ETAT.profil.classe : (mesClasses()[0] || (ETAT.classesAll[0] && ETAT.classesAll[0].cle));
+  const emploi = (window.EMPLOI || {})[classeVie] || [];
+  const jours = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+  const couleurs = { rose:"#F43F5E", orange:"#F97316", violet:"#6D28D9", cyan:"#0EA5E9", vert:"#10B981" };
+  zone.innerHTML = `
+    <h2 class="text-2xl font-black">Vie de classe</h2>
+    <p class="text-sm text-slate-500">Annonces du cours, emploi du temps, ressources et règles.</p>
+    <div class="grid lg:grid-cols-2 gap-5 mt-5">
+      <div class="card p-5">
+        <h3 class="font-extrabold text-[16px] mb-3">📣 Annonces</h3>
+        <div class="grid gap-3">
+        ${annonces.map(a => `<div class="rounded-2xl border p-4 ${a.important ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100"}"><div class="flex justify-between gap-2"><p class="font-extrabold text-[14px]">${a.important ? "📌 " : ""}${esc(a.titre || "")}</p><span class="text-[11px] text-slate-400 whitespace-nowrap">${a.date ? fmtDateCourte(a.date) : ""}</span></div><p class="text-[13px] mt-1 whitespace-pre-line">${esc(a.texte || "")}</p></div>`).join("") || `<p class="text-sm text-slate-400">Aucune annonce.</p>`}
+        </div>
+      </div>
+      <div class="grid gap-5">
+        <div class="card p-5">
+          <h3 class="font-extrabold text-[16px] mb-3">🕐 Emploi du temps — ${esc(nomClasse(classeVie))}</h3>
+          <div class="grid gap-1.5">
+          ${jours.map(j => { const s = emploi.filter(x => x.jour === j); return `<div class="mm-row ${s.length ? "" : "opacity-40"}"><span class="capitalize font-bold text-[13px] w-24">${j}</span><span class="flex-1 text-[13px]">${s.length ? s.map(x => `${esc(x.debut)}–${esc(x.fin)} · ${esc(x.intitule)} <span class="text-slate-400">(${esc(x.salle)})</span>`).join("<br>") : "—"}</span></div>`; }).join("")}
+          </div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-extrabold text-[16px] mb-3">🔗 Ressources</h3>
+          <div class="grid gap-2">
+          ${(window.RESSOURCES || []).map(r => `<a href="${esc(r.url || "#")}" target="_blank" rel="noopener" class="mm-row hover:opacity-80"><span class="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0" style="background:${couleurs[r.couleur] || "#6D28D9"}"><i class="fa-solid fa-link"></i></span><span class="flex-1"><b class="text-[13px]">${esc(r.titre || "")}</b><br><span class="text-[12px] text-slate-400">${esc(r.desc || "")}</span></span><i class="fa-solid fa-arrow-up-right-from-square text-slate-300"></i></a>`).join("")}
+          </div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-extrabold text-[16px] mb-2">📜 Règles du cours</h3>
+          <ul class="list-disc list-outside pl-5 text-[13px] text-slate-600 grid gap-1.5">
+          ${(window.REGLES || []).map(r => `<li>${esc(r)}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ================= DÉMARRAGE ================= */
+(async function demarrer() {
+  try { await chargerClasses(); } catch (e) { }
+  let session = null;
+  try { session = await sbSessionValide(); } catch (e) { }
+  if (session) {
+    ETAT.session = session;
+    try {
+      const profil = await sbAssurerProfil(session);
+      if (!profil) { afficherAuth("connexion"); return; }
+      apresAuth(profil);
+      return;
+    } catch (e) { /* session illisible : on réaffiche la connexion */ }
+  }
+  afficherAuth("connexion");
+})();
+</script>
 </body>
 </html>
