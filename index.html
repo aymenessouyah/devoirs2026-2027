@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
 <script>
 tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','Inter','sans-serif']},colors:{primary:'#6D28D9',indigo2:'#6366F1'}}}}
 </script>
@@ -141,7 +142,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.3.0</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.4.1</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -177,7 +178,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.0.1</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.4.1</p>
 </main>
 </div>
 </div>
@@ -656,8 +657,8 @@ function rendreClasses() {
       </div>`; }).join("") || `<div class="card p-5 text-slate-400 text-sm md:col-span-3">Aucune classe sur le site pour le moment${estAdmin() ? " : créez-en dans ⭐ Administration." : " : l'administrateur doit d'abord les créer."}</div>`}
     </div>
     <div class="card p-5 mt-5">
-      <div class="flex flex-wrap justify-between gap-2 items-center"><h3 class="font-extrabold text-[16px]">🗓️ Mon emploi du temps</h3><span class="text-[11px] text-slate-400">Photo bienvenue — le site l'affiche dans le tableau (Vie de classe)</span></div>
-      <p class="text-[13px] text-slate-500 mt-1">Chargez la <b>photo de votre emploi du temps</b> et/ou saisissez vos séances hebdomadaires : le site les affiche en tableau et s'en sert pour proposer vos devoirs les jours de séance.</p>
+      <div class="flex flex-wrap justify-between gap-2 items-center"><h3 class="font-extrabold text-[16px]">🗓️ Mon emploi du temps</h3><span class="text-[11px] text-slate-400">Photo en français ou en arabe — analyse OCR bilingue, affichée dans le tableau (Vie de classe)</span></div>
+      <p class="text-[13px] text-slate-500 mt-1">Chargez la <b>photo de votre emploi du temps</b> (en français ou en arabe) et/ou saisissez vos séances hebdomadaires : le bouton d’analyse OCR lit les deux langues, puis le site affiche les séances en tableau et s'en sert pour proposer vos devoirs les jours de séance.</p>
       <div class="grid md:grid-cols-[220px_1fr] gap-4 mt-4">
         <div>
           <div class="rounded-2xl border-2 border-dashed border-violet-300 bg-violet-50 overflow-hidden flex items-center justify-center min-h-[140px]" id="emploiPhotoApercu">${photoEmploiHTML()}</div>
@@ -668,7 +669,14 @@ function rendreClasses() {
         </div>
         <div>
           <div id="seancesZone" class="grid gap-2">${seancesTriees().map((x, i) => seanceRowHTML(x)).join("") || `<p class="text-sm text-slate-400" id="seancesVide">Aucune séance saisie pour le moment — ajoutez vos créneaux (ils définissent aussi vos jours de séance).</p>`}</div>
-          <button type="button" onclick="ajouterSeanceDOM()" class="pill mt-3 !text-xs">＋ Ajouter une séance</button>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button type="button" onclick="ajouterSeanceDOM()" class="pill !text-xs">＋ Ajouter une séance</button>
+            <button type="button" onclick="transformerPhotoEnTableau(this)" class="ai-grad text-white px-4 py-2 rounded-full text-xs font-extrabold">🔍 Transformer la photo en tableau (FR/AR)</button>
+          </div>
+          <details class="mt-3"><summary class="text-xs font-bold text-violet-700 cursor-pointer">📝 Texte reconnu (OCR français + arabe) — corriger si besoin</summary>
+            <textarea id="ocrTexte" dir="auto" rows="5" class="input mt-2" placeholder="Le texte lu dans la photo apparaîtra ici (français ou arabe). Vous pouvez aussi coller un emploi du temps puis analyser. Exemple : الثلاثاء ٠٨:٠٠ - ١٠:٠٠ — الثالثة إعلامية 1 — الإعلامية — قاعة 5"></textarea>
+            <button type="button" onclick="analyserTexteOCR()" class="pill mt-2 !text-xs">Analyser ce texte</button>
+          </details>
         </div>
       </div>
     </div>
@@ -686,6 +694,7 @@ function rendreClasses() {
     majBarreClasses();
   }));
   $$(".mm-mat1, .mm-mat2").forEach(sel => sel.addEventListener("change", majBarreClasses));
+  lierLignesSeances();
 }
 function basculerJourSeance(btn) { btn.classList.toggle("active"); majBarreClasses(); }
 let classesDirty = false;
@@ -710,7 +719,7 @@ function ajouterSeanceDOM() {
   const zone = $("#seancesZone"); if (!zone) return;
   const vide = $("#seancesVide"); if (vide) vide.remove();
   zone.insertAdjacentHTML("beforeend", seanceRowHTML({ jour: 1, debut: "08:00", fin: "10:00", classe: ETAT.classes[0] && ETAT.classes[0].cle, matiere: (ETAT.profil && toutesSesMatieres(ETAT.profil)[0]) || "" }));
-  zone.querySelectorAll("select, input").forEach(el => el.addEventListener("change", majBarreClasses));
+  lierLignesSeances();
   majBarreClasses();
 }
 function supprimerSeanceDOM(btn) { const r = btn.closest(".seance-row"); if (r) r.remove(); majBarreClasses(); }
@@ -784,7 +793,12 @@ async function chargerPhotoDistante() {
     if (ETAT.section === "vie") rendreVie();
   }
 }
-/* Tableau hebdomadaire affiché (Vie de classe) */
+/* Grille hebdomadaire des séances (utilisée pour soi et dans l'admin) */
+function grilleSeancesHTML(seances) {
+  if (!seances || !seances.length) return "";
+  return `<div class="grid gap-1.5 mt-4">${JOURS_SEANCE.map(([j, nom]) => { const ss = seances.filter(x => Number(x.jour) === j); return `<div class="mm-row ${ss.length ? "" : "opacity-40"}"><span class="capitalize font-bold text-[13px] w-24">${nom}</span><span class="flex-1 text-[13px]">${ss.length ? ss.map(x => `<b>${esc(x.debut || "")}–${esc(x.fin || "")}</b> · ${esc(x.classe ? nomClasse(x.classe) : "")}${x.matiere ? " · " + esc(x.matiere) : ""}${x.salle ? ` <span class="text-slate-400">(${esc(x.salle)})</span>` : ""}`).join("<br>") : "—"}</span></div>`; }).join("")}</div>`;
+}
+/* Tableau hebdomadaire affiché (Vie de classe, pour soi) */
 function tableauEmploiHTML() {
   const n = normaliserEmploi(ETAT.profil && ETAT.profil.emploi);
   const photo = ETAT.photoNouvelle || ETAT.photoEmploi;
@@ -792,8 +806,286 @@ function tableauEmploiHTML() {
   return `<div class="card p-5 mt-5">
     <h3 class="font-extrabold text-[16px]">🗓️ Mon emploi du temps</h3>
     ${photo ? `<img src="${esc(photo)}" alt="Photo de l'emploi du temps" class="emploi-photo-img w-full rounded-2xl border mt-3 cursor-zoom-in" style="max-height:340px;object-fit:contain;background:#0B1322" onclick="window.open(this.src,'_blank')">` : ""}
-    ${n.seances.length ? `<div class="grid gap-1.5 mt-4">${JOURS_SEANCE.map(([j, nom]) => { const ss = n.seances.filter(x => Number(x.jour) === j); return `<div class="mm-row ${ss.length ? "" : "opacity-40"}"><span class="capitalize font-bold text-[13px] w-24">${nom}</span><span class="flex-1 text-[13px]">${ss.length ? ss.map(x => `<b>${esc(x.debut || "")}–${esc(x.fin || "")}</b> · ${esc(x.classe ? nomClasse(x.classe) : "")}${x.matiere ? " · " + esc(x.matiere) : ""}${x.salle ? ` <span class="text-slate-400">(${esc(x.salle)})</span>` : ""}`).join("<br>") : "—"}</span></div>`; }).join("")}</div>` : ""}
+    ${grilleSeancesHTML(n.seances)}
   </div>`;
+}
+/* ---------- OCR : transformer la photo en tableau de séances ---------- */
+/* Reconnaissance bilingue : français + arabe (jours, horaires, classes,
+   matières et salles), puis correction manuelle avant confirmation. */
+function normTexte(x) { return String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+function convertirChiffresOCR(x) {
+  return String(x || "")
+    .replace(/[\u0660-\u0669]/g, c => String(c.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, c => String(c.charCodeAt(0) - 0x06F0));
+}
+function normTexteOCR(x) {
+  return convertirChiffresOCR(x)
+    .replace(/[\u064B-\u0652\u0670]/g, "")
+    .replace(/\u0640/g, "")
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+function texteMotsOCR(x) {
+  const mots = normTexteOCR(x).replace(/[^\p{L}\p{N}]+/gu, " ").replace(/\s+/g, " ").trim();
+  return mots ? " " + mots + " " : " ";
+}
+function contientPhraseOCR(texteMots, phrase) {
+  const p = texteMotsOCR(phrase).trim();
+  return !!p && texteMots.includes(" " + p + " ");
+}
+const JOURS_OCR = [
+  { jour: 1, noms: ["lundi", "الاثنين", "الاتنين", "اثنين"] },
+  { jour: 2, noms: ["mardi", "الثلاثاء", "التلاتاء", "ثلاثاء"] },
+  { jour: 3, noms: ["mercredi", "الاربعاء", "اربعاء"] },
+  { jour: 4, noms: ["jeudi", "الخميس", "خميس"] },
+  { jour: 5, noms: ["vendredi", "الجمعة", "الجمعه", "جمعة", "جمعه"] },
+  { jour: 6, noms: ["samedi", "السبت", "سبت"] }
+];
+function trouverJourOCR(texteMots) {
+  let meilleur = null;
+  JOURS_OCR.forEach(j => j.noms.forEach(nom => {
+    const i = texteMots.indexOf(" " + texteMotsOCR(nom).trim() + " ");
+    if (i >= 0 && (!meilleur || i < meilleur.index)) meilleur = { jour: j.jour, index: i };
+  }));
+  return meilleur;
+}
+const NOMBRES_AR_OCR = {
+  "واحد": 1, "واحده": 1, "احد": 1, "الاول": 1, "الاولي": 1,
+  "اثنان": 2, "اثنين": 2, "اثنتان": 2, "اثنتين": 2, "الثاني": 2, "الثانيه": 2,
+  "ثلاث": 3, "ثلاثه": 3, "الثالث": 3, "الثالثه": 3,
+  "اربع": 4, "اربعه": 4, "الرابع": 4, "الرابعه": 4,
+  "خمس": 5, "خمسه": 5, "الخامس": 5, "الخامسه": 5,
+  "ست": 6, "سته": 6, "السادس": 6, "السادسه": 6,
+  "سبع": 7, "سبعه": 7, "السابع": 7, "السابعه": 7
+};
+function nombresOCR(texteMots) {
+  return texteMots.trim().split(/\s+/).filter(Boolean).map(tok => {
+    if (/^\d+$/.test(tok)) return Number(tok);
+    return Object.prototype.hasOwnProperty.call(NOMBRES_AR_OCR, tok) ? NOMBRES_AR_OCR[tok] : NaN;
+  }).filter(n => Number.isFinite(n));
+}
+function contientSequence(nombre, seq) {
+  if (!seq.length || nombre.length < seq.length) return false;
+  for (let i = 0; i <= nombre.length - seq.length; i++) {
+    if (seq.every((n, j) => nombre[i + j] === n)) return true;
+  }
+  return false;
+}
+function detecterClasseOCR(texteMots) {
+  const classes = (typeof ETAT !== "undefined" && ETAT.classes) || [];
+  const compact = texteMots.replace(/[^a-z0-9\u0600-\u06FF]/g, "");
+  for (const c of classes) {
+    const sigCle = normTexteOCR(c.cle).replace(/[^a-z0-9\u0600-\u06FF]/g, "");
+    const sigNom = normTexteOCR(c.nom).replace(/[^a-z0-9\u0600-\u06FF]/g, "");
+    if (sigCle.length >= 3 && compact.includes(sigCle)) return c.cle;
+    if (sigNom.length >= 4 && compact.includes(sigNom)) return c.cle;
+  }
+  const nums = nombresOCR(texteMots);
+  if (nums.length < 2) return "";
+  const tokens = texteMots.trim().split(/\s+/).filter(Boolean);
+  const aMarqueur = ["si", "اعلاميه", "معلوماتيه", "حاسوب", "قسم"].some(m => contientPhraseOCR(texteMots, m));
+  const aNombreMot = tokens.some(tok => Object.prototype.hasOwnProperty.call(NOMBRES_AR_OCR, tok));
+  if (!aMarqueur && !aNombreMot) return "";
+  for (const c of classes) {
+    const numsCle = (String(c.cle || "").match(/\d+/g) || []).map(Number);
+    const numsNom = (normTexteOCR(c.nom).match(/\d+/g) || []).map(Number);
+    const signature = numsCle.length >= 2 ? numsCle : numsNom;
+    if (signature.length >= 2 && contientSequence(nums, signature)) return c.cle;
+  }
+  return "";
+}
+const ALIAS_MATIERES_OCR = [
+  { mats: ["Algo"], alias: ["algorithmique", "algorithme", "algorithmes", "الخوارزميات", "خوارزميات", "الخوارزميه", "خوارزميه"] },
+  { mats: ["STI"], alias: ["sti", "sciences et technologies de l informatique", "sciences technologies informatique", "علوم وتكنولوجيا الاعلاميه", "تكنولوجيا الاعلاميه", "تكنولوجيا المعلومات والاتصال"] },
+  { mats: ["Mathématiques"], alias: ["mathematiques", "maths", "math", "الرياضيات", "رياضيات"] },
+  { mats: ["Physique"], alias: ["physique", "sciences physiques", "الفيزياء", "فيزياء", "العلوم الفيزيائيه"] },
+  { mats: ["Chimie"], alias: ["chimie", "الكيمياء", "كيمياء"] },
+  { mats: ["Sciences naturelles"], alias: ["sciences naturelles", "sciences de la vie", "svt", "العلوم الطبيعيه", "علوم الحياة والارض", "علوم الحياة", "البيولوجيا"] },
+  { mats: ["Français"], alias: ["francais", "الفرنسيه", "اللغه الفرنسيه", "فرنسيه"] },
+  { mats: ["Anglais"], alias: ["anglais", "الانجليزيه", "الانقليزيه", "اللغه الانجليزيه", "انجليزيه"] },
+  { mats: ["Arabe"], alias: ["arabe", "العربيه", "اللغه العربيه", "عربيه"] },
+  { mats: ["Histoire-Géographie"], alias: ["histoire geographie", "histoire", "geographie", "التاريخ والجغرافيا", "التاريخ", "الجغرافيا"] },
+  { mats: ["Philosophie"], alias: ["philosophie", "الفلسفه", "فلسفه"] },
+  { mats: ["Éducation islamique"], alias: ["education islamique", "التربيه الاسلاميه", "تربيه اسلاميه"] },
+  { mats: ["Éducation civile"], alias: ["education civile", "التربيه المدنيه", "تربيه مدنيه"] },
+  { mats: ["Sport"], alias: ["sport", "education physique", "eps", "التربيه البدنيه", "الرياضه", "رياضه"] },
+  { mats: ["Informatique", "STI", "Algo"], alias: ["informatique", "computer science", "الاعلاميه", "المعلوماتيه", "علوم الحاسوب", "الحاسوب", "اعلاميه", "معلوماتيه", "البرمجه", "برمجه"] }
+];
+function detecterMatiereOCR(texteMots, classe) {
+  const propres = [];
+  if (classe && typeof ETAT !== "undefined" && ETAT.profil) {
+    matieresDeClasse(ETAT.profil, classe).forEach(m => { if (m && !propres.includes(m)) propres.push(m); });
+  }
+  const candidates = [...propres];
+  MATIERES.forEach(m => { if (!candidates.includes(m)) candidates.push(m); });
+  for (const m of candidates) if (contientPhraseOCR(texteMots, m)) return m;
+  for (const groupe of ALIAS_MATIERES_OCR) {
+    if (!groupe.alias.some(a => contientPhraseOCR(texteMots, a))) continue;
+    const choix = propres.find(m => groupe.mats.includes(m)) || groupe.mats.find(m => MATIERES.includes(m));
+    if (choix) return choix;
+  }
+  return "";
+}
+function detecterSalleOCR(texteBrut) {
+  const m = String(texteBrut || "").match(/(labo(?:ratoire)?\s*(?:n[°o]\s*)?\w+|salle\s*(?:n[°o]\s*)?\w+|s\.\s*\w+|(?:المخبر|مخبر|المختبر|مختبر|قاعة|القاعة)\s*(?:رقم\s*)?[0-9٠-٩۰-۹]*|(?:قسم|القسم)\s+(?:رقم\s*)?[0-9٠-٩۰-۹]+)/i);
+  return m ? convertirChiffresOCR(m[0]).replace(/\s+/g, " ").trim() : "";
+}
+function extraireMetaOCR(texteBrut, classeConnue) {
+  const mots = texteMotsOCR(texteBrut);
+  const classe = detecterClasseOCR(mots) || classeConnue || "";
+  return { classe: classe, matiere: detecterMatiereOCR(mots, classe), salle: detecterSalleOCR(texteBrut) };
+}
+function extraireHeuresOCR(texteBrut) {
+  const texte = convertirChiffresOCR(texteBrut);
+  const trouvees = [];
+  const ajouter = (h, min, index) => {
+    if (h < 5 || h > 19 || min < 0 || min > 59) return;
+    trouvees.push({ valeur: pad(h) + ":" + pad(min), index: index, fin: index + 5 });
+  };
+  let m;
+  const re = /(^|[^\d])(\d{1,2})\s*(?:h|H|:|\.|س)\s*(\d{2})?(?!\d)/g;
+  while ((m = re.exec(texte))) ajouter(Number(m[2]), m[3] ? Number(m[3]) : 0, m.index + (m[1] || "").length);
+  if (!trouvees.length) {
+    const reCompact = /(^|[^\d])([01]?\d|2[0-3])([0-5]\d)(?!\d)/g;
+    while ((m = reCompact.exec(texte))) ajouter(Number(m[2]), Number(m[3]), m.index + (m[1] || "").length);
+  }
+  if (!trouvees.length) {
+    const reArabe = /(\d{1,2})\s*(صباحا|صباح|مساءا|مساء)|(?:الساعة|الساعه)\s*(\d{1,2})/g;
+    while ((m = reArabe.exec(texte))) {
+      let h = Number(m[1] || m[3]);
+      if (/مساء/.test(m[2] || "") && h < 12) h += 12;
+      ajouter(h, 0, m.index);
+    }
+  }
+  if (!trouvees.length) {
+    const rePlage = /(^|[^\d])(\d{1,2})\s*[-–—]\s*(\d{1,2})(?!\d)/g;
+    while ((m = rePlage.exec(texte))) {
+      ajouter(Number(m[2]), 0, m.index + (m[1] || "").length);
+      ajouter(Number(m[3]), 0, texte.indexOf(m[3], m.index + (m[1] || "").length));
+    }
+  }
+  return trouvees.sort((a, b) => a.index - b.index);
+}
+function analyserEmploiTexte(texte) {
+  const seances = [];
+  let jourCourant = null;
+  let contexte = { classe: "", matiere: "", salle: "" };
+  const classeParDefaut = (typeof ETAT !== "undefined" && ETAT.classes && ETAT.classes[0] && ETAT.classes[0].cle) || "";
+  String(texte || "").split(/\r?\n/).forEach(brute => {
+    const l = String(brute || "").trim();
+    if (!l) return;
+    const mots = texteMotsOCR(l);
+    const jourTrouve = trouverJourOCR(mots);
+    if (jourTrouve) {
+      if (jourTrouve.jour !== jourCourant) contexte = { classe: "", matiere: "", salle: "" };
+      jourCourant = jourTrouve.jour;
+    }
+    const metaLigne = extraireMetaOCR(l, contexte.classe);
+    const heures = extraireHeuresOCR(l);
+    if (!heures.length) {
+      const aMeta = !!(metaLigne.classe || metaLigne.matiere || metaLigne.salle);
+      if (aMeta) {
+        if (!jourTrouve && seances.length) {
+          const der = seances[seances.length - 1];
+          if (der._classeAuto && metaLigne.classe) { der.classe = metaLigne.classe; der._classeAuto = false; }
+          if (der._matiereAuto && metaLigne.matiere) { der.matiere = metaLigne.matiere; der._matiereAuto = false; }
+          if (der._salleAuto && metaLigne.salle) { der.salle = metaLigne.salle; der._salleAuto = false; }
+        }
+        contexte = {
+          classe: metaLigne.classe || contexte.classe,
+          matiere: metaLigne.matiere || contexte.matiere,
+          salle: metaLigne.salle || contexte.salle
+        };
+      }
+      return;
+    }
+    for (let i = 0; i < heures.length; i += 2) {
+      const debutH = heures[i];
+      const finH = heures[i + 1];
+      const segDebut = i === 0 ? 0 : debutH.index;
+      const segFin = i + 2 < heures.length ? heures[i + 2].index : l.length;
+      const segment = l.slice(segDebut, segFin);
+      const jourSeg = trouverJourOCR(texteMotsOCR(segment));
+      if (jourSeg) jourCourant = jourSeg.jour;
+      const metaSeg = extraireMetaOCR(segment, metaLigne.classe || contexte.classe);
+      const classeTrouvee = metaSeg.classe || metaLigne.classe || contexte.classe;
+      const matiereTrouvee = metaSeg.matiere || metaLigne.matiere || contexte.matiere;
+      const salleTrouvee = metaSeg.salle || metaLigne.salle || contexte.salle;
+      let fin = finH ? finH.valeur : "";
+      if (!fin) {
+        const parts = debutH.valeur.split(":").map(Number);
+        fin = pad(Math.min(parts[0] + 2, 19)) + ":" + pad(parts[1]);
+      }
+      seances.push({
+        jour: jourCourant || 1, debut: debutH.valeur, fin: fin,
+        classe: classeTrouvee || classeParDefaut, matiere: matiereTrouvee || "", salle: salleTrouvee || "",
+        _classeAuto: !classeTrouvee, _matiereAuto: !matiereTrouvee, _salleAuto: !salleTrouvee
+      });
+    }
+    contexte = {
+      classe: metaLigne.classe || contexte.classe,
+      matiere: metaLigne.matiere || contexte.matiere,
+      salle: metaLigne.salle || contexte.salle
+    };
+  });
+  const uniques = [], vus = new Set();
+  seances.forEach(s => {
+    delete s._classeAuto; delete s._matiereAuto; delete s._salleAuto;
+    const cle = [s.jour, s.debut, s.fin, s.classe, s.matiere].join("|");
+    if (!vus.has(cle)) { vus.add(cle); uniques.push(s); }
+  });
+  return uniques;
+}
+function lierLignesSeances() { $$(".seance-row select, .seance-row input").forEach(el => el.addEventListener("change", majBarreClasses)); }
+function verserSeances(seances) {
+  const zone = $("#seancesZone"); if (!zone) return 0;
+  const existantes = new Set(lireSeancesDOM().map(x => [x.jour, x.debut, x.fin, x.classe].join("|")));
+  let ajout = 0;
+  (seances || []).forEach(x => {
+    const k = [x.jour, x.debut, x.fin, x.classe].join("|");
+    if (existantes.has(k)) return;
+    existantes.add(k);
+    const vide = $("#seancesVide"); if (vide) vide.remove();
+    zone.insertAdjacentHTML("beforeend", seanceRowHTML(x));
+    ajout++;
+  });
+  lierLignesSeances();
+  if (ajout) majBarreClasses();
+  return ajout;
+}
+function analyserTexteOCR() {
+  const z = $("#ocrTexte"); if (!z) return;
+  const lignes = analyserEmploiTexte(z.value);
+  if (!lignes.length) return toast("Aucune séance reconnue dans ce texte. Indiquez un jour (français ou arabe) et des horaires, puis réessayez.", "erreur");
+  const ajout = verserSeances(lignes);
+  toast(`✅ ${lignes.length} séance(s) reconnue(s), ${ajout} ajoutée(s) au tableau — vérifiez puis Confirmez.`, "success");
+}
+async function transformerPhotoEnTableau(btn) {
+  const src = ETAT.photoNouvelle || ETAT.photoEmploi;
+  if (!src) return toast("Chargez d'abord la photo de votre emploi du temps.", "erreur");
+  if (typeof Tesseract === "undefined") return toast("Le moteur de reconnaissance (OCR) n'est pas chargé — vérifiez votre connexion Internet, ou collez le texte via « Texte reconnu ».", "erreur");
+  const ancien = btn ? btn.textContent : "";
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Analyse FR/AR de la photo…"; }
+    let image = src;
+    if (!String(src).startsWith("data:")) {
+      const blob = await (await fetch(src)).blob();
+      image = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+    }
+    const { data } = await Tesseract.recognize(image, "fra+ara", { logger: m => { if (btn && m.status === "recognizing text") btn.textContent = `⏳ Analyse FR/AR… ${Math.round((m.progress || 0) * 100)} %`; } });
+    const texte = (data && data.text) || "";
+    const z = $("#ocrTexte"); if (z) z.value = texte;
+    const lignes = analyserEmploiTexte(texte);
+    if (!lignes.length) { toast("Photo analysée (français + arabe), mais aucune séance reconnue automatiquement. Corrigez le texte reconnu ci-dessous puis « Analyser ce texte ».", "info"); return; }
+    const ajout = verserSeances(lignes);
+    toast(`✅ Photo transformée (FR/AR) : ${lignes.length} séance(s) reconnue(s), ${ajout} ajoutée(s) au tableau — vérifiez puis Confirmez l'enregistrement.`, "success");
+  } catch (e) { toast("Analyse impossible : " + e.message, "erreur"); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = ancien || "🔍 Transformer en tableau"; } }
 }
 function lireChoixClasses() {
   const classes = [], carte = {}, emploiJours = {};
@@ -1353,6 +1645,8 @@ function rendreAdmin() {
       </div>
     </div>
 
+    ${emploisAdminHTML()}
+
     <div class="card p-5 mt-5">
       <h3 class="font-extrabold text-[16px]">🏫 Classes du site (${ETAT.classesAll.length})</h3>
       <p class="text-[13px] text-slate-500">Ces classes apparaissent dans les inscriptions des élèves et dans les jetons des enseignants. Les enseignants choisissent ensuite la (les) matière(s) qu'ils y enseignent.</p>
@@ -1364,6 +1658,38 @@ function rendreAdmin() {
         <button class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold">＋ Ajouter la classe</button>
       </form>
     </div>`;
+  chargerPhotosAdmin();
+}
+/* Photos d'emploi du temps des enseignants (stockage du site) */
+async function chargerPhotosAdmin() {
+  for (const img of $$("img[data-photo-uid]")) {
+    try {
+      img.src = await sbLienSigne(`${img.dataset.photoUid}/emploi/emploi-du-temps.jpg`, 3600);
+      img.classList.remove("hidden");
+    } catch (e) { /* photo absente ou stockage indisponible */ }
+  }
+}
+/* Emplois du temps de tous les enseignants (vue administrateur) */
+function emploisAdminHTML() {
+  const profs = ETAT.profils.filter(p => p.role === "enseignant" && statutProfil(p) === "accepte")
+    .slice().sort((a, b) => (a.nom || "").localeCompare(b.nom || "", "fr"));
+  return `<div class="card p-5 mt-5">
+    <h3 class="font-extrabold text-[16px]">🗓️ Emplois du temps des enseignants (${profs.length})</h3>
+    <p class="text-[13px] text-slate-500">Photo et séances hebdomadaires renseignées par chaque enseignant dans « Mes Classes ».</p>
+    <div class="grid lg:grid-cols-2 gap-4 mt-4">
+    ${profs.map(p => { const n = normaliserEmploi(p.emploi); const mats = toutesSesMatieres(p); return `
+      <div class="border rounded-2xl p-4">
+        <div class="flex items-center gap-3">
+          <span class="w-11 h-11 rounded-full text-white font-black flex items-center justify-center shrink-0" style="background:#6D28D9">${esc(initialesDe(p.nom || "?"))}</span>
+          <div class="flex-1 min-w-0"><p class="font-extrabold truncate">${esc(p.nom || "")}${p.id === (ETAT.session && ETAT.session.user.id) ? " (vous)" : ""}</p>
+          <p class="text-[11px] text-slate-400">${(p.classes || []).map(cle => `${esc(nomClasse(cle))}${matieresDeClasse(p, cle).length ? " · " + matieresDeClasse(p, cle).map(esc).join(" + ") : ""}`).join(" | ") || esc(p.email || "")}</p></div>
+          ${n.photo === "storage" ? `<span class="badge bg-emerald-100 text-emerald-700">📷 Photo</span>` : n.photo === "local" ? `<span class="badge bg-amber-100 text-amber-700">📷 Photo (son appareil)</span>` : ""}
+        </div>
+        ${n.photo === "storage" ? `<img data-photo-uid="${p.id}" class="w-full rounded-xl border mt-3 hidden cursor-zoom-in" style="max-height:190px;object-fit:contain;background:#0B1322" alt="Emploi du temps de ${esc(p.nom || "")}" onclick="window.open(this.src,'_blank')">` : ""}
+        ${n.seances.length ? grilleSeancesHTML(n.seances) : `<p class="text-sm text-slate-400 mt-3">Emploi du temps non renseigné par cet enseignant.</p>`}
+      </div>`; }).join("") || `<p class="text-sm text-slate-400">Aucun enseignant actif pour le moment.</p>`}
+    </div>
+  </div>`;
 }
 async function actualiserAdmin() { await chargerDonnees(); rendreAdmin(); }
 async function accepterCompte(id) {
