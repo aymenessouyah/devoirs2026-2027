@@ -822,6 +822,17 @@ tbody tr:hover { background: var(--surface-2); }
 [data-theme="dark"] .cal-case.cal-vac .cal-off { color: #4ade80; }
 [data-theme="dark"] .cal-case.cal-ferie .cal-off { color: #fdba74; }
 
+/* Calendrier de choix de date (espace enseignant) */
+.cal-grid button.cal-case { font: inherit; color: inherit; width: 100%; text-align: left; }
+.choix-case.valide { background: var(--soft-green); border-color: var(--green); cursor: pointer; }
+.choix-case.valide:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.choix-case.valide .cal-num { color: var(--green); }
+.choix-case.invalide { opacity: 0.45; cursor: not-allowed; }
+.choix-case.selectionne { opacity: 1; border-color: var(--rose); box-shadow: 0 0 0 3px var(--soft-rose); background: var(--soft-rose); }
+.choix-case.selectionne .cal-num { color: var(--rose); }
+.choix-case.actuel { opacity: 1; border-style: dashed; border-color: var(--violet); }
+[data-theme="dark"] .choix-case.valide .cal-num { color: #4ade80; }
+
 @media (max-width: 520px) {
   .cal-off { font-size: 0.58rem; padding: 0.12rem 0.3rem; }
   .cal-case { min-height: 78px; }

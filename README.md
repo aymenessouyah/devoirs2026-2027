@@ -150,3 +150,10 @@ de noms, sans repasser par Supabase.
 sont acceptés** — 2 DC + 1 DS par trimestre et par classe, passés en classe
 (champ `examen: true` dans `data/devoirs.js`, pas de dépôt en ligne). Les
 anciens devoirs « maison » (exercices, TP, projet…) ont été retirés.
+
+**🗓️ Choisir la date d'un devoir** : dans l'espace enseignant (page Admin et
+espace connecté), un calendrier interactif par classe n'autorise que les dates
+conformes au calendrier officiel tunisien — jours de cours de la classe pour
+les devoirs de contrôle, semaines bloquées pour les devoirs de synthèse,
+jamais pendant les vacances ni un jour férié. La modification générée se colle
+ensuite dans `data/devoirs.js`.

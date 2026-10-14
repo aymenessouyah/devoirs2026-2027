@@ -417,6 +417,12 @@ async function renderEspaceEnseignant() {
     </div>
 
     <div class="card mb-3">
+      <h2 class="card-title">🗓️ Choisir la date d'un devoir (calendrier officiel)</h2>
+      <p class="text-muted">Choisissez la classe, puis le devoir : le calendrier n'autorise que les dates compatibles avec le calendrier officiel tunisien (jours de cours de la classe, hors vacances, jours fériés et semaines bloquées). La modification générée se colle ensuite dans <code>data/devoirs.js</code>.</p>
+      <div id="calendrier-choix-enseignant" class="mt-2"></div>
+    </div>
+
+    <div class="card mb-3">
       <h2 class="card-title">📊 Suivi par devoir — dépôts et saisie des notes</h2>
       <div class="form-grid mt-2">
         <div class="field full">
@@ -465,6 +471,8 @@ async function renderEspaceEnseignant() {
     </div>`;
 
   brancherDeconnexion();
+  const zoneChoixEns = $("#calendrier-choix-enseignant");
+  if (zoneChoixEns && typeof creerCalendrierChoix === "function") creerCalendrierChoix(zoneChoixEns);
   chargerAnnuaire();
   chargerEnseignants();
 

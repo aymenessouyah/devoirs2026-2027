@@ -251,6 +251,230 @@ function prochainJourCours(classe, apresIso) {
   return null;
 }
 
+/* ---------- Choix d'une date de devoir dans le respect du calendrier officiel ---------- */
+/* type : "controle" (jour de cours ordinaire) ou "synthese" (semaine bloquée).
+   devoirIgnoreId : le devoir qu'on est en train de déplacer (sa date actuelle ne compte pas comme occupée). */
+function evaluerDateChoix(classe, iso, type, devoirIgnoreId) {
+  if (!OFFICIEL) return { etat: "inconnu", ok: false, raison: "Calendrier officiel indisponible" };
+  if (iso < todayISO()) return { etat: "passe", ok: false, raison: "Date déjà passée" };
+  const occupe = DEVOIRS.find((d) => d.examen && d.classe === classe && d.echeance === iso && d.id !== devoirIgnoreId);
+  const evts = evenementsOfficiels(iso);
+  const ferie = evts.find((e) => e.type === "ferie");
+  const vac = evts.find((e) => e.type === "vacances");
+  const susp = evts.find((e) => e.type === "suspension");
+  const jourSem = parseDate(iso).getDay();
+
+  if (type === "synthese") {
+    const fenetres = ((OFFICIEL.epreuves || {})[classe] || []).filter((e) => e.debut && e.fin);
+    const fen = fenetres.find((e) => iso >= e.debut && iso <= e.fin);
+    if (!fen) return { etat: "hors-bloquee", ok: false, raison: "Hors semaine bloquée : les devoirs de synthèse ont lieu pendant les semaines bloquées" };
+    if (jourSem === 0) return { etat: "dimanche", ok: false, raison: "Dimanche (pas d'épreuve)" };
+    if (ferie) return { etat: "ferie", ok: false, raison: `Jour férié (${ferie.label})` };
+    if (occupe) return { etat: "occupe", ok: false, raison: `Déjà occupé par « ${occupe.titre} »` };
+    return { etat: "valide", ok: true, raison: `Semaine bloquée du ${fen.nom} — date valide` };
+  }
+
+  /* Devoir de contrôle : uniquement un jour de cours ordinaire de la classe */
+  if (vac) return { etat: "vacances", ok: false, raison: vac.label };
+  if (ferie) return { etat: "ferie", ok: false, raison: `Jour férié (${ferie.label})` };
+  if (susp) return { etat: "bloquee", ok: false, raison: "Semaine bloquée (réservée aux devoirs de synthèse)" };
+  const cours = (OFFICIEL.cours || {})[classe] || [];
+  if (!cours.includes(jourSem)) return { etat: "pas-cours", ok: false, raison: "Pas de cours de STI ce jour-là pour cette classe" };
+  if (occupe) return { etat: "occupe", ok: false, raison: `Déjà occupé par « ${occupe.titre} »` };
+  return { etat: "valide", ok: true, raison: "Jour de cours de la classe — date valide" };
+}
+
+const CHOIX_ICONES = { vacances: "🏖️", ferie: "🚩", bloquee: "🔒", "hors-bloquee": "", occupe: "📝", passe: "", "pas-cours": "", dimanche: "", valide: "" };
+
+function creerCalendrierChoix(conteneur) {
+  if (!conteneur) return;
+  const classesCfg = Object.keys(CFG.classes || {});
+  let classe = classesCfg[0] || "3si1";
+  let devoirId = "";
+  let nouveau = false;
+  let typeChoix = "controle";
+  let dateChoisie = null;
+  const auj = new Date();
+  let annee = auj.getFullYear();
+  let mois = auj.getMonth();
+
+  const devoirsExam = () => trierDevoirs(DEVOIRS.filter((d) => d.examen && d.classe === classe));
+  const devoirSel = () => getDevoir(devoirId);
+  const typeEffectif = () => {
+    if (nouveau) return typeChoix;
+    const d = devoirSel();
+    return d && d.titre.toLowerCase().includes("synthèse") ? "synthese" : "controle";
+  };
+
+  function rendreResultat() {
+    const zone = $(".cx-resultat", conteneur);
+    if (!zone) return;
+    if (!dateChoisie) {
+      zone.innerHTML = `<p class="text-muted">👆 Cliquez sur un jour <strong style="color:var(--green)">vert</strong> du calendrier pour choisir la date. Les jours grisés sont impossibles (vacances, jour férié, semaine bloquée, pas de cours ou date déjà prise).</p>`;
+      return;
+    }
+    const ev = evaluerDateChoix(classe, dateChoisie, typeEffectif(), nouveau ? "" : devoirId);
+    const lienEdit = `https://github.com/aymenessouyah/devoirs2026-2027/edit/main/data/devoirs.js`;
+    let generation;
+    if (nouveau) {
+      const titre = ($(".cx-titre", conteneur)?.value || "").trim() || (typeChoix === "synthese" ? "Devoir de synthèse" : "Devoir de contrôle");
+      const id = "d" + (Math.max(0, ...DEVOIRS.map((d) => Number(String(d.id).replace(/\D/g, "")) || 0)) + 1);
+      generation = `
+        <p class="mt-1">Bloc de la nouvelle épreuve — collez-le dans <code>data/devoirs.js</code>, juste après le crochet ouvrant <code>[</code> :</p>
+        <div class="code-block cx-code">  {
+    id: "${id}",
+    titre: ${JSON.stringify(titre)},
+    classe: "${classe}",
+    type: "interro",
+    date_ajout: "${todayISO()}",
+    echeance: "${dateChoisie}",
+    description:
+      "Épreuve en classe — aucun dépôt sur le site.",
+    fichiers: [],
+    corrige: false,
+    examen: true
+  },</div>`;
+    } else {
+      const d = devoirSel();
+      generation = `
+        <p class="mt-1">Dans <code>data/devoirs.js</code>, cherchez le devoir <strong>« ${esc(d ? d.titre : "")} »</strong> (${esc(nomClasse(classe))}) et remplacez sa ligne de date par :</p>
+        <div class="code-block cx-code">    echeance: "${dateChoisie}",</div>`;
+    }
+    zone.innerHTML = `
+      <div class="callout ${ev.ok ? "callout-success" : "callout-warning"}">${ev.ok ? ICONS.check : ICONS.alert}<div>
+        <strong>${fmtDate(dateChoisie)}</strong> — ${esc(ev.raison)}${ev.ok ? "" : "<br/>Choisissez un autre jour."}
+      </div></div>
+      ${ev.ok ? `${generation}
+      <div class="copy-row">
+        <button class="btn btn-outline btn-sm cx-copier">📋 Copier</button>
+        <a class="btn btn-ghost btn-sm" href="${lienEdit}" target="_blank" rel="noopener">✏️ Ouvrir data/devoirs.js</a>
+        <span class="copy-feedback cx-feedback">Copié ✓</span>
+      </div>` : ""}`;
+    $(".cx-copier", zone)?.addEventListener("click", () => {
+      copierTexte($(".cx-code", zone)?.textContent || "", $(".cx-feedback", zone));
+    });
+  }
+
+  function dessinerGrille() {
+    const grille = $(".cx-grille", conteneur);
+    const titreMois = $(".cx-mois", conteneur);
+    if (!grille) return;
+    if (titreMois) titreMois.textContent = `${MOIS_LONG[mois]} ${annee}`;
+    const premier = new Date(annee, mois, 1);
+    const debut = (premier.getDay() + 6) % 7;
+    const nbJours = new Date(annee, mois + 1, 0).getDate();
+    const dSel = devoirSel();
+    let html = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"].map((j) => `<div class="cal-jour-nom">${j}</div>`).join("");
+    for (let i = 0; i < debut; i++) html += `<div class="cal-case vide"></div>`;
+    for (let jour = 1; jour <= nbJours; jour++) {
+      const iso = `${annee}-${String(mois + 1).padStart(2, "0")}-${String(jour).padStart(2, "0")}`;
+      const ev = evaluerDateChoix(classe, iso, typeEffectif(), nouveau ? "" : devoirId);
+      const classes = ["cal-case", "choix-case", ev.ok ? "valide" : "invalide"];
+      if (iso === todayISO()) classes.push("aujourdhui");
+      if (iso === dateChoisie) classes.push("selectionne");
+      const estActuel = !nouveau && dSel && dSel.echeance === iso;
+      if (estActuel) classes.push("actuel");
+      const icone = CHOIX_ICONES[ev.etat] || "";
+      html += `<button type="button" class="${classes.join(" ")}" data-iso="${iso}" ${ev.ok ? "" : "disabled"} title="${esc(ev.raison)}">
+        <div class="cal-num">${jour}</div>
+        ${icone ? `<div class="cal-off">${icone}</div>` : ""}
+        ${estActuel ? `<div class="cal-off epreuve">actuel</div>` : ""}
+      </button>`;
+    }
+    const reste = (7 - ((debut + nbJours) % 7)) % 7;
+    for (let i = 0; i < reste; i++) html += `<div class="cal-case vide"></div>`;
+    grille.innerHTML = html;
+    $$(".choix-case.valide", grille).forEach((btn) => {
+      btn.addEventListener("click", () => {
+        dateChoisie = btn.dataset.iso;
+        dessinerGrille();
+        rendreResultat();
+      });
+    });
+  }
+
+  function rendre() {
+    const liste = devoirsExam();
+    if (!nouveau && !liste.some((d) => d.id === devoirId)) devoirId = liste[0] ? liste[0].id : "";
+    conteneur.innerHTML = `
+      <div class="form-grid">
+        <div class="field">
+          <label>Classe</label>
+          <select class="cx-classe">
+            ${classesCfg.map((cle) => `<option value="${cle}" ${cle === classe ? "selected" : ""}>${esc(nomClasse(cle))}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label>Devoir (épreuve)</label>
+          <select class="cx-devoir">
+            ${liste.map((d) => `<option value="${esc(d.id)}" ${d.id === devoirId ? "selected" : ""}>${esc(d.titre)} — ${fmtDateCourte(d.echeance)}</option>`).join("")}
+            <option value="__nouveau" ${nouveau ? "selected" : ""}>➕ Nouvelle épreuve…</option>
+          </select>
+        </div>
+        <div class="field cx-type-zone ${nouveau ? "" : "hidden"}">
+          <label>Type d'épreuve</label>
+          <select class="cx-type">
+            <option value="controle" ${typeChoix === "controle" ? "selected" : ""}>Devoir de contrôle</option>
+            <option value="synthese" ${typeChoix === "synthese" ? "selected" : ""}>Devoir de synthèse</option>
+          </select>
+        </div>
+        <div class="field cx-titre-zone ${nouveau ? "" : "hidden"}">
+          <label>Titre de l'épreuve</label>
+          <input type="text" class="cx-titre" placeholder="Ex. : Devoir de contrôle n°3" />
+        </div>
+      </div>
+      <div class="cal-nav mb-2 mt-2">
+        <button type="button" class="btn btn-outline btn-sm cx-prev">← Précédent</button>
+        <h3 class="cx-mois">—</h3>
+        <button type="button" class="btn btn-outline btn-sm cx-next">Suivant →</button>
+        <div style="margin-left:auto; display:flex; gap:.5rem; flex-wrap:wrap">
+          <span class="pill" style="border-color:var(--green);background:var(--soft-green);color:var(--green)">🟢 Date possible</span>
+          <span class="pill">🏖️ Vacances</span>
+          <span class="pill">🚩 Férié</span>
+          <span class="pill">🔒 Semaine bloquée</span>
+        </div>
+      </div>
+      <div class="cal-grid cx-grille"></div>
+      <p class="text-muted mt-1" style="font-size:.85rem">${sourceOfficielHTML()} · Jours de cours : ${classe === "3si1" ? "mardi & jeudi" : "lundi & vendredi"} pour la classe choisie.</p>
+      <div class="cx-resultat mt-2"></div>`;
+
+    $(".cx-classe", conteneur)?.addEventListener("change", (ev) => {
+      classe = ev.target.value;
+      nouveau = false;
+      devoirId = "";
+      dateChoisie = null;
+      rendre();
+    });
+    $(".cx-devoir", conteneur)?.addEventListener("change", (ev) => {
+      if (ev.target.value === "__nouveau") {
+        nouveau = true;
+        dateChoisie = null;
+      } else {
+        nouveau = false;
+        devoirId = ev.target.value;
+        dateChoisie = null;
+        const d = devoirSel();
+        if (d) { const dt = parseDate(d.echeance); annee = dt.getFullYear(); mois = dt.getMonth(); }
+      }
+      rendre();
+    });
+    $(".cx-type", conteneur)?.addEventListener("change", (ev) => {
+      typeChoix = ev.target.value;
+      dateChoisie = null;
+      dessinerGrille();
+      rendreResultat();
+    });
+    $(".cx-prev", conteneur)?.addEventListener("click", () => { mois--; if (mois < 0) { mois = 11; annee--; } dessinerGrille(); });
+    $(".cx-next", conteneur)?.addEventListener("click", () => { mois++; if (mois > 11) { mois = 0; annee++; } dessinerGrille(); });
+
+    dessinerGrille();
+    rendreResultat();
+  }
+
+  rendre();
+  quandOfficielPret(() => rendre());
+}
+
 function sourceOfficielHTML() {
   return officielEnLigne
     ? `🔄 Synchronisé en direct avec <a href="https://aymenessouyah.github.io/viescolaire/" target="_blank" rel="noopener">l'espace Vie scolaire</a>`
@@ -1461,6 +1685,10 @@ function renderAdmin() {
     quandOfficielPret(majAlertes);
   }
 
+  /* Calendrier de choix de date (calendrier officiel) */
+  const zoneChoix = $("#calendrier-choix");
+  if (zoneChoix) creerCalendrierChoix(zoneChoix);
+
   $$(".lien-edition").forEach((a) => {
     const repo = a.dataset.repo || "aymenessouyah/devoirs2026-2027";
     a.href = `https://github.com/${repo}/edit/main/data/${a.dataset.fichier}`;
@@ -1484,7 +1712,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* Collaboration Vie scolaire : calendrier officiel synchronisé en direct */
-  if (["accueil", "calendrier", "admin"].includes(page)) chargerOfficiel();
+  if (["accueil", "calendrier", "admin", "espace-enseignant"].includes(page)) chargerOfficiel();
 
   initReveal();
 
