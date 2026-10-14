@@ -10,6 +10,14 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const SB_SESSION_KEY = "sb-session-devoirs";
 
+/* Admin du site : ce compte est automatiquement « enseignant »
+   (déclencheur SQL dans supabase/schema.sql, §5). */
+const SB_ADMIN_EMAIL = "aymenessouyah@gmail.com";
+
+function sbEstAdminEmail(email) {
+  return String(email || "").toLowerCase() === SB_ADMIN_EMAIL;
+}
+
 /* ---------- E-mail de connexion d'un élève (à partir de son code) ---------- */
 function emailEleve(code) {
   return `${String(code || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "")}@devoirs2026.tn`;

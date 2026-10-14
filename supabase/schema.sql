@@ -2,12 +2,15 @@
 --  Site « 3SI1 & 4SI2 — Devoirs » — Phase 3 : comptes enseignant & élèves
 --  Base Supabase partagée avec l'espace Vie scolaire (même projet).
 --
---  À exécuter UNE SEULE FOIS : Supabase → SQL Editor → New query →
---  coller tout ce texte → Run. Aucune modification nécessaire.
+--  À exécuter dans : Supabase → SQL Editor → New query → coller → Run.
+--  Le script est SANS DANGER si vous le relancez (mise à jour v3.1 incluse).
 --
---  Crée : profils (comptes), notes (saisies en ligne), rendus (dépôts
---  d'élèves) + le bucket privé « depots » pour les fichiers déposés.
---  La table espace_pedagogique de viescolaire n'est pas touchée.
+--  Crée : profils (comptes), eleves (annuaire des codes d'inscription),
+--  notes (saisies en ligne), rendus (dépôts d'élèves) + le bucket privé
+--  « depots ». La table espace_pedagogique de viescolaire n'est pas touchée.
+--
+--  ⭐ Admin du site : aymenessouyah@gmail.com — tout compte créé avec cet
+--  e-mail devient automatiquement « enseignant » (voir le déclencheur §5).
 -- =========================================================================
 
 -- 1) Tables -----------------------------------------------------------------
@@ -17,6 +20,15 @@ create table if not exists public.profils (
   nom        text not null,
   classe     text,                    -- '3si1' / '4si2' (élèves uniquement)
   code       text unique,             -- code élève (ex. 3SI1-01)
+  created_at timestamptz not null default now()
+);
+
+-- Annuaire des élèves autorisés à s'inscrire (gérable depuis le site).
+create table if not exists public.eleves (
+  id         uuid primary key default gen_random_uuid(),
+  nom        text not null,
+  classe     text not null,           -- '3si1' / '4si2'
+  code       text not null unique,    -- code d'inscription (ex. 3SI1-01)
   created_at timestamptz not null default now()
 );
 
@@ -63,6 +75,7 @@ $$;
 
 -- 3) Sécurité (RLS) ----------------------------------------------------------
 alter table public.profils enable row level security;
+alter table public.eleves  enable row level security;
 alter table public.notes   enable row level security;
 alter table public.rendus  enable row level security;
 
@@ -75,16 +88,31 @@ drop policy if exists "profils suppression" on public.profils;
 create policy "profils lecture" on public.profils
   for select using (id = auth.uid() or public.est_enseignant());
 
--- Création de son propre profil, toujours en rôle « eleve »
--- (la promotion enseignant se fait par SQL, ci-dessous — pas d'auto-promotion).
+-- Création de son propre profil en rôle « eleve » — sauf l'admin du site,
+-- reconnu par son e-mail (voir aussi le déclencheur §5).
 create policy "profils creation" on public.profils
-  for insert with check (id = auth.uid() and role = 'eleve');
+  for insert with check (
+    id = auth.uid()
+    and (role = 'eleve' or lower(auth.jwt() ->> 'email') = 'aymenessouyah@gmail.com')
+  );
 
--- Seul l'enseignant modifie ou supprime les profils.
+-- L'enseignant modifie/supprime les profils (promotions, corrections de noms…).
 create policy "profils modif" on public.profils
   for update using (public.est_enseignant()) with check (public.est_enseignant());
 create policy "profils suppression" on public.profils
   for delete using (public.est_enseignant());
+
+drop policy if exists "eleves lecture"  on public.eleves;
+drop policy if exists "eleves ecriture" on public.eleves;
+
+-- Annuaire lisible par tous (nécessaire pour vérifier le code à l'inscription ;
+-- ces codes sont déjà publics dans data/eleves.js du site).
+create policy "eleves lecture" on public.eleves
+  for select using (true);
+
+-- Seul l'enseignant gère l'annuaire (ajout / correction / suppression).
+create policy "eleves ecriture" on public.eleves
+  for all using (public.est_enseignant()) with check (public.est_enseignant());
 
 drop policy if exists "notes lecture"  on public.notes;
 drop policy if exists "notes ecriture" on public.notes;
@@ -116,9 +144,10 @@ insert into storage.buckets (id, name, public)
 values ('depots', 'depots', false)
 on conflict (id) do nothing;
 
-drop policy if exists "depots lecture" on storage.objects;
-drop policy if exists "depots envoi"   on storage.objects;
-drop policy if exists "depots gestion" on storage.objects;
+drop policy if exists "depots lecture"     on storage.objects;
+drop policy if exists "depots envoi"       on storage.objects;
+drop policy if exists "depots gestion"     on storage.objects;
+drop policy if exists "depots suppression" on storage.objects;
 
 -- Chaque élève dépose dans SON dossier (1er segment du chemin = son id).
 create policy "depots envoi" on storage.objects
@@ -146,6 +175,33 @@ create policy "depots suppression" on storage.objects
     and ((storage.foldername(name))[1] = auth.uid()::text or public.est_enseignant())
   );
 
+-- 5) Admin du site : promotion automatique de aymenessouyah@gmail.com -------
+create or replace function public.definir_role_admin()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if lower(coalesce(auth.jwt() ->> 'email', '')) = 'aymenessouyah@gmail.com' then
+    new.role := 'enseignant';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_role_admin on public.profils;
+create trigger trg_role_admin
+  before insert or update on public.profils
+  for each row execute function public.definir_role_admin();
+
+-- Si le profil admin existe déjà (créé avant cette mise à jour), on le
+-- promeut tout de suite :
+update public.profils p
+set role = 'enseignant'
+from auth.users u
+where p.id = u.id and lower(u.email) = 'aymenessouyah@gmail.com';
+
 -- =========================================================================
 --  APRÈS l'exécution de ce script :
 --
@@ -154,12 +210,11 @@ create policy "depots suppression" on storage.objects
 --       • « Confirm email » : DÉSACTIVÉ (les codes élèves n'ont pas de boîte
 --         e-mail ; la connexion doit marcher immédiatement)
 --
---  B) Créez votre compte enseignant depuis la page Connexion du site
---     (onglet Enseignant → Inscription, avec votre vrai e-mail), puis
---     promouvez-le ici même (SQL Editor) en remplaçant l'e-mail :
---
---     update public.profils set role = 'enseignant'
---     where id = (select id from auth.users where email = 'aymenessouyah@gmail.com');
+--  B) Créez votre compte depuis la page Connexion du site (onglet
+--     Enseignant → Inscription, avec aymenessouyah@gmail.com) : il devient
+--     enseignant AUTOMATIQUEMENT. Ensuite, tout se gère depuis le site :
+--     annuaire des élèves (ajout/correction des codes), promotion des
+--     autres enseignants, saisie des notes, suivi des dépôts.
 --
 --  C) Dites aux élèves de s'inscrire sur la page Connexion avec leur
 --     code élève (ex. 3SI1-01) et un mot de passe de leur choix.

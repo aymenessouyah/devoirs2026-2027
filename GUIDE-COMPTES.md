@@ -43,6 +43,12 @@ where id = (select id from auth.users where email = 'aymenessouyah@gmail.com');
 3. Reconnectez-vous sur le site → l'**Espace enseignant** s'ouvre :
    suivi des dépôts par devoir, saisie des notes en ligne, élèves inscrits.
 
+> ⭐ **Votre e-mail `aymenessouyah@gmail.com` est l'admin du site** : avec le
+> schéma SQL à jour (v3.1), la promotion est **automatique** dès la création
+> du profil — l'étape 2 ci-dessus n'est qu'un secours. Et si vous aviez déjà
+> exécuté l'ancien schéma, **relancez simplement le fichier** : il est sans
+> danger et ajoute l'annuaire + la promotion automatique.
+
 ## Étape 4 — Inscrire les élèves
 
 Dites simplement aux élèves :
@@ -77,6 +83,22 @@ Ensuite, depuis leur **Espace élève**, ils peuvent :
 | « Compte non activé comme enseignant » | Étape 3, promotion non faite | Exécuter la ligne SQL de promotion |
 | « Ce compte existe déjà » | Code élève déjà inscrit | L'élève se connecte (ou voir ci-dessous) |
 | Élève a oublié son mot de passe | — | Supabase → Authentication → Users → supprimez son compte, puis il se réinscrit avec le même code (⚠️ ses notes en ligne liées au compte seront effacées) |
+
+## 👥 Gérer les enseignants et les élèves depuis le site
+
+Une fois connecté comme enseignant, tout se fait dans l'**Espace enseignant**,
+sans repasser par Supabase :
+
+- **📋 Annuaire des élèves** : ajoutez un élève (nom, classe, code proposé
+  automatiquement), corrigez un nom / une classe / un code, ou supprimez une
+  entrée. Le code est utilisable **immédiatement** pour l'inscription.
+  Au premier usage, le bouton **« Importer les élèves des fichiers »** recopie
+  vos listes actuelles (`data/eleves.js`) dans l'annuaire.
+- **🧑‍🏫 Enseignants** : un collègue crée son compte (page Connexion, onglet
+  Enseignant), puis vous le **promouvez** ici en un clic ; vous pouvez aussi
+  renommer un compte ou rétrograder un enseignant.
+- La colonne **« Compte »** de l'annuaire indique quels élèves ont déjà créé
+  leur compte (✓ Créé / En attente).
 
 ## 🔒 Sécurité
 

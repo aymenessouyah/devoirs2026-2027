@@ -139,3 +139,9 @@ deux réglages d'authentification, créer puis promouvoir le compte enseignant.
 
 Les anciens fonctionnements restent disponibles en parallèle : « Mon suivi »
 par code, générateurs de l'espace admin et édition des fichiers `data/`.
+
+**⭐ Admin du site : `aymenessouyah@gmail.com`** — ce compte devient
+automatiquement enseignant (déclencheur SQL) et gère depuis l'espace
+enseignant : l'**annuaire des élèves** (ajout/correction des codes
+d'inscription), la **promotion des autres enseignants** et les corrections
+de noms, sans repasser par Supabase.

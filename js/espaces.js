@@ -15,6 +15,18 @@ function espaceMessage(zoneId, type, texte) {
   zone.innerHTML = `<div class="callout ${cls}">${icone}<div>${texte}</div></div>`;
 }
 
+/* Inscription : le code est vérifié dans l'annuaire en base (géré par
+   l'enseignant depuis le site) ; repli sur le fichier data/eleves.js. */
+async function trouverElevePourInscription(code) {
+  const CODE = String(code || "").trim().toUpperCase();
+  try {
+    const rows = await sbSelect("eleves", `select=*&code=eq.${encodeURIComponent(CODE)}`);
+    if (rows && rows.length) return { nom: rows[0].nom, classe: rows[0].classe, code: rows[0].code };
+  } catch (e) { /* repli sur les fichiers */ }
+  const fiche = ELEVES.find((e) => String(e.code).toUpperCase() === CODE);
+  return fiche ? { nom: fiche.nom, classe: fiche.classe, code: fiche.code } : null;
+}
+
 function dateHeureFr(isoVal) {
   try {
     return new Date(isoVal).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -89,7 +101,7 @@ async function accesEspace(roleAttendu) {
         <div class="callout callout-warning">${ICONS.lock}<div>
           <strong>Compte non activé comme enseignant.</strong><br/>
           Votre compte « ${esc(profil.nom)} » existe, mais il n'a pas encore le rôle enseignant.
-          Dans Supabase (SQL Editor), exécutez :<br/>
+          ${sbEstAdminEmail(session.user.email) ? `Votre e-mail est celui de l'<strong>admin du site</strong> : la promotion est automatique dès que le schéma SQL à jour est exécuté dans Supabase — (ré)exécutez <code>supabase/schema.sql</code>, puis reconnectez-vous.<br/>` : `Dans Supabase (SQL Editor), exécutez :<br/>`}
           <code>update public.profils set role = 'enseignant' where id = (select id from auth.users where email = '${esc(session.user.email || "")}');</code><br/>
           puis reconnectez-vous.
         </div></div>
@@ -101,13 +113,13 @@ async function accesEspace(roleAttendu) {
   return { session, profil };
 }
 
-function enteteEspaceHTML(profil, titre) {
+function enteteEspaceHTML(profil, titre, email) {
   return `
     <div class="section-head">
       <div>
         <h2>${titre}</h2>
         <p>${profil.role === "enseignant" ? "🧑‍🏫" : "👨‍🎓"} <strong>${esc(profil.nom)}</strong>
-        ${profil.classe ? `· ${esc(nomClasse(profil.classe))}` : ""}${profil.code ? ` · code ${esc(profil.code)}` : ""}</p>
+        ${profil.classe ? `· ${esc(nomClasse(profil.classe))}` : ""}${profil.code ? ` · code ${esc(profil.code)}` : ""}${sbEstAdminEmail(email) ? ` · <span class="badge badge-note">⭐ Admin du site</span>` : ""}</p>
       </div>
       <button class="btn btn-outline btn-sm" id="btn-deconnexion">Se déconnecter</button>
     </div>`;
@@ -166,7 +178,7 @@ function renderConnexion() {
     const code = $("#el-in-code").value.trim().toUpperCase();
     const mdp = $("#el-in-mdp").value;
     const mdp2 = $("#el-in-mdp2").value;
-    const fiche = ELEVES.find((e) => String(e.code).toUpperCase() === code);
+    const fiche = await trouverElevePourInscription(code);
     if (!fiche) { espaceMessage("#msg-eleve", "erreur", "Code élève inconnu. Vérifiez le code donné par votre enseignant (ex. 3SI1-01)."); return; }
     if (mdp.length < 6) { espaceMessage("#msg-eleve", "erreur", "Mot de passe trop court (6 caractères minimum)."); return; }
     if (mdp !== mdp2) { espaceMessage("#msg-eleve", "erreur", "Les deux mots de passe ne correspondent pas."); return; }
@@ -253,7 +265,7 @@ async function renderEspaceEleve() {
   };
 
   contenu.innerHTML = `
-    ${enteteEspaceHTML(profil, "🎒 Mon espace élève")}
+    ${enteteEspaceHTML(profil, "🎒 Mon espace élève", session.user.email)}
 
     <div class="grid grid-3 mb-3">
       <div class="card stat-card"><div class="num">${moyenne !== null ? fmtNote(moyenne) + "/20" : "—"}</div><div class="label">Moyenne générale</div></div>
@@ -394,7 +406,7 @@ async function renderEspaceEnseignant() {
   const nonInscrits = ELEVES.filter((e) => !codesInscrits.has(String(e.code).toUpperCase()));
 
   contenu.innerHTML = `
-    ${enteteEspaceHTML(profil, "🧑‍🏫 Espace enseignant")}
+    ${enteteEspaceHTML(profil, "🧑‍🏫 Espace enseignant", acces.session.user.email)}
 
     <div class="grid grid-3 mb-3">
       <div class="card stat-card"><div class="num">${elevesInscrits.length}</div><div class="label">Élèves inscrits</div></div>
@@ -429,6 +441,18 @@ async function renderEspaceEnseignant() {
       ${nonInscrits.length ? `<p class="text-muted mt-2">⏳ Sans compte pour le moment (${nonInscrits.length}) : ${nonInscrits.map((e) => esc(e.nom)).join(", ")}.</p>` : ""}
     </div>
 
+    <div class="card mb-3">
+      <h2 class="card-title">📋 Annuaire des élèves — codes d'inscription</h2>
+      <p class="text-muted">Ajoutez ou corrigez ici les élèves autorisés à créer un compte (nom, classe, code). Effet immédiat à l'inscription, sans toucher aux fichiers du site.</p>
+      <div id="gestion-eleves" class="mt-2"><p class="text-muted">Chargement…</p></div>
+    </div>
+
+    <div class="card mb-3">
+      <h2 class="card-title">🧑‍🏫 Enseignants du site</h2>
+      <p class="text-muted">Promouvez un compte en enseignant ou corrigez un nom. (La personne crée d'abord son compte sur la page Connexion, onglet Enseignant.)</p>
+      <div id="gestion-enseignants" class="mt-2"><p class="text-muted">Chargement…</p></div>
+    </div>
+
     <div class="card">
       <h2 class="card-title">🧰 Outils</h2>
       <p class="text-muted">
@@ -439,6 +463,183 @@ async function renderEspaceEnseignant() {
     </div>`;
 
   brancherDeconnexion();
+  chargerAnnuaire();
+  chargerEnseignants();
+
+  /* ---------- Annuaire des élèves (table « eleves ») ---------- */
+  async function chargerAnnuaire() {
+    const zone = $("#gestion-eleves");
+    if (!zone) return;
+    let annuaire = null;
+    try {
+      annuaire = await sbSelect("eleves", "select=*&order=classe.asc,nom.asc");
+    } catch (e) { /* table absente : schéma SQL à mettre à jour */ }
+
+    if (!annuaire) {
+      zone.innerHTML = `
+        <div class="callout callout-info">${ICONS.info}<div>
+          L'annuaire en ligne n'est pas encore actif (table « eleves » absente).
+          (Ré)exécutez <code>supabase/schema.sql</code> dans Supabase pour l'activer.
+          En attendant, la liste des fichiers reste utilisée : ${ELEVES.length} élèves
+          (${ELEVES.map((e) => esc(e.nom)).join(", ")}).
+        </div></div>`;
+      return;
+    }
+
+    const codesComptes = new Set(elevesInscrits.map((p) => String(p.code || "").toUpperCase()));
+    const classesCfg = Object.entries(CFG.classes || {});
+    const prefixe = (cle) => cle.toUpperCase();
+    const codeSuggere = (cle) => {
+      const p = prefixe(cle);
+      const nums = [...annuaire, ...ELEVES]
+        .filter((e) => e.classe === cle && String(e.code).toUpperCase().startsWith(p + "-"))
+        .map((e) => Number(String(e.code).split("-")[1]) || 0);
+      return `${p}-${String(Math.max(0, ...nums) + 1).padStart(2, "0")}`;
+    };
+
+    function rendre(modeId) {
+      const enEdition = modeId ? annuaire.find((e) => e.id === modeId) : null;
+      zone.innerHTML = `
+        <div class="form-grid">
+          <div class="field">
+            <label for="ge-nom">Nom de l'élève</label>
+            <input type="text" id="ge-nom" placeholder="Ex. : Prénom NOM" value="${enEdition ? esc(enEdition.nom) : ""}" />
+          </div>
+          <div class="field">
+            <label for="ge-classe">Classe</label>
+            <select id="ge-classe">
+              ${classesCfg.map(([cle, nom]) => `<option value="${cle}" ${enEdition && enEdition.classe === cle ? "selected" : ""}>${esc(nom)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="ge-code">Code d'inscription</label>
+            <input type="text" id="ge-code" style="text-transform:uppercase" value="${enEdition ? esc(enEdition.code) : esc(codeSuggere(classesCfg[0][0]))}" />
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-primary" id="ge-enregistrer">${enEdition ? "💾 Enregistrer" : "➕ Ajouter l'élève"}</button>
+              ${enEdition ? `<button class="btn btn-ghost" id="ge-annuler">Annuler</button>` : ""}
+            </div>
+          </div>
+        </div>
+        <div id="ge-msg" class="mt-1"></div>
+        ${annuaire.length === 0 ? `
+        <div class="callout callout-info mt-2">${ICONS.info}<div>
+          L'annuaire est vide. <button class="btn btn-outline btn-sm" id="ge-import">📥 Importer les ${ELEVES.length} élèves des fichiers</button>
+          pour démarrer avec vos listes actuelles.
+        </div></div>` : `
+        <div class="table-wrap mt-2"><table class="table">
+          <thead><tr><th>Nom</th><th>Classe</th><th>Code</th><th>Compte</th><th>Actions</th></tr></thead>
+          <tbody>
+          ${annuaire.map((e) => `
+            <tr>
+              <td>${esc(e.nom)}</td>
+              <td>${esc(nomClasse(e.classe))}</td>
+              <td><strong>${esc(e.code)}</strong></td>
+              <td>${codesComptes.has(String(e.code).toUpperCase()) ? `<span class="badge badge-note">✓ Créé</span>` : `<span class="badge badge-afaire">En attente</span>`}</td>
+              <td>
+                <button class="btn btn-ghost btn-sm ge-modif" data-id="${esc(e.id)}">✏️ Modifier</button>
+                <button class="btn btn-ghost btn-sm ge-suppr" data-id="${esc(e.id)}">🗑️ Supprimer</button>
+              </td>
+            </tr>`).join("")}
+          </tbody></table></div>
+        <p class="text-muted mt-1" style="font-size:.85rem">${annuaire.length} élève(s) dans l'annuaire. Supprimer un élève de l'annuaire ne supprime pas son compte s'il est déjà créé.</p>`}`;
+
+      $("#ge-classe")?.addEventListener("change", (ev) => {
+        if (!modeId) $("#ge-code").value = codeSuggere(ev.target.value);
+      });
+      $("#ge-annuler")?.addEventListener("click", () => rendre(null));
+      $("#ge-import")?.addEventListener("click", async () => {
+        try {
+          await sbUpsert("eleves", ELEVES.map((e) => ({ nom: e.nom, classe: e.classe, code: e.code })), "code");
+          chargerAnnuaire();
+        } catch (e) { espaceMessage("#ge-msg", "erreur", esc(e.message)); }
+      });
+      $$(".ge-modif", zone).forEach((b) => b.addEventListener("click", () => rendre(b.dataset.id)));
+      $$(".ge-suppr", zone).forEach((b) => b.addEventListener("click", async () => {
+        const e = annuaire.find((x) => x.id === b.dataset.id);
+        if (!e || !confirm(`Supprimer « ${e.nom} » (${e.code}) de l'annuaire ?`)) return;
+        try {
+          await sbReq(`eleves?id=eq.${e.id}`, { method: "DELETE" });
+          chargerAnnuaire();
+        } catch (err) { espaceMessage("#ge-msg", "erreur", esc(err.message)); }
+      }));
+      $("#ge-enregistrer")?.addEventListener("click", async () => {
+        const nom = $("#ge-nom").value.trim();
+        const classe = $("#ge-classe").value;
+        const code = $("#ge-code").value.trim().toUpperCase();
+        if (!nom || !code) { espaceMessage("#ge-msg", "erreur", "Nom et code sont obligatoires."); return; }
+        try {
+          if (modeId) await sbReq(`eleves?id=eq.${modeId}`, { method: "PATCH", body: { nom, classe, code }, prefer: "return=representation" });
+          else await sbReq("eleves", { method: "POST", body: { nom, classe, code }, prefer: "return=representation" });
+          chargerAnnuaire();
+        } catch (err) {
+          espaceMessage("#ge-msg", "erreur", /duplicate|unique/i.test(err.message) ? "Ce code existe déjà dans l'annuaire." : esc(err.message));
+        }
+      });
+    }
+
+    rendre(null);
+  }
+
+  /* ---------- Gestion des enseignants (table « profils ») ---------- */
+  async function chargerEnseignants() {
+    const zone = $("#gestion-enseignants");
+    if (!zone) return;
+    let profils = [];
+    try {
+      profils = await sbSelect("profils", "select=*&order=nom.asc");
+    } catch (e) {
+      zone.innerHTML = `<p class="text-muted">Impossible de charger les comptes (${esc(e.message)}).</p>`;
+      return;
+    }
+    const uid = acces.session.user.id;
+    const enseignants = profils.filter((p) => p.role === "enseignant");
+    const enAttente = profils.filter((p) => p.role !== "enseignant" && !p.classe);
+    const ligne = (p, boutons) => `
+      <tr>
+        <td>${esc(p.nom)}${p.id === uid ? ` <span class="badge badge-note">vous</span>` : ""}${sbEstAdminEmail(p.id === uid ? acces.session.user.email : "") ? ` <span class="badge badge-note">⭐ Admin</span>` : ""}</td>
+        <td>${p.role === "enseignant" ? "Enseignant" : "Compte à activer"}</td>
+        <td>${boutons}</td>
+      </tr>`;
+    zone.innerHTML = `
+      ${enseignants.length || enAttente.length ? `
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead>
+        <tbody>
+        ${enseignants.map((p) => ligne(p, `
+          <button class="btn btn-ghost btn-sm pr-renommer" data-id="${esc(p.id)}">✏️ Renommer</button>
+          ${p.id !== uid ? `<button class="btn btn-ghost btn-sm pr-retro" data-id="${esc(p.id)}">Rétrograder</button>` : ""}`)).join("")}
+        ${enAttente.map((p) => ligne(p, `
+          <button class="btn btn-primary btn-sm pr-promouvoir" data-id="${esc(p.id)}">🧑‍🏫 Promouvoir enseignant</button>
+          <button class="btn btn-ghost btn-sm pr-renommer" data-id="${esc(p.id)}">✏️ Renommer</button>`)).join("")}
+        </tbody></table></div>` : `<p class="text-muted">Aucun autre compte enseignant.</p>`}
+      <p class="text-muted mt-1" style="font-size:.85rem">Pour ajouter un enseignant : la personne crée son compte (page Connexion → onglet Enseignant), puis vous la promouvez ici. Les comptes élèves (avec une classe) ne sont pas listés dans ce tableau.</p>`;
+
+    $$(".pr-promouvoir", zone).forEach((b) => b.addEventListener("click", async () => {
+      try {
+        await sbReq(`profils?id=eq.${b.dataset.id}`, { method: "PATCH", body: { role: "enseignant" }, prefer: "return=representation" });
+        renderEspaceEnseignant();
+      } catch (e) { alert(e.message); }
+    }));
+    $$(".pr-retro", zone).forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Rétrograder ce compte en simple compte (il perdra l'accès enseignant) ?")) return;
+      try {
+        await sbReq(`profils?id=eq.${b.dataset.id}`, { method: "PATCH", body: { role: "eleve" }, prefer: "return=representation" });
+        renderEspaceEnseignant();
+      } catch (e) { alert(e.message); }
+    }));
+    $$(".pr-renommer", zone).forEach((b) => b.addEventListener("click", async () => {
+      const p = profils.find((x) => x.id === b.dataset.id);
+      const nouveau = prompt("Nom affiché :", p ? p.nom : "");
+      if (!nouveau || !nouveau.trim()) return;
+      try {
+        await sbReq(`profils?id=eq.${b.dataset.id}`, { method: "PATCH", body: { nom: nouveau.trim() }, prefer: "return=representation" });
+        renderEspaceEnseignant();
+      } catch (e) { alert(e.message); }
+    }));
+  }
 
   const zoneRes = $("#suivi-resultat");
   $("#suivi-devoir")?.addEventListener("change", async (ev) => {
