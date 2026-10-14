@@ -585,7 +585,7 @@ function injectLayout() {
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
-        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.5</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.6</div>
       </div>
     </footer>`;
 
@@ -1640,7 +1640,9 @@ document.addEventListener("DOMContentLoaded", () => {
   /* Service worker (PWA installable + fonctionnement hors-ligne) */
   if ("serviceWorker" in navigator) {
     const avaitControleur = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register("sw.js").catch(() => { /* ignoré */ });
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+        .then((inscription) => inscription.update())
+        .catch(() => { /* ignoré */ });
     /* Une nouvelle version du site prend le contrôle : on recharge la
        page une seule fois pour l'afficher immédiatement (fini les
        anciennes versions servies par le cache). */
@@ -1655,12 +1657,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* Filet de sécurité : si le serveur propose une version plus récente que
    ce code-ci, on nettoie caches et Service Worker puis on recharge. */
-window.__VERSION_ATTENDUE = 17; /* numéro du cache de sw.js correspondant */
+window.__VERSION_ATTENDUE = 18; /* numéro du cache de sw.js correspondant */
 setTimeout(async () => {
   try {
     if (sessionStorage.getItem("maj-verifiee")) return;
     sessionStorage.setItem("maj-verifiee", "1");
-    const rep = await fetch("sw.js", { cache: "no-store" });
+    const rep = await fetch("sw.js?controle=" + Date.now(), { cache: "no-store" });
     const txt = await rep.text();
     const m = txt.match(/devoirs-v(\d+)/);
     if (m && parseInt(m[1], 10) > window.__VERSION_ATTENDUE) {

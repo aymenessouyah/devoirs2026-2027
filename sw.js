@@ -2,7 +2,7 @@
    Service Worker — mise en cache pour usage hors-ligne (PWA)
    ⚠️ Lors d'une mise à jour du site, changez la VERSION ci-dessous.
    ============================================================ */
-const VERSION = "devoirs-v17";
+const VERSION = "devoirs-v18";
 const FICHIERS = [
   "./",
   "./index.html",
@@ -18,17 +18,18 @@ const FICHIERS = [
   "./espace-eleve.html",
   "./espace-enseignant.html",
   "./espace-admin.html",
-  "./css/style.css",
-  "./js/app.js",
-  "./js/supabase.js",
-  "./js/espaces.js",
-  "./data/config.js",
-  "./data/devoirs.js",
-  "./data/eleves.js",
-  "./data/notes.js",
-  "./data/annonces.js",
-  "./data/vie.js",
-  "./data/calendrier.js",
+  "./reparer.html",
+  "./css/style.css?v=426",
+  "./js/app.js?v=426",
+  "./js/supabase.js?v=426",
+  "./js/espaces.js?v=426",
+  "./data/config.js?v=426",
+  "./data/devoirs.js?v=426",
+  "./data/eleves.js?v=426",
+  "./data/notes.js?v=426",
+  "./data/annonces.js?v=426",
+  "./data/vie.js?v=426",
+  "./data/calendrier.js?v=426",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",

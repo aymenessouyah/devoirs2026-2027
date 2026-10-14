@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Réparer l'affichage · Devoirs Lycée</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 24px; background: #faf7f2; color: #241435;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .carte {
+      width: min(680px, 100%); background: #fff; border: 1px solid #eadff2;
+      border-radius: 24px; padding: 32px; box-shadow: 0 24px 60px rgba(75, 30, 100, .14);
+    }
+    h1 { margin: 0 0 12px; font-size: clamp(1.7rem, 5vw, 2.5rem); }
+    p { line-height: 1.6; }
+    .journal {
+      margin: 22px 0; padding: 18px 20px; border-radius: 16px;
+      background: #f7f1fb; min-height: 112px;
+    }
+    .journal li { margin: 8px 0; }
+    .bouton {
+      display: inline-block; margin: 8px 8px 0 0; padding: 13px 20px;
+      border: 0; border-radius: 999px; background: #e11d63; color: #fff;
+      font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+    }
+    .bouton.secondaire { background: #241435; }
+    .bouton:disabled { opacity: .55; cursor: wait; }
+    .note { color: #6d6475; font-size: .94rem; }
+  </style>
+</head>
+<body>
+  <main class="carte">
+    <h1>🛠️ Mise à jour forcée</h1>
+    <p>Cette page supprime uniquement les anciennes copies du site conservées dans ce navigateur. <strong>Votre compte et votre session restent inchangés.</strong></p>
+
+    <ul class="journal" id="journal" aria-live="polite">
+      <li>⏳ Préparation de la réparation…</li>
+    </ul>
+
+    <a class="bouton" id="ouvrir" href="espace-enseignant.html?maj=426">Ouvrir mon espace enseignant</a>
+    <button class="bouton secondaire" id="relancer" type="button">Relancer la réparation</button>
+
+    <p class="note">Après la réparation, l’ouverture de la dernière version est automatique. En bas du site, vous devez lire « version du site 4.2.6 ».</p>
+  </main>
+
+  <script>
+    const journal = document.getElementById("journal");
+    const boutonRelancer = document.getElementById("relancer");
+    const boutonOuvrir = document.getElementById("ouvrir");
+
+    function cible() {
+      return "espace-enseignant.html?maj=426&t=" + Date.now();
+    }
+
+    function ligne(texte) {
+      const li = document.createElement("li");
+      li.textContent = texte;
+      journal.appendChild(li);
+    }
+
+    async function reparer() {
+      boutonRelancer.disabled = true;
+      boutonOuvrir.href = cible();
+      journal.innerHTML = "";
+      ligne("🧹 Suppression des anciens mécanismes de cache…");
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const inscriptions = await navigator.serviceWorker.getRegistrations();
+          let supprimees = 0;
+          for (const inscription of inscriptions) {
+            if (await inscription.unregister()) supprimees++;
+          }
+          ligne("Services de cache supprimés : " + supprimees + "/" + inscriptions.length + ".");
+        } else {
+          ligne("Aucun service de cache à supprimer.");
+        }
+
+        if ("caches" in window) {
+          const noms = await caches.keys();
+          await Promise.all(noms.map((nom) => caches.delete(nom)));
+          ligne("Anciens caches supprimés : " + noms.length + ".");
+        }
+
+        ligne("✅ Réparation terminée. Ouverture de la version 4.2.6…");
+        setTimeout(() => location.replace(cible()), 1000);
+      } catch (erreur) {
+        ligne("⚠️ La réparation automatique a rencontré un problème. Cliquez sur « Ouvrir mon espace enseignant ».");
+        boutonRelancer.disabled = false;
+      }
+    }
+
+    boutonRelancer.addEventListener("click", reparer);
+    window.addEventListener("DOMContentLoaded", reparer);
+  </script>
+</body>
+</html>
