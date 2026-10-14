@@ -60,6 +60,13 @@ Deno.serve(async (req) => {
   const bareme = Number(devoir.bareme) || 20;
   const texte = String(fichier.texte || "");
   const base64 = String(fichier.base64 || "");
+  const consignes = String(body.consignes || "").slice(0, 3000).trim();
+  const exemplesBruts = Array.isArray(body.exemples) ? body.exemples.slice(0, 3) : [];
+  const exemplesTxt = exemplesBruts.map((e, i) => {
+    const ex = (e || {}) as Record<string, unknown>;
+    const ext = String(ex.extrait || "").slice(0, 1500).trim();
+    return `Exemple ${i + 1} (déjà validé par l'enseignant) — note : ${Number(ex.note) || 0}/${Number(ex.sur) || 20} — appréciation donnée : « ${String(ex.appreciation || "").slice(0, 300)} »${ext ? `\nExtrait de la copie de l'élève :\n${ext}` : ""}`;
+  }).join("\n\n");
   if (!texte && !base64) return json({ error: "Aucun contenu de fichier à corriger." }, 400);
 
   // --- 3) Construire le prompt de correction ---
@@ -76,6 +83,7 @@ ${String(devoir.sujet || "(non fourni)")}
 
 CORRIGÉ TYPE DE L'ENSEIGNANT (référence principale de notation) :
 ${String(devoir.correction || "(non fourni : corrige alors à partir du sujet et de tes connaissances, en restant prudent)")}
+${consignes ? `\nCONSIGNES PERSONNELLES DE L'ENSEIGNANT (prioritaires, à appliquer strictement) :\n${consignes}\n` : ""}${exemplesTxt ? `\nEXEMPLES DE CORRECTIONS DÉJÀ VALIDÉES PAR CET ENSEIGNANT (imite son niveau d'exigence et son style d'appréciation) :\n${exemplesTxt}\n` : ""}
 
 CONSIGNES DE NOTATION
 - Note l'élève sur ${bareme}, au quart de point près (ex. 13.25).

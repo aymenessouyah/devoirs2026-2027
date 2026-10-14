@@ -38,3 +38,28 @@ Déposez un fichier de test en tant qu'élève, puis corrigez-le en tant qu'ense
 - L'IA peut se tromper : c'est un **assistant** — relisez toujours la note proposée avant de valider, surtout pour les copies manuscrites.
 - Sans corrigé type dans le devoir, la correction est moins fiable (l'IA le signale et demande confirmation).
 - Le quota gratuit Gemini est largement suffisant pour un usage scolaire normal ; en cas de dépassement, réessayez le lendemain.
+
+---
+
+## 🧭 Personnaliser votre agent (consignes + mémoire) — depuis la v5.5.9
+
+Dans le panneau **Correction IA des solutions**, dépliez **« 🧭 Votre agent de
+correction »** :
+
+- **Vos consignes** : écrivez comment VOUS corrigez (sévérité, barème
+  détaillé, fautes pénalisées, style des appréciations), puis
+  « Enregistrer mes consignes ». L'agent les applique à toutes vos copies,
+  en plus de l'énoncé et du corrigé type de chaque devoir.
+- **Sa mémoire** : chaque correction que vous **validez** (bouton
+  « Valider et publier ») devient un exemple anonyme (sans le nom de
+  l'élève) dont l'agent s'inspire pour les copies suivantes, en
+  privilégiant la même matière. Bouton « Effacer la mémoire » pour
+  repartir de zéro.
+
+⚠️ Après la mise à jour de `supabase/functions/corriger-ia/index.ts`,
+**redéployez la fonction** pour que consignes et exemples soient pris en
+compte :
+
+```bash
+supabase functions deploy corriger-ia
+```

@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.8</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.9</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.8</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.9</p>
 </main>
 </div>
 </div>
@@ -1885,6 +1885,18 @@ function correctionIAHTML(devoir, eleves) {
       ${aCorriger ? `<button type="button" onclick="corrigerTousRendus('${devoir.id}', this)" class="pill !text-xs">🤖 Tout corriger (${aCorriger})</button>` : ""}
     </div>
     <p class="text-xs text-slate-500 mt-1">Les élèves déposent leur solution depuis « Mes devoirs » (PDF, Word, photo de copie ou fichier de code). L'IA compare chaque fichier au <b>corrigé type</b> du devoir et propose une note sur ${esc(String(devoir.bareme || 20))} + une appréciation. <b>Vous validez (ou corrigez) avant publication</b> : l'élève ne voit rien avant votre validation.</p>
+    <details class="mt-3"><summary class="text-xs font-bold text-violet-700 cursor-pointer">🧭 Votre agent de correction : vos consignes + sa mémoire (${exemplesIA().length} exemple(s) appris)</summary>
+      <div class="mt-2">
+        <label class="text-[11px] font-extrabold block">VOS CONSIGNES DE CORRECTION (appliquées à toutes vos copies : sévérité, barème détaillé, fautes pénalisées, style des appréciations…)
+          <textarea id="ia-consignes" class="input mt-1" rows="4" placeholder="Ex. : Sois exigeant sur la syntaxe du code (–1 par erreur). Un raisonnement juste vaut la moitié des points même si le résultat final est faux. Appréciations courtes et encourageantes.">${esc(consignesIA())}</textarea>
+        </label>
+        <div class="flex flex-wrap gap-2 mt-2 items-center">
+          <button type="button" class="pill !text-xs" onclick="enregistrerConsignesIA()">💾 Enregistrer mes consignes</button>
+          <span class="text-[11px] text-slate-400 flex-1 min-w-[220px]">🧠 Mémoire : chaque note que vous « Validez et publiez » devient un exemple que l'agent imite (niveau d'exigence + style), <b>sans le nom de l'élève</b>.</span>
+          ${exemplesIA().length ? `<button type="button" class="pill !text-xs !text-red-500" onclick="effacerExemplesIA()">🗑️ Effacer la mémoire (${exemplesIA().length})</button>` : ""}
+        </div>
+      </div>
+    </details>
     <div class="flex flex-wrap gap-2 items-end mt-3">
       <label class="text-xs font-extrabold">IMPORTER LE FICHIER D'UN ÉLÈVE<br><select id="ia-import-eleve" class="input mt-1 !w-auto">${eleves.map(e => `<option value="${e.id}">${esc(e.nom || e.email || "")}</option>`).join("")}</select></label>
       <label class="pill cursor-pointer !text-xs !py-2.5">📥 Importer un fichier<input type="file" accept=".pdf,.docx,.txt,.py,.pas,.sql,.md,.csv,.json,.js,.html,.css,.c,.h,.cpp,.java,.php,.xml,.png,.jpg,.jpeg,.webp" class="hidden" onchange="importerSolutionProf(this,'${devoir.id}')"></label>
@@ -1924,6 +1936,33 @@ function correctionIAHTML(devoir, eleves) {
       </div>
     </details>
   </div>`;
+}
+/* ---------- Votre agent de correction : consignes + mémoire ----------
+   Consignes personnelles de l'enseignant et exemples appris de ses
+   validations, stockés dans SON navigateur (par compte). Ils sont
+   envoyés à la fonction « corriger-ia » à chaque correction. */
+function cleAgentIA(base) { return base + "-" + ((ETAT.session && ETAT.session.user && ETAT.session.user.id) || "invite"); }
+function consignesIA() { try { return localStorage.getItem(cleAgentIA("dl-consignes-ia")) || ""; } catch (e) { return ""; } }
+function enregistrerConsignesIA() {
+  const champ = $("#ia-consignes"); if (!champ) return;
+  try { localStorage.setItem(cleAgentIA("dl-consignes-ia"), champ.value || ""); toast("🧭 Consignes enregistrées : votre agent les appliquera à toutes vos corrections.", "success"); }
+  catch (e) { toast("Impossible d'enregistrer les consignes dans ce navigateur.", "erreur"); }
+}
+function exemplesIA() { try { const l = JSON.parse(localStorage.getItem(cleAgentIA("dl-exemples-ia")) || "[]"); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+function ajouterExempleIA(ex) {
+  const l = exemplesIA(); l.unshift(ex);
+  try { localStorage.setItem(cleAgentIA("dl-exemples-ia"), JSON.stringify(l.slice(0, 30))); } catch (e) { }
+}
+function choisirExemplesIA(devoir) {
+  const l = exemplesIA(); if (!l.length) return [];
+  const mm = l.filter(x => x.matiere && devoir.matiere && String(x.matiere).toLowerCase() === String(devoir.matiere).toLowerCase());
+  return (mm.length ? mm : l).slice(0, 3);
+}
+function effacerExemplesIA() {
+  if (!confirm("Effacer la mémoire de votre agent (les exemples appris de vos corrections validées) ?")) return;
+  try { localStorage.removeItem(cleAgentIA("dl-exemples-ia")); } catch (e) { }
+  toast("🧠 Mémoire de l'agent effacée.", "info");
+  rendreEleves();
 }
 /* ---------- Import du dossier de la classe (travaux de tous les élèves) ----------
    L'enseignant choisit un dossier local : un fichier par élève. Chaque
@@ -2136,11 +2175,14 @@ async function corrigerRenduIA(id, btn) {
     }
     if (!blob) throw new Error("Aucun fichier attaché à ce dépôt.");
     const contenu = await extraireContenuFichier(blob, r.nom_fichier || r.fichier || "fichier");
+    r._extraitIA = contenu.texte ? contenu.texte.slice(0, 1500) : "";
     const eleve = (ETAT.profils || []).find(p => p.id === r.eleve_id);
     const data = await appelerIA({
       devoir: { titre: devoir.titre, matiere: devoir.matiere || "", type: devoir.type, classe: nomClasse(devoir.classe), bareme: Number(devoir.bareme) || 20, sujet: devoir.sujet || "", correction: devoir.correction || "" },
       eleve: { nom: eleve ? (eleve.nom || "") : "" },
-      fichier: { nom: r.nom_fichier || "fichier", mime: blob.type || "", texte: contenu.texte || "", base64: contenu.base64 || "" }
+      fichier: { nom: r.nom_fichier || "fichier", mime: blob.type || "", texte: contenu.texte || "", base64: contenu.base64 || "" },
+      consignes: consignesIA(),
+      exemples: choisirExemplesIA(devoir)
     });
     let note = Number(data && data.note);
     if (isNaN(note)) throw new Error("Réponse de l'IA incomplète (aucune note) : réessayez.");
@@ -2191,6 +2233,7 @@ async function validerCorrectionIA(id) {
     await sbUpsert("notes", { devoir_id: devoir.id, eleve_id: r.eleve_id, note, sur: bareme, appreciation, updated_by: ETAT.session.user.id }, "devoir_id,eleve_id");
     await sbPatch("rendus", `id=eq.${r.id}`, { statut: "valide", note_ia: note, appreciation_ia: appreciation });
     r.statut = "valide"; r.note_ia = note; r.appreciation_ia = appreciation;
+    ajouterExempleIA({ matiere: devoir.matiere || "", titre: devoir.titre || "", note, sur: bareme, appreciation, extrait: (r._extraitIA || "").slice(0, 1500), details: (r.details_ia || "").slice(0, 800) });
     try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) { }
     toast("✅ Note validée et publiée : l'élève la voit maintenant dans ses notes.", "success");
     rendreEleves();
