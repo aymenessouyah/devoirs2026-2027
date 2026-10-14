@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.5</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.6</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.5</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.6</p>
 </main>
 </div>
 </div>
@@ -239,14 +239,45 @@ function toast(msg, type) {
 function toggleSidebar() { $("#sidebar").classList.toggle("-translate-x-full"); }
 
 /* ---------- Classes & matières ---------- */
+const nomClasseNormalise = (nom) => String(nom || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+/* Deux lignes de classes portant le MEME nom (ex. « 3ème SI 1 » sous les
+   identifiants 3emesi1 ET 3si1) ne font qu'UNE classe : on garde
+   l'identifiant « slug » du nom et les autres deviennent des alias,
+   pour que élèves, devoirs et enseignants se retrouvent toujours. */
+function fusionnerClasses() {
+  const parNom = new Map();
+  for (const c of ETAT.classes) {
+    const k = nomClasseNormalise(c.nom);
+    if (!parNom.has(k)) parNom.set(k, []);
+    parNom.get(k).push(c);
+  }
+  const alias = {}, gardees = [];
+  for (const groupe of parNom.values()) {
+    const canon = groupe.find(c => c.cle === slugClasse(c.nom)) || groupe[0];
+    gardees.push(canon);
+    for (const c of groupe) if (c.cle !== canon.cle) alias[c.cle] = canon.cle;
+  }
+  ETAT.aliasClasses = alias;
+  ETAT.classes = gardees;
+}
+function cleCanoniqueClasse(v) {
+  if (v == null) return v;
+  const brut = String(v);
+  const alias = ETAT.aliasClasses || {};
+  if (alias[brut]) return alias[brut];
+  const cleAlias = Object.keys(alias).find(a => a.toLowerCase() === brut.toLowerCase());
+  if (cleAlias) return alias[cleAlias];
+  return brut;
+}
 async function chargerClasses() {
   try {
     const rows = await sbSelect("classes", "select=*&order=nom.asc");
-    if (rows && rows.length) { ETAT.classes = rows.map(r => ({ cle: r.id, nom: r.nom })); return; }
-  } catch (e) { /* repli config */ }
-  ETAT.classes = Object.keys(CFG.classes || {}).map(cle => ({ cle, nom: CFG.classes[cle] }));
+    if (rows && rows.length) ETAT.classes = rows.map(r => ({ cle: r.id, nom: r.nom }));
+    else ETAT.classes = Object.keys(CFG.classes || {}).map(cle => ({ cle, nom: CFG.classes[cle] }));
+  } catch (e) { ETAT.classes = Object.keys(CFG.classes || {}).map(cle => ({ cle, nom: CFG.classes[cle] })); }
+  fusionnerClasses();
 }
-const nomClasse = (cle) => { const c = ETAT.classes.find(x => x.cle === cle); return c ? c.nom : ((CFG.classes || {})[cle] || cle); };
+const nomClasse = (cle) => { const can = cleCanoniqueClasse(cle); const c = ETAT.classes.find(x => x.cle === can) || ETAT.classes.find(x => x.cle === cle); return c ? c.nom : ((CFG.classes || {})[cle] || cle); };
 const couleurClasse = (cle) => { const i = ETAT.classes.findIndex(c => c.cle === cle); return COULEURS[(i < 0 ? 0 : i) % COULEURS.length]; };
 const optionsClasses = (sel) => ETAT.classes.map(c => `<option value="${esc(c.cle)}" ${c.cle === sel ? "selected" : ""}>${esc(c.nom)}</option>`).join("");
 const optionsMatieres = (sel) => MATIERES.map(m => `<option value="${esc(m)}" ${m === sel ? "selected" : ""}>${esc(m)}</option>`).join("");
@@ -254,9 +285,12 @@ function slugClasse(nom) { return String(nom || "").normalize("NFD").replace(/[\
 function sesMatieres(p) { return [p && p.matiere, p && p.matiere_2].filter(m => m && String(m).trim()).filter((m,i,a) => a.indexOf(m) === i); }
 function matieresDeClasse(p, classe) {
   const carte = (p && p.matieres_par_classe) || {};
-  const liste = Array.isArray(carte[classe]) ? carte[classe].filter(m => m && String(m).trim()) : [];
-  const propres = [...new Set(liste)];
-  if (propres.length) return propres;
+  const canon = cleCanoniqueClasse(classe);
+  const cles = [...new Set([classe, canon, ...Object.keys(ETAT.aliasClasses || {}).filter(a => ETAT.aliasClasses[a] === canon)])];
+  for (const k of cles) {
+    const liste = Array.isArray(carte[k]) ? carte[k].filter(m => m && String(m).trim()) : [];
+    if (liste.length) return [...new Set(liste)];
+  }
   if (Object.keys(carte).length) return [];
   return sesMatieres(p);
 }
@@ -266,7 +300,7 @@ function toutesSesMatieres(p) {
   return toutes.length ? toutes : sesMatieres(p);
 }
 const estAdmin = () => !!(ETAT.session && sbEstAdminEmail(ETAT.session.user.email));
-const mesClasses = () => (ETAT.profil.classes || []).filter(cle => ETAT.classes.some(c => c.cle === cle));
+const mesClasses = () => [...new Set((ETAT.profil.classes || []).map(cle => cleCanoniqueClasse(cle)))].filter(cle => ETAT.classes.some(c => c.cle === cle));
 const mesDevoirs = () => ETAT.devoirs.filter(d => d.enseignant_id === (ETAT.session && ETAT.session.user.id));
 
 /* ---------- Calendrier officiel & règles de dates ---------- */
@@ -1794,11 +1828,11 @@ function rendreElevesEns() {
     return;
   }
   if (!classesDispo.includes(ETAT.selNotes.classe)) ETAT.selNotes.classe = classesDispo[0];
-  const devoirsClasse = ETAT.devoirs.filter(d => d.classe === ETAT.selNotes.classe && d.enseignant_id === ETAT.session.user.id).slice().sort((a,b) => a.date.localeCompare(b.date));
+  const devoirsClasse = ETAT.devoirs.filter(d => memeClasse(cleCanoniqueClasse(d.classe), ETAT.selNotes.classe) && d.enseignant_id === ETAT.session.user.id).slice().sort((a,b) => a.date.localeCompare(b.date));
   if (!devoirsClasse.some(d => d.id === ETAT.selNotes.devoirId)) ETAT.selNotes.devoirId = devoirsClasse.length ? devoirsClasse[devoirsClasse.length - 1].id : null;
   const devoir = devoirsClasse.find(d => d.id === ETAT.selNotes.devoirId) || null;
-  const nbElevesClasse = (cle) => ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(p.classe, cle)).length;
-  const eleves = ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(p.classe, ETAT.selNotes.classe)).slice().sort((a,b) => (a.nom||"").localeCompare(b.nom||"", "fr"));
+  const nbElevesClasse = (cle) => ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(cleCanoniqueClasse(p.classe), cle)).length;
+  const eleves = ETAT.profils.filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(cleCanoniqueClasse(p.classe), ETAT.selNotes.classe)).slice().sort((a,b) => (a.nom||"").localeCompare(b.nom||"", "fr"));
   const notesD = ETAT.notes.filter(n => devoir && n.devoir_id === devoir.id);
   const moy = notesD.length ? notesD.reduce((s,n) => s + (Number(n.note)/ (Number(n.sur)||20) * 20), 0) / notesD.length : null;
   zone.innerHTML = `
@@ -2179,8 +2213,8 @@ function rendreAdmin() {
     <div class="card p-5 mt-5">
       <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Enseignants à part, élèves regroupés par classe.</span></div>
       ${groupeComptesHTML("🧑‍🏫 Enseignants", comptes.filter(x => x.role === "enseignant"), "Aucun enseignant.", true)}
-      ${ETAT.classesAll.map(c => ({ cle: c.cle, nom: c.nom, liste: comptes.filter(x => x.role !== "enseignant" && memeClasse(x.classe, c.cle)) }))
-        .concat((() => { const sc = comptes.filter(x => x.role !== "enseignant" && !ETAT.classesAll.some(c => memeClasse(c.cle, x.classe))); return sc.length ? [{ cle: "", nom: "Sans classe (ou classe supprimée)", liste: sc }] : []; })())
+      ${ETAT.classesAll.map(c => ({ cle: c.cle, nom: c.nom, liste: comptes.filter(x => x.role !== "enseignant" && memeClasse(cleCanoniqueClasse(x.classe), c.cle)) }))
+        .concat((() => { const sc = comptes.filter(x => x.role !== "enseignant" && !ETAT.classesAll.some(c => memeClasse(cleCanoniqueClasse(x.classe), c.cle))); return sc.length ? [{ cle: "", nom: "Sans classe (ou classe supprimée)", liste: sc }] : []; })())
         .map(g => groupeComptesHTML(`🎓 Élèves — ${esc(g.nom)}`, g.liste, "Aucun élève dans cette classe.", false)).join("")}
     </div>
 
