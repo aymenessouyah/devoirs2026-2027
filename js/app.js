@@ -585,7 +585,7 @@ function injectLayout() {
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
-        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.2</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.3</div>
       </div>
     </footer>`;
 
@@ -1639,7 +1639,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* Service worker (PWA installable + fonctionnement hors-ligne) */
   if ("serviceWorker" in navigator) {
+    const avaitControleur = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register("sw.js").catch(() => { /* ignoré */ });
+    /* Une nouvelle version du site prend le contrôle : on recharge la
+       page une seule fois pour l'afficher immédiatement (fini les
+       anciennes versions servies par le cache). */
+    if (avaitControleur) {
+      let dejaRecharge = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!dejaRecharge) { dejaRecharge = true; location.reload(); }
+      });
+    }
   }
 });
 
