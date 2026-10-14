@@ -1,5 +1,5 @@
 -- =========================================================================
---  Site « 3SI1 & 4SI2 — Devoirs » — Schéma de la base (Supabase)
+--  Site « Devoirs Lycée » — Schéma de la base (Supabase)
 --  Base Supabase du site : comptes, classes, devoirs et notes.
 --
 --  À exécuter dans : Supabase → SQL Editor → New query → coller → Run.

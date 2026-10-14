@@ -1,7 +1,7 @@
 {
-  "name": "3SI1 & 4SI2 — Devoirs · STI",
-  "short_name": "Devoirs 3SI/4SI",
-  "description": "Devoirs, dépôts et notes des classes 3ème SI 1 et 4ème SI 2 — matière STI, année 2026-2027.",
+  "name": "Devoirs Lycée",
+  "short_name": "Devoirs Lycée",
+  "description": "Devoirs de contrôle et de synthèse, sujets, corrections et notes — année scolaire 2026-2027.",
   "lang": "fr",
   "start_url": "./index.html",
   "scope": "./",

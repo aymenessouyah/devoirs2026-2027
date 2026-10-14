@@ -1,5 +1,5 @@
 /* ============================================================
-   3SI1 & 4SI2 — Devoirs · Logique du site
+   Devoirs Lycée · Logique du site
    (aucune dépendance externe — JavaScript pur)
    ============================================================ */
 
@@ -585,7 +585,7 @@ function injectLayout() {
           <a href="calendrier.html">Calendrier</a>
           <a href="vie-de-classe.html">Vie de classe</a>` : `<a href="index.html">Connexion</a>`}
         </div>
-        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.3</div>
+        <div class="muted">Publié avec GitHub Pages · PWA installable 📱 · version du site 4.2.4</div>
       </div>
     </footer>`;
 

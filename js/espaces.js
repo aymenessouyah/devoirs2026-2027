@@ -324,7 +324,8 @@ function enteteEspaceHTML(profil, titre, email) {
       <div>
         <h2>${titre}</h2>
         <p>${profil.role === "enseignant" ? "🧑‍🏫" : "👨‍🎓"} <strong>${esc(profil.nom)}</strong>
-        ${profil.classe ? `· ${esc(nomClasseDyn(profil.classe))}` : ""}${profil.matiere ? ` · 📚 ${esc(profil.matiere)}` : ""}${profil.code ? ` · code ${esc(profil.code)}` : ""}${sbEstAdminEmail(email) ? ` · <span class="badge badge-note">⭐ Admin du site</span>` : ""}</p>
+        ${profil.classe ? `· ${esc(nomClasseDyn(profil.classe))}` : ""}${profil.matiere ? ` · 📚 ${esc(profil.matiere)}` : ""}${profil.code ? ` · code ${esc(profil.code)}` : ""}${sbEstAdminEmail(email) ? ` · <span class="badge badge-note">⭐ Admin du site</span>` : ""}
+        ${email ? `<br/><span class="text-muted" style="font-size:.85rem">✉️ Connecté : ${esc(email)}</span>` : ""}</p>
       </div>
       <button class="btn btn-outline btn-sm" id="btn-deconnexion">Se déconnecter</button>
     </div>`;

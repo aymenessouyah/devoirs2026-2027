@@ -1,4 +1,4 @@
-# 📚 3SI1 & 4SI2 — Devoirs · STI · 2026-2027
+# 📚 Devoirs Lycée · 2026-2027
 
 Site de gestion des devoirs pour les classes **3ème SI 1** et **4ème SI 2** — matière **STI**,
 année scolaire **2026-2027**. Hébergé gratuitement sur **GitHub Pages**.
