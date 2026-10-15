@@ -102,6 +102,12 @@ body.theme-clair .mm-row{background:#fff;border-color:#E8EDF4}
 body.theme-clair .seg button{background:#fff}
 
 
+#zone-impression { display: none; }
+@media print {
+  body * { visibility: hidden !important; }
+  #zone-impression, #zone-impression * { visibility: visible !important; }
+  #zone-impression { display: block !important; position: fixed; inset: 0; background: #fff; z-index: 9999; }
+}
 </style>
 </head>
 <body class="bg-[#E6EAF3] text-slate-800">
@@ -143,7 +149,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.10</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.11</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +185,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.10</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.11</p>
 </main>
 </div>
 </div>
@@ -505,6 +511,8 @@ function construireNav() {
       ${n.badge ? `<span class="ml-auto bg-amber-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full">${n.badge}</span>` : ""}
     </div>`).join("");
 }
+const depotEnRetard = (devoir, rendu) => !!(devoir && devoir.limite && rendu && rendu.date && new Date(rendu.date) > new Date(devoir.limite));
+const fmtDateHeure = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }) + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); };
 const memeClasse = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
 async function rafraichirProfils() {
   if (!ETAT.session || !ETAT.profil || ETAT.profil.role !== "enseignant") return;
@@ -1673,7 +1681,7 @@ function modifierDevoir(id) {
   if (!d) return;
   ETAT.cal.classe = d.classe; ETAT.cal.type = d.type; ETAT.cal.matiere = d.matiere || "";
   const dt = parseDate(d.date); ETAT.cal.a = dt.getFullYear(); ETAT.cal.m = dt.getMonth();
-  ETAT.form = { id: d.id, classe: d.classe, type: d.type, date: d.date, matiere: d.matiere || "", titre: d.titre, bareme: d.bareme || 20, sujet: d.sujet || "", correction: d.correction || "" };
+  ETAT.form = { id: d.id, classe: d.classe, type: d.type, date: d.date, matiere: d.matiere || "", titre: d.titre, bareme: d.bareme || 20, sujet: d.sujet || "", correction: d.correction || "", limite: d.limite || "" };
   if (ETAT.section !== "devoirs") showSection("devoirs"); else { dessinerCalendrier(); rendreFormulaire(); }
   setTimeout(() => { const z = $("#zoneFormDevoir"); if (z) z.scrollIntoView({ behavior: "smooth" }); }, 80);
 }
@@ -1695,6 +1703,7 @@ function rendreFormulaire() {
       <div class="md:col-span-2"><label class="text-xs font-extrabold">TITRE</label><input id="dvf-titre" class="input mt-1" value="${esc(f.titre || "")}" placeholder="Ex. : Devoir de contrôle n°1"></div>
       <div><label class="text-xs font-extrabold">BARÈME</label><input id="dvf-bareme" type="number" min="1" max="100" step="0.5" class="input mt-1" value="${esc(String(f.bareme || 20))}"></div>
       <div><label class="text-xs font-extrabold">DATE (cliquez un jour vert du calendrier)</label><div class="input mt-1 bg-violet-50 font-bold" id="dvf-date-txt">${f.date ? fmtDate(f.date) : "— aucune —"}</div></div>
+      <div><label class="text-xs font-extrabold">⏰ DATE LIMITE DE DÉPÔT DE LA SOLUTION (optionnel)</label><input id="dvf-limite" type="datetime-local" class="input mt-1" value="${f.limite ? String(f.limite).slice(0, 16) : ""}"><p class="text-[11px] text-slate-400 mt-1">Après cette date/heure, le dépôt de l'élève sera marqué « en retard ».</p></div>
       <div class="md:col-span-2"><label class="text-xs font-extrabold">📄 SUJET (visible par les élèves le lendemain de l'épreuve)</label><textarea id="dvf-sujet" rows="4" class="input mt-1" placeholder="Chapitres, durée, matériel autorisé…">${esc(f.sujet || "")}</textarea></div>
       <div class="md:col-span-2"><label class="text-xs font-extrabold">✅ CORRECTION (visible le lendemain)</label><textarea id="dvf-correction" rows="4" class="input mt-1" placeholder="Corrigé détaillé…">${esc(f.correction || "")}</textarea></div>
       <div class="md:col-span-2 flex flex-wrap gap-2">
@@ -1721,14 +1730,20 @@ async function enregistrerDevoir(ev) {
   if (!evd.ok) return toast(`Date refusée : ${evd.raison}`, "erreur");
   const q = etatQuota(mesDevoirs(), f.classe, matiere, f.type, f.date, f.id);
   if (!q.ok) return toast(`Limite atteinte (${q.trimestre.label}) : maximum ${q.max} par trimestre, par classe et par matière.`, "erreur");
-  const ligne = { enseignant_id: ETAT.session.user.id, enseignant_nom: ETAT.profil.nom, classe: f.classe, matiere, type: f.type, titre, date: f.date, sujet, correction, bareme };
-  try {
-    if (f.id) await sbPatch("devoirs", `id=eq.${f.id}`, ligne); else await sbInsert("devoirs", ligne);
-    toast(`✅ Devoir « ${titre} » enregistré pour le ${fmtDate(f.date)} (${nomClasse(f.classe)}).`, "success");
-    ETAT.form = null;
-    await chargerDonnees();
-    dessinerCalendrier(); rendreFormulaire(); rendreListeDevoirs();
-  } catch (e) { toast(e.message, "erreur"); }
+  const limiteVal = $("#dvf-limite") ? $("#dvf-limite").value : "";
+  const ligne = { enseignant_id: ETAT.session.user.id, enseignant_nom: ETAT.profil.nom, classe: f.classe, matiere, type: f.type, titre, date: f.date, sujet, correction, bareme, limite: limiteVal ? new Date(limiteVal).toISOString() : null };
+  const sauvegarder = async (l) => { if (f.id) await sbPatch("devoirs", `id=eq.${f.id}`, l); else await sbInsert("devoirs", l); };
+  let limiteIgnoree = false;
+  try { await sauvegarder(ligne); } catch (e) {
+    if (!/limite/i.test(e.message || "")) return toast(e.message, "erreur");
+    const sansLimite = { ...ligne }; delete sansLimite.limite;
+    try { await sauvegarder(sansLimite); limiteIgnoree = true; } catch (e2) { return toast(e2.message, "erreur"); }
+  }
+  toast(`✅ Devoir « ${titre} » enregistré pour le ${fmtDate(f.date)} (${nomClasse(f.classe)}).`, "success");
+  if (limiteIgnoree) toast("⚠️ Devoir enregistré SANS la date limite : l'administrateur doit exécuter la mise à jour de supabase/schema.sql.", "erreur");
+  ETAT.form = null;
+  await chargerDonnees();
+  dessinerCalendrier(); rendreFormulaire(); rendreListeDevoirs();
 }
 async function supprimerDevoir(id) {
   const d = ETAT.devoirs.find(x => x.id === id);
@@ -1749,7 +1764,7 @@ function rendreListeDevoirs() {
   zone.innerHTML = liste.map(d => `
     <div class="card p-4 flex gap-4 items-center table-row">
       <span class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white shrink-0" style="background:${couleurClasse(d.classe)}">${esc(d.type)}</span>
-      <div class="flex-1 min-w-0"><p class="font-extrabold truncate">${esc(d.titre)}</p><p class="text-xs text-slate-400">${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")} • ${fmtDate(d.date)} • /${esc(String(d.bareme || 20))}</p>
+      <div class="flex-1 min-w-0"><p class="font-extrabold truncate">${esc(d.titre)}</p><p class="text-xs text-slate-400">${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")} • ${fmtDate(d.date)} • /${esc(String(d.bareme || 20))}${d.limite ? ` • ⏰ dépôt jusqu'au ${fmtDateHeure(d.limite)}` : ""}</p>
       <div class="flex gap-1.5 mt-1.5"><span class="badge ${d.sujet ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}">${d.sujet ? "Sujet prêt" : "Sujet à écrire"}</span><span class="badge ${d.correction ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}">${d.correction ? "Correction prête" : "Correction à écrire"}</span></div></div>
       <div class="flex flex-col gap-1.5 shrink-0">
         <button onclick="modifierDevoir('${d.id}')" class="pill !py-1.5 text-xs">✏️ Modifier</button>
@@ -1772,6 +1787,7 @@ function carteDevoirEleve(d) {
       ${note ? `<span class="badge bg-emerald-100 text-emerald-700">Note : ${esc(String(note.note))}/${esc(String(note.sur || 20))}</span>` : ""}
     </div>
     <p class="text-sm"><i class="fa-regular fa-calendar text-violet-500"></i> <b>${fmtDate(d.date)}</b> <span class="badge ${d.date >= todayISO() ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}">${d.type === "DS" ? "Devoir de synthèse" : "Devoir de contrôle"}</span></p>
+    ${d.limite ? `<p class="text-[13px]">⏰ <b>Dépôt de la solution jusqu'au ${fmtDateHeure(d.limite)}</b>${rendu && depotEnRetard(d, rendu) ? ` <span class="badge bg-red-100 text-red-600">⏰ Déposé en retard</span>` : ""}</p>` : ""}
     ${visible ? `
       <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-amber-700">📄 SUJET</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.sujet ? esc(d.sujet) : "<i class='text-slate-400'>Sujet non encore publié par l'enseignant.</i>"}</p></div>
       <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-emerald-700">✅ CORRECTION</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.correction ? esc(d.correction) : "<i class='text-slate-400'>Correction pas encore publiée.</i>"}</p></div>`
@@ -1788,6 +1804,8 @@ function carteDevoirEleve(d) {
 async function deposerSolution(input, devoirId) {
   const f = input.files && input.files[0]; if (!f) return;
   if (f.size > 10 * 1024 * 1024) return toast("Fichier trop lourd (10 Mo maximum).", "erreur");
+  const dvDepot = ETAT.devoirs.find(d => String(d.id) === String(devoirId));
+  if (dvDepot && dvDepot.limite && new Date() > new Date(dvDepot.limite) && !confirm(`⏰ La date limite de dépôt (${fmtDateHeure(dvDepot.limite)}) est dépassée.\n\nDéposer quand même ? Votre dépôt sera marqué « en retard ».`)) return;
   try {
     const chemin = sbCheminFichier(ETAT.session.user.id, devoirId, f.name);
     await sbEnvoyerFichier(chemin, f);
@@ -1917,6 +1935,7 @@ function correctionIAHTML(devoir, eleves) {
           <b class="text-sm">${esc(nomEleve(r.eleve_id))}</b>
           <span class="text-xs text-slate-400">📎 ${esc(r.nom_fichier || "fichier")}</span>
           ${badge(r.statut)}
+          ${depotEnRetard(devoir, r) ? `<span class="badge bg-red-100 text-red-600">⏰ En retard</span>` : ""}
           <span class="flex-1"></span>
           <button type="button" class="pill !text-xs" onclick="voirRendu(${r.id})">👁️ Voir</button>
           ${r.statut !== "valide" ? `<button type="button" class="pill !text-xs" onclick="corrigerRenduIA(${r.id}, this)">🤖 ${r.statut === "corrige" ? "Re-corriger" : "Corriger avec l'IA"}</button>` : ""}
@@ -2388,7 +2407,7 @@ function ligneCompteHTML(p) {
     <td class="text-[13px]">${detailsCompte(p)}</td>
     <td><span class="badge ${statutProfil(p) === "suspendu" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}">${statutProfil(p) === "suspendu" ? "Suspendu" : "Actif"}</span></td>
     <td class="text-right whitespace-nowrap">
-      ${p.email !== SB_ADMIN_EMAIL ? `<button class="pill !py-1.5 text-xs" onclick="modifierCompte('${p.id}')">✏️ Modifier</button>
+      ${p.email !== SB_ADMIN_EMAIL ? `${p.role === "eleve" ? `<button class="pill !py-1.5 text-xs" onclick="reinitialiserMdpEleve('${p.id}')">🔑 Mot de passe</button>` : ""}<button class="pill !py-1.5 text-xs" onclick="modifierCompte('${p.id}')">✏️ Modifier</button>
       <button class="pill !py-1.5 text-xs" onclick="basculerStatut('${p.id}')">${statutProfil(p) === "suspendu" ? "▶️ Réactiver" : "⏸️ Suspendre"}</button>
       <button class="pill !py-1.5 text-xs !text-red-500" onclick="supprimerCompte('${p.id}')">🗑️</button>` : `<span class="text-slate-300 text-xs">—</span>`}
     </td></tr>`;
@@ -2402,10 +2421,11 @@ function tableComptesHTML(liste, messageVide) {
     </table>
   </div>`;
 }
-function groupeComptesHTML(titre, liste, messageVide, ouvert) {
+function groupeComptesHTML(titre, liste, messageVide, ouvert, cleImp) {
   return `<details ${ouvert ? "open" : ""} class="mt-3 border rounded-2xl px-3 py-2" style="background:rgba(124,58,237,.03)">
     <summary class="font-extrabold text-[15px] cursor-pointer py-1">${titre} (${liste.length})</summary>
     ${tableComptesHTML(liste, messageVide)}
+    ${cleImp ? `<div class="mt-2"><button type="button" class="pill !text-xs" onclick="imprimerListeEleves('${cleImp}')">🖨️ Imprimer la liste des élèves (noms + codes)</button></div>` : ""}
   </details>`;
 }
 function rendreAdmin() {
@@ -2462,12 +2482,16 @@ function rendreAdmin() {
       <div id="recapEleves">${recapElevesCreesHTML()}</div>
     </div>
 
+    <div class="card p-5 mt-5 flex flex-wrap gap-3 items-center justify-between">
+      <div><h3 class="font-extrabold text-[16px]">💾 Sauvegarde complète du site</h3><p class="text-xs text-slate-500 mt-0.5">Télécharge un fichier (JSON) avec les comptes, classes, devoirs, notes et dépôts — selon vos droits d'accès. À faire avant toute manipulation importante.</p></div>
+      <button type="button" class="pill !text-xs" onclick="sauvegarderSite(this)">💾 Télécharger la sauvegarde</button>
+    </div>
     <div class="card p-5 mt-5">
       <div class="flex justify-between items-center"><h3 class="font-extrabold text-[16px]">👥 Comptes (${comptes.length})</h3><span class="text-xs text-slate-400">Enseignants à part, élèves regroupés par classe.</span></div>
       ${groupeComptesHTML("🧑‍🏫 Enseignants", comptes.filter(x => x.role === "enseignant"), "Aucun enseignant.", true)}
       ${ETAT.classesAll.map(c => ({ cle: c.cle, nom: c.nom, liste: comptes.filter(x => x.role !== "enseignant" && memeClasse(cleCanoniqueClasse(x.classe), c.cle)) }))
         .concat((() => { const sc = comptes.filter(x => x.role !== "enseignant" && !ETAT.classesAll.some(c => memeClasse(cleCanoniqueClasse(x.classe), c.cle))); return sc.length ? [{ cle: "", nom: "Sans classe (ou classe supprimée)", liste: sc }] : []; })())
-        .map(g => groupeComptesHTML(`🎓 Élèves — ${esc(g.nom)}`, g.liste, "Aucun élève dans cette classe.", false)).join("")}
+        .map(g => groupeComptesHTML(`🎓 Élèves — ${esc(g.nom)}`, g.liste, "Aucun élève dans cette classe.", false, g.cle)).join("")}
     </div>
 
     ${emploisAdminHTML()}
@@ -2592,6 +2616,66 @@ async function ajouterElevesMasse(ev) {
   if (crees.length) toast(`✅ ${crees.length} compte(s) élève créé(s) — codes et mot de passe ci-dessus.`, "success");
   if (echecs.length) toast("⚠️ Échec(s) : " + echecs.join(" ; "), "erreur");
   if (!crees.length && !echecs.length) toast("Aucun compte créé.", "info");
+}
+async function reinitialiserMdpEleve(id) {
+  const p = (ETAT.profils || []).find(x => x.id === id);
+  if (!p) return;
+  const mdp = prompt(`Nouveau mot de passe provisoire pour ${p.nom || "cet élève"} (code ${p.code || "?"}) — 6 caractères minimum :`, "");
+  if (mdp === null) return;
+  if (String(mdp).length < 6) return toast("Mot de passe trop court (6 caractères minimum).", "erreur");
+  try {
+    const session = await sbSessionValide();
+    if (!session) throw new Error("Session expirée : reconnectez-vous.");
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/reinitialiser-mdp`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ eleve_id: id, mot_de_passe: String(mdp) })
+    });
+    const texte = await res.text();
+    let data = null; try { data = JSON.parse(texte); } catch (e) { }
+    if (res.status === 404) throw new Error("la fonction « reinitialiser-mdp » n'est pas encore déployée dans Supabase (voir GUIDE-COMPTES.md).");
+    if (!res.ok) throw new Error((data && (data.error || data.message)) || texte || `Erreur ${res.status}`);
+    toast(`🔑 Mot de passe réinitialisé pour ${p.nom || "l'élève"} : communiquez-lui son code (${p.code || "—"}) + ce nouveau mot de passe.`, "success");
+  } catch (e) { toast("Réinitialisation impossible : " + e.message, "erreur"); }
+}
+function imprimerListeEleves(cle) {
+  const eleves = elevesActifsDeLaClasse(cle);
+  if (!eleves.length) return toast("Aucun élève actif dans cette classe.", "erreur");
+  const zone = $("#zone-impression"); if (!zone) return;
+  const th = (t) => `<th style="border:1px solid #999;padding:6px;text-align:left">${t}</th>`;
+  const td = (t) => `<td style="border:1px solid #999;padding:6px">${t}</td>`;
+  zone.innerHTML = `<div style="font-family:Arial,sans-serif;color:#000;padding:8px">
+    <h1 style="font-size:20px;margin:0">Devoirs Lycée — Liste des élèves</h1>
+    <p style="margin:4px 0;font-size:14px"><b>Classe : ${esc(nomClasse(cle))}</b> • ${eleves.length} élève(s) • imprimé le ${new Date().toLocaleDateString("fr-FR")}</p>
+    <p style="font-size:12px;margin:4px 0">Connexion au site : chaque élève utilise son <b>code</b> ci-dessous + le mot de passe provisoire donné par l'enseignant.</p>
+    <table style="border-collapse:collapse;width:100%;margin-top:10px;font-size:13px">
+      <thead><tr>${th("N°")}${th("Nom de l'élève")}${th("Code de connexion")}${th("Mot de passe (à noter)")}</tr></thead>
+      <tbody>${eleves.map((e, i) => `<tr>${td(String(i + 1))}${td(esc(e.nom || ""))}${td("<b>" + esc(e.code || "") + "</b>")}${td("")}</tr>`).join("")}</tbody>
+    </table>
+  </div>`;
+  window.print();
+}
+async function sauvegarderSite(btn) {
+  const ancien = btn ? btn.textContent : "";
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Préparation de la sauvegarde…"; }
+    const resultats = await Promise.all([
+      sbSelect("profils", "select=*"), sbSelect("classes", "select=*"),
+      sbSelect("devoirs", "select=*"), sbSelect("notes", "select=*"), sbSelect("rendus", "select=*")
+    ]);
+    const [profils, classes, devoirs, notes, rendus] = resultats;
+    const data = { site: "Devoirs Lycée", exporteLe: new Date().toISOString(), exportePar: (ETAT.profil && ETAT.profil.email) || "", classes, profils, devoirs, notes, rendus };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    a.href = url; a.download = `sauvegarde-devoirs-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast(`💾 Sauvegarde téléchargée : ${(profils || []).length} compte(s), ${(devoirs || []).length} devoir(s), ${(notes || []).length} note(s).`, "success");
+  } catch (e) { toast("Sauvegarde impossible : " + e.message, "erreur"); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = ancien || "💾 Télécharger la sauvegarde"; } }
 }
 async function accepterCompte(id) {
   const role = $("#acc-role-" + id).value;
@@ -2960,5 +3044,6 @@ async function afficherRemplissageSupabase() {
   afficherAuth("connexion");
 })();
 </script>
+<div id="zone-impression"></div>
 </body>
 </html>

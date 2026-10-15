@@ -183,3 +183,26 @@ laissez chacun se réinscrire.
 | Inscription impossible (« Signups not allowed ») | Inscriptions fermées dans Supabase | Étape 2 : activer « Allow new users to sign up » |
 | « E-mail non confirmé » à la connexion | « Confirm email » activé | Étape 2 : le désactiver |
 | Un élève validé ne voit aucun devoir | Classe/matière de son profil, ou devoirs pas encore créés/importés | Admin : corriger le profil ; Enseignant : importer ou créer les devoirs de sa classe |
+
+---
+
+## 🔑 Réinitialiser le mot de passe d'un élève (depuis la v5.5.11)
+
+Dans **⭐ Administration → Comptes**, chaque élève a un bouton
+**« 🔑 Mot de passe »** : l'administrateur (ou l'enseignant de sa classe)
+saisit un nouveau mot de passe provisoire — le compte et les notes de
+l'élève sont conservés.
+
+Ce bouton a besoin d'une petite fonction serveur (la clé `service_role`
+ne doit jamais être dans le site). **Déploiement, une seule fois** :
+
+- **Via le Dashboard** : Edge Functions → *Create a new function* →
+  nom exact : `reinitialiser-mdp` → collez le contenu de
+  `supabase/functions/reinitialiser-mdp/index.ts` → *Deploy*.
+- **Ou via la CLI** : `supabase functions deploy reinitialiser-mdp`
+
+La variable `SUPABASE_SERVICE_ROLE_KEY` est fournie automatiquement par
+Supabase dans les fonctions : rien d'autre à configurer.
+
+Pensez aussi à exécuter la dernière version de `supabase/schema.sql`
+(elle ajoute notamment la **date limite de dépôt** des solutions).
