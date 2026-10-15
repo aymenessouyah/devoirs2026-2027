@@ -149,7 +149,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.11</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.12</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -185,7 +185,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.11</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.12</p>
 </main>
 </div>
 </div>
@@ -2479,6 +2479,16 @@ function rendreAdmin() {
           <button class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold mt-2">➕ Créer tous ces comptes</button>
         </form>
       </details>
+      <div class="border-t mt-4 pt-4">
+        <p class="text-xs font-extrabold">📄 IMPORTER UN FICHIER CSV</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Colonnes reconnues : <b>nom</b> (ou nom + prénom), <b>code</b> (optionnel), <b>classe</b> (optionnelle). Séparateur <b>;</b> ou <b>,</b> — exemple d'en-tête : <i>nom;prenom;code;classe</i>. Sans en-tête : 1<sup>re</sup> colonne = nom, 2<sup>e</sup> = code, 3<sup>e</sup> = classe. Les codes manquants sont générés automatiquement.</p>
+        <div class="grid md:grid-cols-3 gap-3 mt-2">
+          <label class="text-[11px] font-extrabold">CLASSE PAR DÉFAUT (si absente du fichier)<select id="csv-eleve-classe" class="input mt-1"><option value="">— Aucune —</option>${optionsClasses("")}</select></label>
+          <label class="text-[11px] font-extrabold">MOT DE PASSE PROVISOIRE (pour tous)<input id="csv-eleve-mdp" class="input mt-1" value="eleve2026"></label>
+          <label class="text-[11px] font-extrabold">FICHIER<br><span class="pill cursor-pointer !text-xs !py-2.5 mt-1 inline-block">📄 Choisir le fichier CSV<input type="file" accept=".csv,.txt,text/csv" class="hidden" onchange="preparerImportCSV(this)"></span></label>
+        </div>
+        ${importCSVHTML()}
+      </div>
       <div id="recapEleves">${recapElevesCreesHTML()}</div>
     </div>
 
@@ -2676,6 +2686,125 @@ async function sauvegarderSite(btn) {
     toast(`💾 Sauvegarde téléchargée : ${(profils || []).length} compte(s), ${(devoirs || []).length} devoir(s), ${(notes || []).length} note(s).`, "success");
   } catch (e) { toast("Sauvegarde impossible : " + e.message, "erreur"); }
   finally { if (btn) { btn.disabled = false; btn.textContent = ancien || "💾 Télécharger la sauvegarde"; } }
+}
+/* ---------- Import des élèves par fichier CSV ----------
+   Colonnes reconnues : nom (ou nom + prénom), code, classe.
+   Aperçu obligatoire avant la création des comptes. */
+function decouperLigneCSV(ligne, delim) {
+  const cellules = []; let cur = "", dansG = false;
+  for (let i = 0; i < ligne.length; i++) {
+    const ch = ligne[i];
+    if (dansG) {
+      if (ch === '"') { if (ligne[i + 1] === '"') { cur += '"'; i++; } else dansG = false; }
+      else cur += ch;
+    } else if (ch === '"') dansG = true;
+    else if (ch === delim) { cellules.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  cellules.push(cur);
+  return cellules.map(c => c.trim());
+}
+function analyserCSVEleves(texte) {
+  const propre = String(texte || "").replace(/^\uFEFF/, "");
+  const lignesBrutes = propre.split(/\r\n|\r|\n/).filter(l => l.trim() !== "");
+  if (!lignesBrutes.length) return { lignes: [], erreurs: ["Fichier vide."] };
+  const delim = (lignesBrutes[0].split(";").length >= lignesBrutes[0].split(",").length) ? ";" : ",";
+  const grille = lignesBrutes.map(l => decouperLigneCSV(l, delim));
+  const normEntete = (c) => String(c || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " ");
+  const entetes = grille[0].map(normEntete);
+  const idx = (noms) => { for (const n of noms) { const i = entetes.indexOf(n); if (i >= 0) return i; } return -1; };
+  let iNom = idx(["nom", "nom complet", "nom de l eleve", "nom eleve", "eleve", "name", "full name"]);
+  const iPrenom = idx(["prenom", "first name", "given name"]);
+  let iCode = idx(["code", "identifiant", "matricule", "login", "code eleve"]);
+  let iClasse = idx(["classe", "class", "section", "classe eleve"]);
+  let debut = 1;
+  if (iNom < 0) { iNom = 0; iCode = 1; iClasse = 2; debut = 0; }
+  const lignes = [], erreurs = [];
+  for (let r = debut; r < grille.length; r++) {
+    const cols = grille[r];
+    const get = (i) => (i >= 0 && cols[i] != null ? String(cols[i]).trim() : "");
+    let nom = get(iNom);
+    const prenom = get(iPrenom);
+    if (prenom && nom && !nom.toLowerCase().includes(prenom.toLowerCase())) nom = `${prenom} ${nom}`;
+    if (!nom) { erreurs.push(`Ligne ${r + 1} ignorée (nom vide).`); continue; }
+    lignes.push({ nom, code: get(iCode).toUpperCase(), classe: get(iClasse) });
+  }
+  return { lignes, erreurs };
+}
+function resoudreClasseCSV(valeur) {
+  const v = String(valeur || "").trim(); if (!v) return null;
+  const parCle = ETAT.classes.find(c => memeClasse(c.cle, v));
+  if (parCle) return parCle.cle;
+  const cible = nomClasseNormalise(v);
+  const parNom = ETAT.classes.find(c => nomClasseNormalise(c.nom) === cible || slugClasse(c.nom) === slugClasse(v));
+  if (parNom) return parNom.cle;
+  const can = cleCanoniqueClasse(v);
+  return ETAT.classes.some(c => c.cle === can) ? can : null;
+}
+async function preparerImportCSV(input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  try {
+    const buf = await f.arrayBuffer();
+    let texte = new TextDecoder("utf-8").decode(buf);
+    if ((texte.match(/\uFFFD/g) || []).length >= 2) texte = new TextDecoder("windows-1252").decode(buf);
+    const analyse = analyserCSVEleves(texte);
+    if (!analyse.lignes.length) return toast("Aucun élève reconnu dans ce fichier. Vérifiez le format (une colonne « nom »).", "erreur");
+    const classeDefaut = $("#csv-eleve-classe") ? $("#csv-eleve-classe").value : "";
+    const mdp = $("#csv-eleve-mdp") ? $("#csv-eleve-mdp").value : "";
+    if (String(mdp).length < 6) return toast("Mot de passe provisoire trop court (6 caractères minimum).", "erreur");
+    const codesPrevus = [], lignes = [], erreurs = [...analyse.erreurs];
+    for (const l of analyse.lignes) {
+      const classe = resoudreClasseCSV(l.classe) || classeDefaut || null;
+      if (!classe) { erreurs.push(`${l.nom} : classe « ${l.classe || "?"} » inconnue et aucune classe par défaut choisie.`); continue; }
+      let code = l.code;
+      if (!code) code = codeEleveSuivant(classe, codesPrevus);
+      if (codesPrevus.some(c => c.toLowerCase() === code.toLowerCase())) { erreurs.push(`${l.nom} : code ${code} en double dans le fichier.`); continue; }
+      codesPrevus.push(code);
+      lignes.push({ nom: l.nom, classe, code });
+    }
+    if (!lignes.length) return toast("Aucun élève importable : " + (erreurs[0] || "format inconnu."), "erreur");
+    ETAT.importCSV = { lignes, erreurs, mdp };
+    toast(`📄 ${lignes.length} élève(s) prêt(s) à importer. Vérifiez la liste puis confirmez la création.`, "info");
+    rendreAdmin();
+  } catch (e) { toast("Lecture du fichier impossible : " + e.message, "erreur"); }
+}
+function importCSVHTML() {
+  const d = ETAT.importCSV;
+  if (!d || !d.lignes.length) return "";
+  return `<div class="mt-3 border rounded-2xl p-3" style="background:rgba(16,185,129,.05)">
+    <p class="text-xs font-bold">📄 ${d.lignes.length} élève(s) à créer — mot de passe provisoire commun à tous.${d.erreurs.length ? ` <span class="text-amber-600">${d.erreurs.length} ligne(s) ignorée(s) : ${d.erreurs.map(esc).join(" ")}</span>` : ""}</p>
+    <div class="grid gap-1 mt-2 max-h-56 overflow-auto">
+      ${d.lignes.slice(0, 60).map(l => `<p class="text-[13px]">🎓 <b>${esc(l.nom)}</b> — ${esc(nomClasse(l.classe))} — code : <b>${esc(l.code)}</b></p>`).join("")}
+      ${d.lignes.length > 60 ? `<p class="text-[12px] text-slate-400">… et ${d.lignes.length - 60} autre(s).</p>` : ""}
+    </div>
+    <div class="flex flex-wrap gap-2 mt-2.5">
+      <button type="button" class="ai-grad text-white px-4 py-2.5 rounded-full text-xs font-extrabold" onclick="confirmerImportCSV(this)">✅ Créer les ${d.lignes.length} comptes</button>
+      <button type="button" class="pill !text-xs" onclick="annulerImportCSV()">❌ Annuler</button>
+    </div>
+  </div>`;
+}
+function annulerImportCSV() { ETAT.importCSV = null; rendreAdmin(); }
+async function confirmerImportCSV(btn) {
+  const d = ETAT.importCSV; if (!d) return;
+  const ancien = btn ? btn.textContent : "";
+  const crees = [], echecs = [];
+  try {
+    if (btn) btn.disabled = true;
+    let i = 0;
+    for (const l of d.lignes) {
+      i++;
+      if (btn) btn.textContent = `⏳ Création ${i}/${d.lignes.length}…`;
+      try { const c = await creerCompteEleve(l.nom, l.classe, l.code, d.mdp); crees.push({ ...c, mdp: d.mdp }); }
+      catch (e) { echecs.push(`${l.nom} (${e.message})`); }
+    }
+    derniersElevesCrees = crees;
+    ETAT.importCSV = null;
+    await chargerDonnees();
+    rendreAdmin();
+    if (crees.length) toast(`✅ ${crees.length} compte(s) élève créé(s) via CSV — codes et mot de passe dans le récapitulatif ci-dessus.`, "success");
+    if (echecs.length) toast("⚠️ Échec(s) : " + echecs.join(" ; "), "erreur");
+    if (!crees.length && !echecs.length) toast("Aucun compte créé.", "info");
+  } finally { if (btn) { btn.disabled = false; if (ancien) btn.textContent = ancien; } }
 }
 async function accepterCompte(id) {
   const role = $("#acc-role-" + id).value;
