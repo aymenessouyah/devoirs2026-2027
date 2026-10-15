@@ -143,7 +143,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.9</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.10</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -179,7 +179,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.9</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.10</p>
 </main>
 </div>
 </div>
@@ -1845,6 +1845,9 @@ function rendreElevesEns() {
         <span class="badge bg-violet-100 text-violet-700">${eleves.length} élève(s)</span>
         ${devoir ? `<span class="badge !text-[12px] !py-1.5 !px-3" style="background:#6D28D9;color:#fff">📚 Matière : ${esc(devoir.matiere || "—")}</span><span class="badge bg-slate-100 text-slate-600">${esc(devoir.type === "DS" ? "Devoir de synthèse" : "Devoir de contrôle")} · ${fmtDate(devoir.date)}</span>` : ""}
         ${moy !== null ? `<span class="badge bg-emerald-100 text-emerald-700">Moyenne de la classe : ${moy.toFixed(2)}/20</span>` : ""}
+        <span class="flex-1"></span>
+        <button type="button" class="pill !text-xs" onclick="exporterNotesClasseCSV()">📊 Exporter la classe (CSV)</button>
+        ${devoir ? `<button type="button" class="pill !text-xs" onclick="exporterNotesDevoirCSV()">📊 Exporter ce devoir (CSV)</button>` : ""}
       </div>
       <div class="overflow-auto mt-4">
       <table class="w-full text-sm min-w-[760px]">
@@ -2240,6 +2243,72 @@ async function validerCorrectionIA(id) {
   } catch (e) { toast(e.message, "erreur"); }
 }
 
+/* ---------- Export des notes en CSV (Excel) ---------- */
+function celluleCSV(v) { const t = String(v == null ? "" : v); return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; }
+const versCSV = (lignes) => lignes.map(l => l.map(celluleCSV).join(";")).join("\r\n");
+const noteFR = (n) => (n == null || n === "" || isNaN(Number(n))) ? "" : (Math.round(Number(n) * 100) / 100).toFixed(2).replace(".", ",");
+function slugFichier(t) { return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase() || "export"; }
+function telechargerCSV(nomFichier, contenu) {
+  const blob = new Blob(["\ufeff" + contenu], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nomFichier;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function elevesActifsDeLaClasse(classeCle) {
+  return (ETAT.profils || [])
+    .filter(p => p.role === "eleve" && statutProfil(p) === "accepte" && memeClasse(cleCanoniqueClasse(p.classe), cleCanoniqueClasse(classeCle)))
+    .slice().sort((a, b) => (a.nom || "").localeCompare(b.nom || "", "fr"));
+}
+function exporterNotesDevoirCSV() {
+  const devoir = ETAT.devoirs.find(d => d.id === ETAT.selNotes.devoirId);
+  if (!devoir) return toast("Choisissez d'abord un devoir.", "erreur");
+  const eleves = elevesActifsDeLaClasse(devoir.classe);
+  if (!eleves.length) return toast("Aucun élève dans cette classe.", "erreur");
+  const lignes = [["Élève", "Code", "Note", "Sur", "Note /20", "Appréciation (vue par l'élève)", "Observation générale"]];
+  for (const e of eleves) {
+    const n = ETAT.notes.find(x => x.devoir_id === devoir.id && x.eleve_id === e.id);
+    const sur = n && n.sur ? Number(n.sur) : (Number(devoir.bareme) || 20);
+    lignes.push([e.nom || "", e.code || "", n ? noteFR(n.note) : "", n ? sur : (Number(devoir.bareme) || 20), n ? noteFR(Number(n.note) / sur * 20) : "", n ? (n.appreciation || "") : "", e.observation || ""]);
+  }
+  telechargerCSV(`notes-${slugFichier(nomClasse(devoir.classe))}-${slugFichier(devoir.titre || devoir.type)}.csv`, versCSV(lignes));
+  toast(`📊 Notes du devoir exportées (${eleves.length} élève(s)) — fichier CSV ouvrable dans Excel.`, "success");
+}
+function exporterNotesClasseCSV() {
+  const classe = ETAT.selNotes.classe;
+  if (!classe) return toast("Choisissez d'abord une classe.", "erreur");
+  const devoirs = ETAT.devoirs
+    .filter(d => d.enseignant_id === ETAT.session.user.id && memeClasse(cleCanoniqueClasse(d.classe), cleCanoniqueClasse(classe)))
+    .slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  if (!devoirs.length) return toast("Aucun devoir dans cette classe : rien à exporter.", "erreur");
+  const eleves = elevesActifsDeLaClasse(classe);
+  if (!eleves.length) return toast("Aucun élève dans cette classe.", "erreur");
+  const entete = ["Élève", "Code", ...devoirs.map(d => `${d.type} ${fmtDateCourte(d.date)} — ${d.titre} (/${Number(d.bareme) || 20})`), "Moyenne /20"];
+  const lignes = [entete];
+  const sommes = devoirs.map(() => ({ s: 0, n: 0 }));
+  for (const e of eleves) {
+    const row = [e.nom || "", e.code || ""];
+    let s20 = 0, n20 = 0;
+    devoirs.forEach((d, i) => {
+      const n = ETAT.notes.find(x => x.devoir_id === d.id && x.eleve_id === e.id);
+      if (n) {
+        const sur = Number(n.sur) || Number(d.bareme) || 20;
+        row.push(noteFR(n.note));
+        const v20 = Number(n.note) / sur * 20;
+        s20 += v20; n20++; sommes[i].s += v20; sommes[i].n++;
+      } else row.push("");
+    });
+    row.push(n20 ? noteFR(s20 / n20) : "");
+    lignes.push(row);
+  }
+  const pied = ["Moyenne de la classe", "", ...sommes.map(x => x.n ? noteFR(x.s / x.n) : ""), ""];
+  const toutes = sommes.reduce((a, x) => ({ s: a.s + x.s, n: a.n + x.n }), { s: 0, n: 0 });
+  pied[pied.length - 1] = toutes.n ? noteFR(toutes.s / toutes.n) : "";
+  lignes.push(pied);
+  telechargerCSV(`notes-${slugFichier(nomClasse(classe))}-tous-les-devoirs.csv`, versCSV(lignes));
+  toast(`📊 Notes de la classe exportées (${eleves.length} élève(s), ${devoirs.length} devoir(s)) — fichier CSV ouvrable dans Excel.`, "success");
+}
 async function enregistrerNotes() {
   const devoir = ETAT.devoirs.find(d => d.id === ETAT.selNotes.devoirId);
   if (!devoir) return toast("Choisissez un devoir.", "erreur");
