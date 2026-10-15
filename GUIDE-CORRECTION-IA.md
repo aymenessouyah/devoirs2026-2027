@@ -63,3 +63,24 @@ compte :
 ```bash
 supabase functions deploy corriger-ia
 ```
+
+---
+
+## 📎 Fichiers du devoir + automatisation (depuis la v5.6.0)
+
+- **Dépôt du sujet / de la correction en fichier** : dans le formulaire du
+  devoir, vous pouvez joindre le fichier du sujet (PDF, Word, image…) et
+  celui du corrigé type, au lieu de coller du texte. Les élèves les
+  téléchargent le lendemain de l'épreuve ; l'agent utilise le corrigé
+  déposé comme référence principale.
+- **🤖 Correction automatique** (interrupteur dans « 🧭 Votre agent ») :
+  chaque copie déposée ou importée est corrigée dès son arrivée, et à
+  l'ouverture de la page Élèves & notes.
+- **🚀 Publication automatique** (même endroit, désactivée par défaut) :
+  la note est donnée à l'élève dès la correction terminée. Sinon, le
+  bouton **« ✅ Valider et publier toutes »** publie toutes les notes
+  corrigées d'un coup, après votre relecture.
+
+⚠️ Après cette mise à jour : exécutez `supabase/schema.sql` (colonnes
+`sujet_fichier` / `correction_fichier` + lecture des fichiers de devoirs)
+et **redéployez** `corriger-ia` pour que l'agent lise les fichiers joints.

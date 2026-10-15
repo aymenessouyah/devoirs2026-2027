@@ -96,8 +96,23 @@ CONSIGNES DE NOTATION
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, au format :
 {"note": <nombre entre 0 et ${bareme}>, "appreciation": "<1 à 2 phrases>", "details": "<correction détaillée, avec des retours à la ligne>"}`;
 
+  const sujetF = (body.sujetFichier || {}) as Record<string, unknown>;
+  const corrigeF = (body.corrigeFichier || {}) as Record<string, unknown>;
+
   // deno-lint-ignore no-explicit-any
   const parts: any[] = [{ text: prompt }];
+  if (String(corrigeF.texte || "")) {
+    parts.push({ text: `\n\nCORRIGÉ TYPE FOURNI EN FICHIER (« ${String(corrigeF.nom || "corrigé")} ») — RÉFÉRENCE PRINCIPALE DE NOTATION :\n\n${String(corrigeF.texte).slice(0, 60000)}` });
+  } else if (String(corrigeF.base64 || "")) {
+    parts.push({ text: `\n\nCORRIGÉ TYPE : le document joint ci-après (« ${String(corrigeF.nom || "corrigé")} ») est la RÉFÉRENCE PRINCIPALE de notation.` });
+    parts.push({ inline_data: { mime_type: String(corrigeF.mime || "application/pdf"), data: String(corrigeF.base64) } });
+  }
+  if (String(sujetF.texte || "")) {
+    parts.push({ text: `\n\nSUJET FOURNI EN FICHIER (« ${String(sujetF.nom || "sujet")} ») :\n\n${String(sujetF.texte).slice(0, 40000)}` });
+  } else if (String(sujetF.base64 || "")) {
+    parts.push({ text: `\n\nSUJET : le document joint ci-après (« ${String(sujetF.nom || "sujet")} ») est le sujet officiel du devoir.` });
+    parts.push({ inline_data: { mime_type: String(sujetF.mime || "application/pdf"), data: String(sujetF.base64) } });
+  }
   if (texte) {
     parts.push({ text: `\n\nSOLUTION DE L'ÉLÈVE (fichier « ${fichier.nom || "fichier"} ») :\n\n${texte.slice(0, 80000)}` });
   } else {

@@ -149,7 +149,7 @@ body.theme-clair .seg button{background:#fff}
   <div class="mt-auto pt-5">
     <div class="nav-item" onclick="deconnexion()"><i class="fa-solid fa-right-from-bracket w-5"></i> Se déconnecter</div>
     <div class="flex items-center gap-2 mt-3 px-2 text-[11px] text-slate-500"><span class="w-8 h-8 rounded-lg ai-grad flex items-center justify-center text-white text-sm"><i class="fa-solid fa-school"></i></span> Année 2026-2027 • Devoirs Lycée</div>
-    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.5.12</p>
+    <p class="px-2 mt-2 text-[10px] text-slate-600">version du site 5.6.0</p>
     <div class="px-2 mt-2" id="sbRemplissage" title="Remplissage de la base de données Supabase (offre gratuite : 500 Mo)">
       <div class="flex justify-between text-[10px] text-slate-500"><span>🗄️ Base Supabase</span><span id="sbRemplissageTxt">mesure…</span></div>
       <div class="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="sbRemplissageBarre" class="h-full rounded-full ai-grad transition-all" style="width:0%"></div></div>
@@ -185,7 +185,7 @@ body.theme-clair .seg button{background:#fff}
     <section id="section-calendrier" class="section hidden fadeUp"></section>
     <section id="section-vie" class="section hidden fadeUp"></section>
   </div>
-  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.5.12</p>
+  <p class="text-center text-xs text-slate-400 pb-8">Devoirs Lycée • Année scolaire 2026-2027 • version du site 5.6.0</p>
 </main>
 </div>
 </div>
@@ -1681,7 +1681,7 @@ function modifierDevoir(id) {
   if (!d) return;
   ETAT.cal.classe = d.classe; ETAT.cal.type = d.type; ETAT.cal.matiere = d.matiere || "";
   const dt = parseDate(d.date); ETAT.cal.a = dt.getFullYear(); ETAT.cal.m = dt.getMonth();
-  ETAT.form = { id: d.id, classe: d.classe, type: d.type, date: d.date, matiere: d.matiere || "", titre: d.titre, bareme: d.bareme || 20, sujet: d.sujet || "", correction: d.correction || "", limite: d.limite || "" };
+  ETAT.form = { id: d.id, classe: d.classe, type: d.type, date: d.date, matiere: d.matiere || "", titre: d.titre, bareme: d.bareme || 20, sujet: d.sujet || "", correction: d.correction || "", limite: d.limite || "", sujet_fichier: d.sujet_fichier || "", correction_fichier: d.correction_fichier || "" };
   if (ETAT.section !== "devoirs") showSection("devoirs"); else { dessinerCalendrier(); rendreFormulaire(); }
   setTimeout(() => { const z = $("#zoneFormDevoir"); if (z) z.scrollIntoView({ behavior: "smooth" }); }, 80);
 }
@@ -1705,7 +1705,9 @@ function rendreFormulaire() {
       <div><label class="text-xs font-extrabold">DATE (cliquez un jour vert du calendrier)</label><div class="input mt-1 bg-violet-50 font-bold" id="dvf-date-txt">${f.date ? fmtDate(f.date) : "— aucune —"}</div></div>
       <div><label class="text-xs font-extrabold">⏰ DATE LIMITE DE DÉPÔT DE LA SOLUTION (optionnel)</label><input id="dvf-limite" type="datetime-local" class="input mt-1" value="${f.limite ? String(f.limite).slice(0, 16) : ""}"><p class="text-[11px] text-slate-400 mt-1">Après cette date/heure, le dépôt de l'élève sera marqué « en retard ».</p></div>
       <div class="md:col-span-2"><label class="text-xs font-extrabold">📄 SUJET (visible par les élèves le lendemain de l'épreuve)</label><textarea id="dvf-sujet" rows="4" class="input mt-1" placeholder="Chapitres, durée, matériel autorisé…">${esc(f.sujet || "")}</textarea></div>
+      <div class="md:col-span-2"><label class="text-xs font-extrabold">📎 OU DÉPOSER LE FICHIER DU SUJET (PDF, Word, image…)</label><input id="dvf-sujet-fichier" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp" class="input mt-1">${f.sujet_fichier ? `<p class="text-[11px] mt-1">📎 Actuel : <b>${esc(String(f.sujet_fichier).split("/").pop().replace(/^(sujet|correction)-\d+-/, ""))}</b> <button type="button" class="underline text-red-500" onclick="retirerFichierDevoir('sujet')">retirer</button></p>` : ""}<p class="text-[11px] text-slate-400 mt-1">Les élèves pourront le télécharger le lendemain de l'épreuve ; l'agent IA l'utilisera aussi comme énoncé.</p></div>
       <div class="md:col-span-2"><label class="text-xs font-extrabold">✅ CORRECTION (visible le lendemain)</label><textarea id="dvf-correction" rows="4" class="input mt-1" placeholder="Corrigé détaillé…">${esc(f.correction || "")}</textarea></div>
+      <div class="md:col-span-2"><label class="text-xs font-extrabold">📎 OU DÉPOSER LE FICHIER DE LA CORRECTION (corrigé type)</label><input id="dvf-correction-fichier" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp" class="input mt-1">${f.correction_fichier ? `<p class="text-[11px] mt-1">📎 Actuel : <b>${esc(String(f.correction_fichier).split("/").pop().replace(/^(sujet|correction)-\d+-/, ""))}</b> <button type="button" class="underline text-red-500" onclick="retirerFichierDevoir('correction')">retirer</button></p>` : ""}<p class="text-[11px] text-slate-400 mt-1">C'est la référence principale de l'agent IA pour noter les copies ; visible par les élèves le lendemain.</p></div>
       <div class="md:col-span-2 flex flex-wrap gap-2">
         <button class="ai-grad text-white px-5 py-3 rounded-full text-sm font-extrabold shadow-lg shadow-violet-300">💾 Enregistrer le devoir</button>
         ${f.id ? `<button type="button" onclick="supprimerDevoir('${f.id}')" class="px-5 py-3 rounded-full text-sm font-extrabold bg-red-50 text-red-600 border border-red-200">🗑️ Supprimer</button>` : ""}
@@ -1732,18 +1734,45 @@ async function enregistrerDevoir(ev) {
   if (!q.ok) return toast(`Limite atteinte (${q.trimestre.label}) : maximum ${q.max} par trimestre, par classe et par matière.`, "erreur");
   const limiteVal = $("#dvf-limite") ? $("#dvf-limite").value : "";
   const ligne = { enseignant_id: ETAT.session.user.id, enseignant_nom: ETAT.profil.nom, classe: f.classe, matiere, type: f.type, titre, date: f.date, sujet, correction, bareme, limite: limiteVal ? new Date(limiteVal).toISOString() : null };
-  const sauvegarder = async (l) => { if (f.id) await sbPatch("devoirs", `id=eq.${f.id}`, l); else await sbInsert("devoirs", l); };
-  let limiteIgnoree = false;
-  try { await sauvegarder(ligne); } catch (e) {
+  const sauvegarder = async (l) => { if (f.id) return await sbPatch("devoirs", `id=eq.${f.id}`, l); return await sbInsert("devoirs", l); };
+  let limiteIgnoree = false, resSave = null;
+  try { resSave = await sauvegarder(ligne); } catch (e) {
     if (!/limite/i.test(e.message || "")) return toast(e.message, "erreur");
     const sansLimite = { ...ligne }; delete sansLimite.limite;
-    try { await sauvegarder(sansLimite); limiteIgnoree = true; } catch (e2) { return toast(e2.message, "erreur"); }
+    try { resSave = await sauvegarder(sansLimite); limiteIgnoree = true; } catch (e2) { return toast(e2.message, "erreur"); }
+  }
+  const devoirId = f.id || (Array.isArray(resSave) ? (resSave[0] && resSave[0].id) : (resSave && resSave.id));
+  const televerserDevoir = async (input, type) => {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    if (!devoirId) throw new Error("devoir non identifié");
+    if (file.size > 10 * 1024 * 1024) { toast(`Fichier « ${type} » trop lourd (10 Mo maximum) : ignoré.`, "erreur"); return; }
+    const nomPropre = file.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]/g, "_");
+    const chemin = `devoirs/${devoirId}/${type}-${Date.now()}-${nomPropre}`;
+    await sbEnvoyerFichier(chemin, file);
+    await sbPatch("devoirs", `id=eq.${devoirId}`, type === "sujet" ? { sujet_fichier: chemin } : { correction_fichier: chemin });
+  };
+  try {
+    await televerserDevoir($("#dvf-sujet-fichier"), "sujet");
+    await televerserDevoir($("#dvf-correction-fichier"), "correction");
+  } catch (e) {
+    if (/sujet_fichier|correction_fichier|column|schema/i.test(e.message || "")) toast("⚠️ Fichier(s) du devoir non enregistré(s) : l'administrateur doit exécuter la mise à jour de supabase/schema.sql.", "erreur");
+    else toast("Dépôt du fichier du devoir impossible : " + e.message, "erreur");
   }
   toast(`✅ Devoir « ${titre} » enregistré pour le ${fmtDate(f.date)} (${nomClasse(f.classe)}).`, "success");
   if (limiteIgnoree) toast("⚠️ Devoir enregistré SANS la date limite : l'administrateur doit exécuter la mise à jour de supabase/schema.sql.", "erreur");
   ETAT.form = null;
   await chargerDonnees();
   dessinerCalendrier(); rendreFormulaire(); rendreListeDevoirs();
+}
+async function retirerFichierDevoir(type) {
+  const f = ETAT.form; if (!f || !f.id) return;
+  try {
+    await sbPatch("devoirs", `id=eq.${f.id}`, type === "sujet" ? { sujet_fichier: null } : { correction_fichier: null });
+    if (type === "sujet") f.sujet_fichier = ""; else f.correction_fichier = "";
+    toast("Fichier retiré du devoir.", "info");
+    rendreFormulaire();
+  } catch (e) { toast(e.message, "erreur"); }
 }
 async function supprimerDevoir(id) {
   const d = ETAT.devoirs.find(x => x.id === id);
@@ -1764,7 +1793,7 @@ function rendreListeDevoirs() {
   zone.innerHTML = liste.map(d => `
     <div class="card p-4 flex gap-4 items-center table-row">
       <span class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white shrink-0" style="background:${couleurClasse(d.classe)}">${esc(d.type)}</span>
-      <div class="flex-1 min-w-0"><p class="font-extrabold truncate">${esc(d.titre)}</p><p class="text-xs text-slate-400">${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")} • ${fmtDate(d.date)} • /${esc(String(d.bareme || 20))}${d.limite ? ` • ⏰ dépôt jusqu'au ${fmtDateHeure(d.limite)}` : ""}</p>
+      <div class="flex-1 min-w-0"><p class="font-extrabold truncate">${esc(d.titre)}</p><p class="text-xs text-slate-400">${esc(nomClasse(d.classe))} • ${esc(d.matiere || "")} • ${fmtDate(d.date)} • /${esc(String(d.bareme || 20))}${d.limite ? ` • ⏰ dépôt jusqu'au ${fmtDateHeure(d.limite)}` : ""}${d.sujet_fichier ? " • 📄 sujet" : ""}${d.correction_fichier ? " • ✅ corrigé" : ""}</p>
       <div class="flex gap-1.5 mt-1.5"><span class="badge ${d.sujet ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}">${d.sujet ? "Sujet prêt" : "Sujet à écrire"}</span><span class="badge ${d.correction ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}">${d.correction ? "Correction prête" : "Correction à écrire"}</span></div></div>
       <div class="flex flex-col gap-1.5 shrink-0">
         <button onclick="modifierDevoir('${d.id}')" class="pill !py-1.5 text-xs">✏️ Modifier</button>
@@ -1790,7 +1819,8 @@ function carteDevoirEleve(d) {
     ${d.limite ? `<p class="text-[13px]">⏰ <b>Dépôt de la solution jusqu'au ${fmtDateHeure(d.limite)}</b>${rendu && depotEnRetard(d, rendu) ? ` <span class="badge bg-red-100 text-red-600">⏰ Déposé en retard</span>` : ""}</p>` : ""}
     ${visible ? `
       <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-amber-700">📄 SUJET</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.sujet ? esc(d.sujet) : "<i class='text-slate-400'>Sujet non encore publié par l'enseignant.</i>"}</p></div>
-      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-emerald-700">✅ CORRECTION</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.correction ? esc(d.correction) : "<i class='text-slate-400'>Correction pas encore publiée.</i>"}</p></div>`
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3"><p class="text-xs font-extrabold text-emerald-700">✅ CORRECTION</p><p class="text-[13px] mt-1 whitespace-pre-line">${d.correction ? esc(d.correction) : "<i class='text-slate-400'>Correction pas encore publiée.</i>"}</p></div>
+      ${d.sujet_fichier || d.correction_fichier ? `<div class="flex flex-wrap gap-2">${d.sujet_fichier ? `<button type="button" class="pill !text-xs" onclick="voirFichierDevoir('${d.id}','sujet')">📄 Télécharger le sujet (fichier)</button>` : ""}${d.correction_fichier ? `<button type="button" class="pill !text-xs" onclick="voirFichierDevoir('${d.id}','correction')">✅ Télécharger la correction (fichier)</button>` : ""}</div>` : ""}`
     : `<div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-[13px] text-slate-500">🔒 La date est visible, mais le <b>sujet</b> et la <b>correction</b> seront publiés le <b>${lendemain}</b> (lendemain de l'épreuve).</div>`}
     ${note && note.appreciation ? `<p class="text-[13px]">💬 <b>Remarque :</b> ${esc(note.appreciation)}</p>` : ""}
     <div class="bg-violet-50 border border-violet-100 rounded-2xl p-3">
@@ -1814,6 +1844,13 @@ async function deposerSolution(input, devoirId) {
     toast("📤 Solution déposée ! Elle sera corrigée puis validée par votre enseignant.", "success");
     rendreDevoirs();
   } catch (e) { toast("Dépôt impossible : " + e.message + " (si le stockage ou la table « rendus » n'est pas actif, l'administrateur doit exécuter supabase/schema.sql).", "erreur"); }
+}
+async function voirFichierDevoir(devoirId, type) {
+  const d = ETAT.devoirs.find(x => String(x.id) === String(devoirId)); if (!d) return;
+  const chemin = type === "sujet" ? d.sujet_fichier : d.correction_fichier;
+  if (!chemin) return toast("Aucun fichier pour ce devoir.", "erreur");
+  try { const url = await sbLienSigne(chemin, 3600); window.open(url, "_blank"); }
+  catch (e) { toast("Impossible d'ouvrir le fichier : " + e.message, "erreur"); }
 }
 async function voirRendu(id) {
   const r = (ETAT.rendus || []).find(x => String(x.id) === String(id));
@@ -1888,6 +1925,7 @@ function rendreElevesEns() {
       </div>
       ${correctionIAHTML(devoir, eleves)}` : `<p class="text-slate-400 text-sm mt-4">📝 La liste des élèves de la classe est ci-dessus. Créez d'abord un devoir pour cette classe (section « Devoirs ») pour pouvoir saisir les notes et utiliser la correction IA.</p>`}
     </div>`;
+  declencherCorrectionAuto(devoir);
 }
 /* ================= CORRECTION IA DES SOLUTIONS =================
    L'IA (Google Gemini, via la fonction Supabase « corriger-ia ») propose
@@ -1900,10 +1938,11 @@ function correctionIAHTML(devoir, eleves) {
     ? `<span class="badge bg-emerald-100 text-emerald-700">✅ Validée</span>`
     : st === "corrige" ? `<span class="badge bg-sky-100 text-sky-700">🤖 Corrigée par l'IA — à valider</span>` : `<span class="badge bg-amber-100 text-amber-700">⏳ En attente de correction</span>`;
   const aCorriger = rendusD.filter(r => r.statut !== "valide").length;
+  const aValider = rendusD.filter(r => r.statut === "corrige").length;
   return `<div class="card p-4 md:p-5 mt-5" style="border:2px solid #7C3AED">
     <div class="flex flex-wrap gap-2 items-center justify-between">
       <h3 class="font-extrabold text-[16px]">🤖 Correction IA des solutions</h3>
-      ${aCorriger ? `<button type="button" onclick="corrigerTousRendus('${devoir.id}', this)" class="pill !text-xs">🤖 Tout corriger (${aCorriger})</button>` : ""}
+      <span class="flex flex-wrap gap-2">${aCorriger ? `<button type="button" onclick="corrigerTousRendus('${devoir.id}', this)" class="pill !text-xs">🤖 Tout corriger (${aCorriger})</button>` : ""}${aValider ? `<button type="button" onclick="validerToutesCorrections('${devoir.id}', this)" class="pill !text-xs">✅ Valider et publier toutes (${aValider})</button>` : ""}</span>
     </div>
     <p class="text-xs text-slate-500 mt-1">Les élèves déposent leur solution depuis « Mes devoirs » (PDF, Word, photo de copie ou fichier de code). L'IA compare chaque fichier au <b>corrigé type</b> du devoir et propose une note sur ${esc(String(devoir.bareme || 20))} + une appréciation. <b>Vous validez (ou corrigez) avant publication</b> : l'élève ne voit rien avant votre validation.</p>
     <details class="mt-3"><summary class="text-xs font-bold text-violet-700 cursor-pointer">🧭 Votre agent de correction : vos consignes + sa mémoire (${exemplesIA().length} exemple(s) appris)</summary>
@@ -1916,6 +1955,8 @@ function correctionIAHTML(devoir, eleves) {
           <span class="text-[11px] text-slate-400 flex-1 min-w-[220px]">🧠 Mémoire : chaque note que vous « Validez et publiez » devient un exemple que l'agent imite (niveau d'exigence + style), <b>sans le nom de l'élève</b>.</span>
           ${exemplesIA().length ? `<button type="button" class="pill !text-xs !text-red-500" onclick="effacerExemplesIA()">🗑️ Effacer la mémoire (${exemplesIA().length})</button>` : ""}
         </div>
+        <label class="flex gap-2 items-center text-[12px] font-bold mt-3 cursor-pointer"><input type="checkbox" ${correctionAutoIA() ? "checked" : ""} onchange="basculerCorrectionAuto(this.checked)"> 🤖 Correction automatique : l'agent corrige chaque copie dès son dépôt ou son import (et à l'ouverture de cette page), sans clic.</label>
+        <label class="flex gap-2 items-center text-[12px] font-bold mt-1.5 cursor-pointer"><input type="checkbox" ${publicationAutoIA() ? "checked" : ""} onchange="basculerPublicationAuto(this.checked)"> 🚀 Publication automatique : la note est donnée à l'élève dès la correction terminée, sans votre validation. (Sinon, corrigez puis « Valider et publier ».)</label>
       </div>
     </details>
     <div class="flex flex-wrap gap-2 items-end mt-3">
@@ -1985,6 +2026,27 @@ function effacerExemplesIA() {
   try { localStorage.removeItem(cleAgentIA("dl-exemples-ia")); } catch (e) { }
   toast("🧠 Mémoire de l'agent effacée.", "info");
   rendreEleves();
+}
+function correctionAutoIA() { try { return localStorage.getItem(cleAgentIA("dl-correction-auto")) === "1"; } catch (e) { return false; } }
+function basculerCorrectionAuto(actif) {
+  try { localStorage.setItem(cleAgentIA("dl-correction-auto"), actif ? "1" : "0"); } catch (e) { }
+  toast(actif ? "🤖 Correction automatique activée : les copies en attente vont être corrigées." : "Correction automatique désactivée.", "info");
+  if (actif) rendreEleves();
+}
+function publicationAutoIA() { try { return localStorage.getItem(cleAgentIA("dl-pub-auto")) === "1"; } catch (e) { return false; } }
+function basculerPublicationAuto(actif) {
+  try { localStorage.setItem(cleAgentIA("dl-pub-auto"), actif ? "1" : "0"); } catch (e) { }
+  toast(actif ? "🚀 Publication automatique activée : les notes seront données aux élèves dès la correction terminée." : "Publication automatique désactivée : vous validez chaque note avant publication.", "info");
+}
+function declencherCorrectionAuto(devoir) {
+  if (!devoir || !correctionAutoIA() || ETAT._correctionAutoEnCours) return;
+  const enAttente = (ETAT.rendus || []).some(r => String(r.devoir_id) === String(devoir.id) && r.statut === "en_attente");
+  if (!enAttente) return;
+  ETAT._correctionAutoEnCours = true;
+  setTimeout(async () => {
+    try { await corrigerTousRendus(devoir.id, null, true); }
+    finally { ETAT._correctionAutoEnCours = false; }
+  }, 300);
 }
 /* ---------- Import du dossier de la classe (travaux de tous les élèves) ----------
    L'enseignant choisit un dossier local : un fichier par élève. Chaque
@@ -2114,6 +2176,7 @@ async function confirmerImportDossier(btn) {
     try { ETAT.rendus = await sbSelect("rendus", "select=*&order=date.desc"); } catch (e) { }
     ETAT.importDossier = null;
     if (ok) toast(`📁 Dossier importé : ${ok} copie(s) prête(s). Lancez « 🤖 Tout corriger » en haut du panneau pour lancer la correction IA de toute la classe.`, "success");
+    if (ok && correctionAutoIA()) { toast("🤖 Correction automatique des copies importées…", "info"); await corrigerTousRendus(devoir.id, null, true); }
     if (erreurs.length) toast("⚠️ Échec(s) : " + erreurs.join(" ; "), "erreur");
   } finally {
     if (btn) { btn.disabled = false; if (ancien) btn.textContent = ancien; }
@@ -2132,7 +2195,8 @@ async function importerSolutionProf(input, devoirId) {
     await sbUpsert("rendus", { eleve_id: eleveId, devoir_id: devoirId, fichier: chemin, nom_fichier: f.name, statut: "en_attente", note_ia: null, appreciation_ia: "", details_ia: "" }, "eleve_id,devoir_id");
     try { ETAT.rendus = await sbSelect("rendus", "select=*&order=date.desc"); } catch (e) { }
     toast("📥 Fichier importé pour l'élève choisi — vous pouvez lancer la correction IA.", "success");
-    rendreEleves();
+    if (correctionAutoIA()) { toast("🤖 Correction automatique de la copie importée…", "info"); await corrigerTousRendus(devoirId, null, true); }
+    else rendreEleves();
   } catch (e) { toast("Import impossible : " + e.message + " (l'administrateur doit exécuter la mise à jour de supabase/schema.sql pour autoriser l'import par l'enseignant).", "erreur"); }
 }
 /* Extraction du contenu d'un fichier : texte direct, Word via mammoth,
@@ -2180,7 +2244,7 @@ async function corrigerRenduIA(id, btn) {
   if (!r) return;
   const devoir = ETAT.devoirs.find(d => String(d.id) === String(r.devoir_id));
   if (!devoir) return toast("Devoir introuvable.", "erreur");
-  if (!devoir.correction && !confirm("Ce devoir n'a pas de corrigé type : l'IA corrigera à partir du seul sujet (moins fiable). Continuer ?")) return;
+  if (!devoir.correction && !devoir.correction_fichier && !confirm("Ce devoir n'a pas de corrigé type : l'IA corrigera à partir du seul sujet (moins fiable). Continuer ?")) return;
   const ancien = btn ? btn.textContent : "";
   try {
     if (btn) { btn.disabled = true; btn.textContent = "⏳ Correction IA en cours…"; }
@@ -2198,13 +2262,26 @@ async function corrigerRenduIA(id, btn) {
     if (!blob) throw new Error("Aucun fichier attaché à ce dépôt.");
     const contenu = await extraireContenuFichier(blob, r.nom_fichier || r.fichier || "fichier");
     r._extraitIA = contenu.texte ? contenu.texte.slice(0, 1500) : "";
+    let sujetFichierIA = null, corrigeFichierIA = null;
+    const lireFichierDevoir = async (chemin) => {
+      const url = await sbLienSigne(chemin, 600);
+      const rp = await fetch(url);
+      if (!rp.ok) return null;
+      const b = await rp.blob();
+      const c = await extraireContenuFichier(b, chemin.split("/").pop() || "fichier");
+      return { nom: (chemin.split("/").pop() || "fichier").replace(/^(sujet|correction)-\d+-/, ""), texte: c.texte || "", base64: c.base64 || "", mime: b.type || "" };
+    };
+    if (devoir.sujet_fichier) { try { sujetFichierIA = await lireFichierDevoir(devoir.sujet_fichier); } catch (e) { } }
+    if (devoir.correction_fichier) { try { corrigeFichierIA = await lireFichierDevoir(devoir.correction_fichier); } catch (e) { } }
     const eleve = (ETAT.profils || []).find(p => p.id === r.eleve_id);
     const data = await appelerIA({
       devoir: { titre: devoir.titre, matiere: devoir.matiere || "", type: devoir.type, classe: nomClasse(devoir.classe), bareme: Number(devoir.bareme) || 20, sujet: devoir.sujet || "", correction: devoir.correction || "" },
       eleve: { nom: eleve ? (eleve.nom || "") : "" },
       fichier: { nom: r.nom_fichier || "fichier", mime: blob.type || "", texte: contenu.texte || "", base64: contenu.base64 || "" },
       consignes: consignesIA(),
-      exemples: choisirExemplesIA(devoir)
+      exemples: choisirExemplesIA(devoir),
+      sujetFichier: sujetFichierIA,
+      corrigeFichier: corrigeFichierIA
     });
     let note = Number(data && data.note);
     if (isNaN(note)) throw new Error("Réponse de l'IA incomplète (aucune note) : réessayez.");
@@ -2213,7 +2290,14 @@ async function corrigerRenduIA(id, btn) {
     const maj = { note_ia: note, appreciation_ia: String((data && data.appreciation) || "").slice(0, 500), details_ia: String((data && data.details) || "").slice(0, 6000), statut: "corrige", corrige_le: new Date().toISOString() };
     await sbPatch("rendus", `id=eq.${r.id}`, maj);
     Object.assign(r, maj);
-    toast(`🤖 Correction IA prête${eleve && eleve.nom ? " pour " + eleve.nom : ""} : note proposée ${note}/${bareme} — vérifiez puis « Valider et publier ».`, "success");
+    let publieeAuto = false;
+    if (publicationAutoIA()) {
+      try { await publierNoteIA(r, devoir, note, maj.appreciation_ia); publieeAuto = true; }
+      catch (e) { console.warn("Publication automatique :", e); }
+    }
+    toast(publieeAuto
+      ? `🚀 Note publiée automatiquement${eleve && eleve.nom ? " pour " + eleve.nom : ""} : ${note}/${bareme} — l'élève la voit déjà.`
+      : `🤖 Correction IA prête${eleve && eleve.nom ? " pour " + eleve.nom : ""} : note proposée ${note}/${bareme} — vérifiez puis « Valider et publier ».`, "success");
     if (ETAT.section === "eleves") rendreEleves();
   } catch (e) {
     if (/note_ia|appreciation_ia|details_ia|statut|corrige_le|column/i.test(e.message || "")) toast("La base n'a pas encore les colonnes de correction IA : l'administrateur doit exécuter la mise à jour de supabase/schema.sql.", "erreur");
@@ -2222,22 +2306,30 @@ async function corrigerRenduIA(id, btn) {
     if (btn) { btn.disabled = false; btn.textContent = ancien || "🤖 Corriger avec l'IA"; }
   }
 }
-async function corrigerTousRendus(devoirId, btn) {
-  const liste = (ETAT.rendus || []).filter(r => String(r.devoir_id) === String(devoirId) && r.statut !== "valide");
-  if (!liste.length) return toast("Aucune copie en attente de correction.", "info");
+async function corrigerTousRendus(devoirId, btn, seulementEnAttente) {
+  const liste = (ETAT.rendus || []).filter(r => String(r.devoir_id) === String(devoirId) && (seulementEnAttente ? r.statut === "en_attente" : r.statut !== "valide"));
+  if (!liste.length) { if (!seulementEnAttente) toast("Aucune copie en attente de correction.", "info"); return; }
   const ancien = btn ? btn.textContent : "";
-  let faites = 0;
+  let faites = 0, publiees = 0;
   try {
     for (const r of liste) {
-      if (btn) btn.textContent = `⏳ Correction IA ${faites + 1}/${liste.length}…`;
+      if (btn) btn.textContent = `⏳ Correction IA ${faites + publiees + 1}/${liste.length}…`;
       await corrigerRenduIA(r.id, null);
-      if (r.statut === "corrige") faites++;
+      if (r.statut === "valide") publiees++;
+      else if (r.statut === "corrige") faites++;
     }
-    toast(`🤖 Correction IA terminée : ${faites}/${liste.length} copie(s) corrigée(s). Vérifiez chaque note puis validez.`, faites ? "success" : "info");
+    toast(`🤖 Correction IA terminée : ${faites + publiees}/${liste.length} copie(s) corrigée(s)${publiees ? `, ${publiees} note(s) déjà publiée(s) aux élèves` : ". Vérifiez chaque note puis validez"}.`, (faites + publiees) ? "success" : "info");
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = ancien || "🤖 Tout corriger"; }
     if (ETAT.section === "eleves") rendreEleves();
   }
+}
+async function publierNoteIA(r, devoir, note, appreciation) {
+  const bareme = Number(devoir.bareme) || 20;
+  await sbUpsert("notes", { devoir_id: devoir.id, eleve_id: r.eleve_id, note, sur: bareme, appreciation, updated_by: ETAT.session.user.id }, "devoir_id,eleve_id");
+  await sbPatch("rendus", `id=eq.${r.id}`, { statut: "valide", note_ia: note, appreciation_ia: appreciation });
+  r.statut = "valide"; r.note_ia = note; r.appreciation_ia = appreciation;
+  ajouterExempleIA({ matiere: devoir.matiere || "", titre: devoir.titre || "", note, sur: bareme, appreciation, extrait: (r._extraitIA || "").slice(0, 1500), details: (r.details_ia || "").slice(0, 800) });
 }
 async function validerCorrectionIA(id) {
   const r = (ETAT.rendus || []).find(x => String(x.id) === String(id));
@@ -2252,14 +2344,39 @@ async function validerCorrectionIA(id) {
   if (noteStr === "" || isNaN(note) || note < 0 || note > bareme) return toast(`Note proposée invalide : saisissez une note entre 0 et ${bareme}.`, "erreur");
   const appreciation = String(champAppr ? champAppr.value : (r.appreciation_ia || "")).trim();
   try {
-    await sbUpsert("notes", { devoir_id: devoir.id, eleve_id: r.eleve_id, note, sur: bareme, appreciation, updated_by: ETAT.session.user.id }, "devoir_id,eleve_id");
-    await sbPatch("rendus", `id=eq.${r.id}`, { statut: "valide", note_ia: note, appreciation_ia: appreciation });
-    r.statut = "valide"; r.note_ia = note; r.appreciation_ia = appreciation;
-    ajouterExempleIA({ matiere: devoir.matiere || "", titre: devoir.titre || "", note, sur: bareme, appreciation, extrait: (r._extraitIA || "").slice(0, 1500), details: (r.details_ia || "").slice(0, 800) });
+    await publierNoteIA(r, devoir, note, appreciation);
     try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) { }
     toast("✅ Note validée et publiée : l'élève la voit maintenant dans ses notes.", "success");
     rendreEleves();
   } catch (e) { toast(e.message, "erreur"); }
+}
+async function validerToutesCorrections(devoirId, btn) {
+  const devoir = ETAT.devoirs.find(d => String(d.id) === String(devoirId));
+  if (!devoir) return;
+  const liste = (ETAT.rendus || []).filter(r => String(r.devoir_id) === String(devoirId) && r.statut === "corrige");
+  if (!liste.length) return toast("Aucune copie corrigée à valider.", "info");
+  const bareme = Number(devoir.bareme) || 20;
+  const ancien = btn ? btn.textContent : "";
+  let ok = 0; const erreurs = [];
+  try {
+    if (btn) btn.disabled = true;
+    for (const r of liste) {
+      const champNote = $("#ia-note-" + r.id);
+      const champAppr = $("#ia-appr-" + r.id);
+      const noteStr = String(champNote ? champNote.value : (r.note_ia == null ? "" : r.note_ia)).trim().replace(",", ".");
+      const note = Number(noteStr);
+      if (noteStr === "" || isNaN(note) || note < 0 || note > bareme) { erreurs.push("une note proposée est invalide"); continue; }
+      const appreciation = String(champAppr ? champAppr.value : (r.appreciation_ia || "")).trim();
+      try { await publierNoteIA(r, devoir, note, appreciation); ok++; }
+      catch (e) { erreurs.push(e.message); }
+    }
+    try { ETAT.notes = await sbSelect("notes", "select=*"); } catch (e) { }
+    if (ok) toast(`✅ ${ok} note(s) validée(s) et publiée(s) : les élèves les voient maintenant dans leurs notes.`, "success");
+    if (erreurs.length) toast("⚠️ " + erreurs.join(" ; "), "erreur");
+  } finally {
+    if (btn) { btn.disabled = false; if (ancien) btn.textContent = ancien; }
+    rendreEleves();
+  }
 }
 
 /* ---------- Export des notes en CSV (Excel) ---------- */
