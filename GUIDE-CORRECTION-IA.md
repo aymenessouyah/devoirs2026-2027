@@ -84,3 +84,20 @@ supabase functions deploy corriger-ia
 ⚠️ Après cette mise à jour : exécutez `supabase/schema.sql` (colonnes
 `sujet_fichier` / `correction_fichier` + lecture des fichiers de devoirs)
 et **redéployez** `corriger-ia` pour que l'agent lise les fichiers joints.
+
+---
+
+## 📚 Travaux et corrigés en plusieurs fichiers (depuis la v5.6.1)
+
+- **Côté élève** : le dépôt accepte **plusieurs fichiers en une fois**
+  (pages d'une copie photographiée, `index.html` + `style.css`, etc.).
+- **Import du dossier de la classe** : tous les fichiers attribués au
+  même élève forment **un seul travail**. La reconnaissance marche aussi
+  par **nom de sous-dossier** (un sous-dossier par élève).
+- **Côté enseignant** : le corrigé type du devoir peut lui aussi être
+  déposé en **plusieurs fichiers/pages**.
+- L'agent reçoit **l'ensemble des fichiers** de l'élève et du corrigé
+  et les corrige comme un seul travail.
+
+⚠️ Exécutez `supabase/schema.sql` (colonnes `fichiers` et
+`correction_fichiers`) et **redéployez `corriger-ia`**.

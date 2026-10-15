@@ -56,10 +56,10 @@ Deno.serve(async (req) => {
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { return json({ error: "Demande illisible." }, 400); }
   const devoir = (body.devoir || {}) as Record<string, unknown>;
-  const fichier = (body.fichier || {}) as Record<string, unknown>;
   const bareme = Number(devoir.bareme) || 20;
-  const texte = String(fichier.texte || "");
-  const base64 = String(fichier.base64 || "");
+  // Le travail de l'élève peut comporter PLUSIEURS fichiers (pages).
+  const fichiersEleve = (Array.isArray(body.fichiers) && body.fichiers.length ? body.fichiers : [body.fichier || {}]) as Record<string, unknown>[];
+  const aDuContenu = fichiersEleve.some((x) => String(x.texte || "") || String(x.base64 || ""));
   const consignes = String(body.consignes || "").slice(0, 3000).trim();
   const exemplesBruts = Array.isArray(body.exemples) ? body.exemples.slice(0, 3) : [];
   const exemplesTxt = exemplesBruts.map((e, i) => {
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     const ext = String(ex.extrait || "").slice(0, 1500).trim();
     return `Exemple ${i + 1} (déjà validé par l'enseignant) — note : ${Number(ex.note) || 0}/${Number(ex.sur) || 20} — appréciation donnée : « ${String(ex.appreciation || "").slice(0, 300)} »${ext ? `\nExtrait de la copie de l'élève :\n${ext}` : ""}`;
   }).join("\n\n");
-  if (!texte && !base64) return json({ error: "Aucun contenu de fichier à corriger." }, 400);
+  if (!aDuContenu) return json({ error: "Aucun contenu de fichier à corriger." }, 400);
 
   // --- 3) Construire le prompt de correction ---
   const prompt = `Tu es un enseignant tunisien expérimenté qui corrige la copie d'un élève de lycée.
@@ -97,28 +97,34 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, au format :
 {"note": <nombre entre 0 et ${bareme}>, "appreciation": "<1 à 2 phrases>", "details": "<correction détaillée, avec des retours à la ligne>"}`;
 
   const sujetF = (body.sujetFichier || {}) as Record<string, unknown>;
-  const corrigeF = (body.corrigeFichier || {}) as Record<string, unknown>;
+  // Le corrigé type peut lui aussi comporter plusieurs fichiers (pages).
+  const corrigesF = (Array.isArray(body.corrigeFichiers) && body.corrigeFichiers.length ? body.corrigeFichiers : (body.corrigeFichier ? [body.corrigeFichier] : [])) as Record<string, unknown>[];
 
   // deno-lint-ignore no-explicit-any
   const parts: any[] = [{ text: prompt }];
-  if (String(corrigeF.texte || "")) {
-    parts.push({ text: `\n\nCORRIGÉ TYPE FOURNI EN FICHIER (« ${String(corrigeF.nom || "corrigé")} ») — RÉFÉRENCE PRINCIPALE DE NOTATION :\n\n${String(corrigeF.texte).slice(0, 60000)}` });
-  } else if (String(corrigeF.base64 || "")) {
-    parts.push({ text: `\n\nCORRIGÉ TYPE : le document joint ci-après (« ${String(corrigeF.nom || "corrigé")} ») est la RÉFÉRENCE PRINCIPALE de notation.` });
-    parts.push({ inline_data: { mime_type: String(corrigeF.mime || "application/pdf"), data: String(corrigeF.base64) } });
-  }
+  corrigesF.slice(0, 6).forEach((corrigeF, i) => {
+    if (String(corrigeF.texte || "")) {
+      parts.push({ text: `\n\nCORRIGÉ TYPE FOURNI EN FICHIER ${i + 1}/${corrigesF.length} (« ${String(corrigeF.nom || "corrigé")} ») — RÉFÉRENCE PRINCIPALE DE NOTATION :\n\n${String(corrigeF.texte).slice(0, 60000)}` });
+    } else if (String(corrigeF.base64 || "")) {
+      parts.push({ text: `\n\nCORRIGÉ TYPE : le document joint ci-après (« ${String(corrigeF.nom || "corrigé")} », fichier ${i + 1}/${corrigesF.length}) est la RÉFÉRENCE PRINCIPALE de notation.` });
+      parts.push({ inline_data: { mime_type: String(corrigeF.mime || "application/pdf"), data: String(corrigeF.base64) } });
+    }
+  });
   if (String(sujetF.texte || "")) {
     parts.push({ text: `\n\nSUJET FOURNI EN FICHIER (« ${String(sujetF.nom || "sujet")} ») :\n\n${String(sujetF.texte).slice(0, 40000)}` });
   } else if (String(sujetF.base64 || "")) {
     parts.push({ text: `\n\nSUJET : le document joint ci-après (« ${String(sujetF.nom || "sujet")} ») est le sujet officiel du devoir.` });
     parts.push({ inline_data: { mime_type: String(sujetF.mime || "application/pdf"), data: String(sujetF.base64) } });
   }
-  if (texte) {
-    parts.push({ text: `\n\nSOLUTION DE L'ÉLÈVE (fichier « ${fichier.nom || "fichier"} ») :\n\n${texte.slice(0, 80000)}` });
-  } else {
-    parts.push({ text: `\n\nSOLUTION DE L'ÉLÈVE : le document joint ci-dessous (fichier « ${fichier.nom || "fichier"} »). Lis-le entièrement puis corrige-le.` });
-    parts.push({ inline_data: { mime_type: String(fichier.mime || "application/pdf"), data: base64 } });
-  }
+  fichiersEleve.slice(0, 8).forEach((fe, i) => {
+    const nomF = String(fe.nom || `fichier ${i + 1}`);
+    if (String(fe.texte || "")) {
+      parts.push({ text: `\n\nSOLUTION DE L'ÉLÈVE — fichier ${i + 1}/${fichiersEleve.length} « ${nomF} » :\n\n${String(fe.texte).slice(0, 60000)}` });
+    } else if (String(fe.base64 || "")) {
+      parts.push({ text: `\n\nSOLUTION DE L'ÉLÈVE — fichier ${i + 1}/${fichiersEleve.length} « ${nomF} » : document joint ci-après.` });
+      parts.push({ inline_data: { mime_type: String(fe.mime || "application/pdf"), data: String(fe.base64) } });
+    }
+  });
 
   // --- 4) Appeler Gemini ---
   const modele = Deno.env.get("GEMINI_MODELE") || "gemini-2.0-flash";
